@@ -163,4 +163,107 @@ describe("IronLung desktop command center", () => {
 
     expect(screen.getByText("No exercises match")).toBeInTheDocument();
   });
+
+  it("keeps exercise search results visible after a second typed character", async () => {
+    useIronLungStore.getState().importData({
+      unitPreference: "lbs",
+      theme: "dark",
+      trainingGoal: "general_fitness",
+      currentTrainingBlockId: null,
+      trainingBlocks: [],
+      exercises: [{
+        id: "ex-bench",
+        name: "Bench Press",
+        primaryMuscle: "Pectoralis major",
+        secondaryMuscles: ["Anterior deltoids", "Triceps brachii"],
+        equipment: "Barbell",
+        movementPattern: "Horizontal press",
+        isUnilateral: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z"
+      }],
+      templates: [],
+      templateExercises: [],
+      sessions: [],
+      sessionExercises: [],
+      setLogs: [],
+      personalRecords: [],
+      photos: [],
+      analyses: []
+    });
+
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: "Exercises" }));
+    await userEvent.type(screen.getByPlaceholderText("Search exercises"), "bp");
+
+    expect(screen.getAllByText("Bench Press").length).toBeGreaterThan(0);
+    expect(screen.queryByText("No exercises match")).not.toBeInTheDocument();
+  });
+
+  it("does not blank exercises search when matching an exercise with invalid imported PR data", async () => {
+    useIronLungStore.getState().importData({
+      unitPreference: "lbs",
+      theme: "dark",
+      trainingGoal: "general_fitness",
+      currentTrainingBlockId: null,
+      trainingBlocks: [],
+      exercises: [{
+        id: "ex-bad-pr",
+        name: "Cable Curl",
+        primaryMuscle: "Biceps brachii",
+        secondaryMuscles: [],
+        equipment: "Cable",
+        movementPattern: "Curl",
+        isUnilateral: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z"
+      }],
+      templates: [],
+      templateExercises: [],
+      sessions: [{
+        id: "session-bad-pr",
+        name: "Arms",
+        startedAt: "2026-01-02T12:00:00.000Z",
+        finishedAt: "2026-01-02T13:00:00.000Z",
+        createdAt: "2026-01-02T12:00:00.000Z",
+        updatedAt: "2026-01-02T13:00:00.000Z"
+      }],
+      sessionExercises: [{
+        id: "session-ex-bad-pr",
+        workoutSessionId: "session-bad-pr",
+        exerciseId: "ex-bad-pr",
+        orderIndex: 0
+      }],
+      setLogs: [{
+        id: "set-bad-pr",
+        workoutSessionExerciseId: "session-ex-bad-pr",
+        setNumber: 1,
+        weight: 40,
+        reps: 12,
+        rpe: 8,
+        setType: "working",
+        isCompleted: true,
+        createdAt: "2026-01-02T12:05:00.000Z"
+      }],
+      personalRecords: [{
+        id: "bad-pr",
+        exerciseId: "ex-bad-pr",
+        workoutSessionId: "session-bad-pr",
+        setLogId: "set-bad-pr",
+        type: "custom_bad_type",
+        value: { bad: "value" },
+        unit: { bad: "unit" },
+        achievedAt: "not-a-date"
+      } as any],
+      photos: [],
+      analyses: []
+    });
+
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: "Exercises" }));
+    await userEvent.type(screen.getByPlaceholderText("Search exercises"), "c");
+
+    expect(screen.getAllByText("Cable Curl").length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText("Search exercises")).toHaveValue("c");
+  });
 });

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Database, Download, FolderDown, FolderUp, Lock, Settings, Trash2 } from "lucide-react";
+import { CheckCircle2, Database, Download, FolderDown, FolderUp, Lock, Settings, Smartphone, Trash2 } from "lucide-react";
 import {
   BoostcampCsvImporter,
   BoostcampJsonImporter,
@@ -18,10 +18,13 @@ import { ScreenShell } from "../components/layout/ScreenShell";
 import { EmptyState } from "../components/empty-states/EmptyState";
 import { AnalyticsTable, StatRows } from "../components/tables/AnalyticsTable";
 import { ConfirmModal } from "../components/modals/ConfirmModal";
-import { shortDate } from "../lib/format";
+import { countNumber, shortDate } from "../lib/format";
 import { refreshBoostcampFromLocalHelper } from "../lib/boostcampSync";
 import { createExport, validateImportPayload } from "../lib/importExport";
 import { type IronLungStateData, useIronLungStore } from "../lib/store";
+import { parseMobileExportBundle } from "../features/mobile-sync/mobileBundleImporter";
+import { createMobileSeedBundle, mergeMobileBundle, previewMobileImport } from "../features/mobile-sync/mobileMerge";
+import type { MobileExportBundle, MobileImportPreview } from "../features/mobile-sync/mobileSyncTypes";
 
 export function DataSettingsPage() {
   const state = useIronLungStore();
@@ -92,7 +95,7 @@ export function DataSettingsPage() {
 
         <Card>
           <SectionHeader title="Privacy" icon={Lock} />
-          <div className="space-y-3 text-sm leading-6 text-white/55">
+          <div className="space-y-3 text-sm leading-relaxed text-obsidian-muted">
             <p>IronLung Desktop does not require an account, does not upload progress photos, and does not add analytics tracking.</p>
             <p>Imported Boostcamp and IronLung files are parsed locally. Original import files are not stored unless you choose to keep them elsewhere.</p>
             <p>Future sync is intentionally left as a documented roadmap item, not a hidden service.</p>
@@ -108,6 +111,8 @@ export function DataSettingsPage() {
 
       <BoostcampImportPanel />
 
+      <MobileSyncPanel />
+
       <div className="grid grid-cols-2 gap-5">
         <IronLungImportPanel onStatus={setStatus} />
         <Card>
@@ -119,13 +124,13 @@ export function DataSettingsPage() {
             <ExportStat label="Photos" value={state.photos.length} />
             <ExportStat label="Analyses" value={state.analyses.length} />
           </div>
-          {status && <div className="mt-3 text-sm text-white/50">{status}</div>}
+          {status && <div className="mt-3 text-sm text-obsidian-muted">{status}</div>}
         </Card>
       </div>
 
       <Card>
         <SectionHeader title="Backup and Mobile Roadmap" icon={Database} />
-        <div className="grid grid-cols-3 gap-4 text-sm leading-6 text-white/52">
+        <div className="grid grid-cols-3 gap-4 text-sm leading-relaxed text-obsidian-muted">
           <p>Manual backup today: export JSON and copy any photo files you want to preserve into your own backup folder.</p>
           <p>Mobile later: keep shared types, PR calculations, analytics, importers, and schema concepts in reusable packages.</p>
           <p>Sync later: add an optional encrypted sync API only after local-first behavior is stable and documented.</p>
@@ -200,8 +205,8 @@ function TrainingBlocksPanel() {
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {state.trainingBlocks.map((block) => (
-          <div key={block.id} className="flex items-center gap-2 rounded-xl border border-line bg-white/[0.03] p-2">
-            <span className="px-2 text-sm text-white/65">{block.name}</span>
+          <div key={block.id} className="flex items-center gap-2 rounded-xl border border-obsidian-strong bg-obsidian-700 p-2">
+            <span className="px-2 text-sm text-obsidian-muted">{block.name}</span>
             <Button variant="ghost" onClick={() => state.setCurrentTrainingBlock(block.id)}>Set active</Button>
             <Button variant="ghost" onClick={() => state.updateTrainingBlock(block.id, { endedAt: block.endedAt ? null : new Date().toISOString() })}>{block.endedAt ? "Reopen" : "End"}</Button>
             <Button variant="danger" onClick={() => setDeleteBlockId(block.id)}>Delete</Button>
@@ -306,9 +311,9 @@ function BoostcampImportPanel() {
 
   return (
     <Card>
-      <SectionHeader title="Boostcamp Import" icon={FolderUp} action={<div className="flex gap-2"><Select value={unit} onChange={(value) => setUnit(value as ImportUnitPreference)}><option value="auto">Auto unit</option><option value="lbs">lbs</option><option value="kg">kg</option></Select><label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-medium text-ink transition hover:bg-accent"><FolderUp className="h-4 w-4" />Upload CSV/JSON<input className="hidden" type="file" accept=".csv,.json,.txt,application/json,text/csv,text/plain" onChange={(event) => handleFile(event.target.files?.[0])} /></label></div>} />
-      <p className="max-w-4xl text-sm leading-6 text-white/50">Import user-provided Boostcamp files, or refresh through your local authenticated `boostcamp-mcp` helper. IronLung does not store your Boostcamp password, does not upload imported data, and still runs a dry-run preview before writing anything.</p>
-      <div className="mt-5 grid grid-cols-[1.15fr_1.15fr_150px_auto] gap-3 rounded-xl border border-line bg-black/15 p-3">
+      <SectionHeader title="Boostcamp Import" icon={FolderUp} action={<div className="flex gap-2"><Select value={unit} onChange={(value) => setUnit(value as ImportUnitPreference)}><option value="auto">Auto unit</option><option value="lbs">lbs</option><option value="kg">kg</option></Select><label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg bg-electric px-4 text-sm font-bold text-white shadow-[0_0_24px_rgba(59,130,246,0.35)] transition-colors hover:bg-blue-500"><FolderUp className="h-4 w-4" />Upload CSV/JSON<input className="hidden" type="file" accept=".csv,.json,.txt,application/json,text/csv,text/plain" onChange={(event) => handleFile(event.target.files?.[0])} /></label></div>} />
+      <p className="max-w-4xl text-sm leading-relaxed text-obsidian-muted">Import user-provided Boostcamp files, or refresh through your local authenticated `boostcamp-mcp` helper. IronLung does not store your Boostcamp password, does not upload imported data, and still runs a dry-run preview before writing anything.</p>
+      <div className="mt-5 grid grid-cols-[1.15fr_1.15fr_150px_auto] gap-3 rounded-xl border border-obsidian bg-obsidian-700 p-3">
         <Input value={helperPath} onChange={setHelperPath} placeholder="Boostcamp helper folder" />
         <Input value={exportDir} onChange={setExportDir} placeholder="Export folder" />
         <Select value={timezoneOffset} onChange={setTimezoneOffset}>
@@ -318,9 +323,9 @@ function BoostcampImportPanel() {
         </Select>
         <Button icon={FolderDown} onClick={refreshFromBoostcamp}>Refresh Boostcamp</Button>
       </div>
-      <p className="mt-2 text-xs leading-5 text-white/38">Personal local mode uses the existing token in the helper folder's `.env`. If it fails, run `uv run login` in that folder and try again.</p>
-      {status && <div className="mt-4 rounded-xl border border-line bg-black/20 p-3 text-sm text-white/55">{status}</div>}
-      {latestExportPath && <div className="mt-2 text-xs text-white/35">Latest export: {latestExportPath}</div>}
+      <p className="mt-2 text-xs leading-relaxed text-obsidian-subtle">Personal local mode uses the existing token in the helper folder's `.env`. If it fails, run `uv run login` in that folder and try again.</p>
+      {status && <div className="mt-4 rounded-xl border border-obsidian bg-obsidian-700 p-3 text-sm text-obsidian-muted">{status}</div>}
+      {latestExportPath && <div className="mt-2 text-xs text-obsidian-subtle">Latest export: {latestExportPath}</div>}
 
       {preview ? (
         <>
@@ -333,14 +338,14 @@ function BoostcampImportPanel() {
             <ImportStat label="Unknown" value={preview.unknownFields.length} hint="fields" />
           </div>
           <div className="mt-5 grid grid-cols-[1fr_360px] gap-5">
-            <div className="rounded-xl border border-line bg-black/15 p-4">
+            <div className="rounded-xl border border-obsidian bg-obsidian-700 p-4">
               <div className="mb-3 font-medium">Exercise mapping</div>
               <div className="max-h-80 space-y-2 overflow-auto pr-1">
                 {mappings.map((mapping) => (
-                  <div key={mapping.importedName} className="grid grid-cols-[1fr_150px_1.2fr] items-center gap-2 rounded-lg border border-line bg-white/[0.03] p-2">
+                  <div key={mapping.importedName} className="grid grid-cols-[1fr_150px_1.2fr] items-center gap-2 rounded-lg border border-obsidian-strong bg-obsidian-700 p-2">
                     <div>
-                      <div className="text-sm font-medium">{mapping.importedName}</div>
-                      <div className="text-xs text-white/38">Imported name</div>
+                      <div className="text-sm font-medium text-white">{mapping.importedName}</div>
+                      <div className="text-xs text-obsidian-subtle">Imported name</div>
                     </div>
                     <Select value={mapping.action} onChange={(value) => updateMapping(mapping.importedName, { action: value as ExerciseMapping["action"] })}>
                       <option value="create">Create new</option>
@@ -389,6 +394,93 @@ function BoostcampImportPanel() {
   );
 }
 
+function MobileSyncPanel() {
+  const state = useIronLungStore();
+  const [status, setStatus] = useState("");
+  const [preview, setPreview] = useState<MobileImportPreview | null>(null);
+  const [bundle, setBundle] = useState<MobileExportBundle | null>(null);
+
+  function downloadSeedBundle() {
+    const seed = createMobileSeedBundle(pickStateData(state));
+    const blob = new Blob([JSON.stringify(seed, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `ironlung-mobile-seed-${new Date().toISOString().slice(0, 10)}.ironlung-mobile-seed.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setStatus("Mobile seed bundle exported. Import it on your phone from the Sync tab.");
+  }
+
+  async function handleMobileBundle(file?: File) {
+    if (!file) return;
+    try {
+      const parsed = parseMobileExportBundle(await file.text());
+      setBundle(parsed);
+      setPreview(previewMobileImport(parsed, pickStateData(state)));
+      setStatus("Dry-run preview complete. Review before merging phone data.");
+    } catch (error) {
+      setBundle(null);
+      setPreview(null);
+      setStatus(error instanceof Error ? error.message : "Could not read mobile bundle.");
+    }
+  }
+
+  function mergePhoneData() {
+    if (!bundle) return;
+    const result = mergeMobileBundle(bundle, pickStateData(useIronLungStore.getState()));
+    state.importData(result.data);
+    setPreview(result.preview);
+    setStatus("Mobile bundle merged. PRs and analytics were recalculated.");
+  }
+
+  return (
+    <Card>
+      <SectionHeader
+        title="Mobile/PWA Sync"
+        icon={Smartphone}
+        action={<Button icon={FolderDown} onClick={downloadSeedBundle}>Export mobile analytics seed</Button>}
+      />
+      <div className="grid grid-cols-[1fr_360px] gap-5">
+        <div className="space-y-3 text-sm leading-relaxed text-obsidian-muted">
+          <p>Use file-based local sync for the phone analytics dashboard. Export an analytics seed from desktop, import it on your phone, and view workout history locally.</p>
+          <p>No account, no cloud upload, and no server is required. Mobile bundles are user-controlled files that can contain sensitive workout data.</p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-obsidian-strong bg-obsidian-700 px-4 text-sm font-semibold text-obsidian-muted transition-colors hover:border-electric hover:text-white">
+              <FolderUp className="h-4 w-4" />
+              Import mobile export
+              <input className="hidden" type="file" accept=".json,.ironlung-mobile.json,application/json" onChange={(event) => handleMobileBundle(event.target.files?.[0])} />
+            </label>
+            <Button disabled={!bundle} icon={CheckCircle2} onClick={mergePhoneData}>Merge mobile data</Button>
+          </div>
+          {status && <div className="rounded-xl border border-obsidian bg-obsidian-700 p-3 text-sm text-obsidian-muted">{status}</div>}
+        </div>
+        <div className="rounded-xl border border-obsidian bg-obsidian-700 p-4">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-obsidian-muted">Dry-run preview</div>
+          {preview ? (
+            <div className="space-y-2">
+              <StatRows rows={[
+                ["Device", preview.deviceName],
+                ["Exported", shortDate(preview.exportedAt)],
+                ["Workouts found", countNumber(preview.workoutsFound)],
+                ["Sets found", countNumber(preview.setsFound)],
+                ["Exercises found", countNumber(preview.exercisesFound)],
+                ["Duplicates", countNumber(preview.duplicateRecords)],
+                ["Conflicts", countNumber(preview.conflicts)],
+                ["Will create", countNumber(preview.recordsToCreate)],
+                ["Will update", countNumber(preview.recordsToUpdate)],
+                ["Will skip", countNumber(preview.recordsToSkip)]
+              ]} />
+              {preview.warnings.length > 0 && <div className="text-xs leading-relaxed text-warn">{preview.warnings.join(" ")}</div>}
+            </div>
+          ) : (
+            <EmptyState icon={Smartphone} title="No phone export selected" body="Upload a .ironlung-mobile.json file from the PWA Sync tab to preview a local merge." />
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function IronLungImportPanel({ onStatus }: { onStatus: (value: string) => void }) {
   const state = useIronLungStore();
   const [importText, setImportText] = useState("");
@@ -413,7 +505,7 @@ function IronLungImportPanel({ onStatus }: { onStatus: (value: string) => void }
       <TextArea placeholder="Paste IronLung JSON export" value={importText} onChange={setImportText} />
       <div className="mt-3 flex flex-wrap gap-2">
         <Button icon={FolderUp} onClick={() => importJson(importText)}>Import pasted JSON</Button>
-        <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-white/[0.04] px-4 text-sm font-medium text-white/70 transition hover:border-accent/50 hover:text-white">
+        <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-obsidian-strong bg-obsidian-700 px-4 text-sm font-medium text-obsidian-muted transition-colors hover:border-electric hover:text-white">
           <FolderUp className="h-4 w-4" />
           Import file
           <input className="hidden" type="file" accept=".json,application/json" onChange={(event) => importFile(event.target.files?.[0])} />
@@ -425,28 +517,28 @@ function IronLungImportPanel({ onStatus }: { onStatus: (value: string) => void }
 
 function ExportStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-line bg-black/15 p-3">
-      <div className="text-xs text-white/42">{label}</div>
-      <div className="mt-1 text-xl font-semibold">{value}</div>
+    <div className="rounded-xl border border-obsidian bg-obsidian-700 p-3">
+      <div className="text-xs font-semibold uppercase tracking-wider text-obsidian-muted">{label}</div>
+      <div className="mt-1 font-mono text-xl font-semibold text-white">{countNumber(value)}</div>
     </div>
   );
 }
 
 function ImportStat({ label, value, hint }: { label: string; value: number; hint: string }) {
   return (
-    <div className="rounded-xl border border-line bg-black/15 p-4">
-      <div className="text-xs text-white/42">{label}</div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wide text-white/30">{hint}</div>
+    <div className="rounded-xl border border-obsidian bg-obsidian-700 p-4">
+      <div className="text-xs font-semibold uppercase tracking-wider text-obsidian-muted">{label}</div>
+      <div className="mt-2 font-mono text-2xl font-semibold text-white">{countNumber(value)}</div>
+      <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-obsidian-subtle">{hint}</div>
     </div>
   );
 }
 
 function ImportDetail({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-xl border border-line bg-black/15 p-4">
-      <div className="mb-2 font-medium">{title}</div>
-      <div className="max-h-28 overflow-auto text-sm leading-6 text-white/50">{body}</div>
+    <div className="rounded-xl border border-obsidian bg-obsidian-700 p-4">
+      <div className="mb-2 font-medium text-white">{title}</div>
+      <div className="max-h-28 overflow-auto text-sm leading-relaxed text-obsidian-muted">{body}</div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
-export const chartColors = ["#64d2ff", "#7ee7bf", "#b9a7ff", "#ffd166", "#ff6b7a", "#8bd3ff"];
+export const chartColors = ["#3b82f6", "#60a5fa", "#facc15", "#f87171", "#93c5fd", "#2563eb"];
 
 export const tooltipStyle = {
-  background: "#11131a",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: 12,
-  color: "#fff"
+  backgroundColor: "#1c2133",
+  border: "1px solid rgba(255,255,255,0.16)",
+  borderRadius: "0.5rem",
+  color: "white"
 };

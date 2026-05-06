@@ -7,7 +7,7 @@ import { ScreenShell } from "../components/layout/ScreenShell";
 import { EmptyState } from "../components/empty-states/EmptyState";
 import { AnalyticsTable } from "../components/tables/AnalyticsTable";
 import { ConfirmModal } from "../components/modals/ConfirmModal";
-import { compactNumber, dateTime, shortDate } from "../lib/format";
+import { compactNumber, countNumber, dateTime, shortDate } from "../lib/format";
 import { oneRmForSet, selectOpenSession, useIronLungStore } from "../lib/store";
 
 type TrainTab = "Start Workout" | "Active Workout" | "Training Journal" | "Templates";
@@ -18,9 +18,9 @@ export function TrainPage() {
 
   return (
     <ScreenShell title="Train" subtitle="Start workouts, log fast, review your training journal, and manage user-created templates.">
-      <div className="flex flex-wrap gap-2">
+      <div className="inline-flex flex-wrap gap-2">
         {(["Start Workout", "Active Workout", "Training Journal", "Templates"] as TrainTab[]).map((item) => (
-          <button key={item} onClick={() => setTab(item)} className={`rounded-lg px-4 py-2 text-sm transition ${tab === item ? "bg-white text-ink" : "border border-line bg-white/[0.04] text-white/65 hover:text-white"}`}>{item}</button>
+          <button key={item} onClick={() => setTab(item)} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === item ? "bg-electric text-white" : "border border-obsidian-strong bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.65)] hover:bg-[rgba(255,255,255,0.08)]"}`}>{item}</button>
         ))}
       </div>
       {tab === "Start Workout" && <StartWorkout onActive={() => setTab("Active Workout")} />}
@@ -48,12 +48,12 @@ function StartWorkout({ onActive }: { onActive: () => void }) {
           )}
           <Button variant="ghost" icon={Dumbbell} onClick={() => { state.startWorkout(state.templates[0]?.id); onActive(); }} disabled={!state.templates.length || Boolean(openSession)}>Start recent template</Button>
         </div>
-        {openSession && <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/8 p-3 text-sm text-white/60">Finish or discard the active workout before starting another one.</div>}
+        {openSession && <div className="mt-3 rounded-xl border border-yellow-400/20 bg-yellow-400/10 p-3 text-sm text-yellow-300">Finish or discard the active workout before starting another one.</div>}
         <div className="mt-5 grid gap-2">
           {state.templates.slice(-6).reverse().map((template) => (
-            <button key={template.id} onClick={() => { state.startWorkout(template.id); onActive(); }} className="rounded-xl border border-line bg-white/[0.035] p-4 text-left hover:border-accent/50">
-              <div className="font-medium">{template.name}</div>
-              <div className="text-sm text-white/42">{state.templateExercises.filter((row) => row.workoutTemplateId === template.id).length} exercises</div>
+            <button key={template.id} onClick={() => { state.startWorkout(template.id); onActive(); }} className="group flex w-full flex-col items-start rounded-lg border border-obsidian-strong bg-obsidian-700 p-3 text-left transition-colors hover:border-electric hover:bg-obsidian-600">
+              <div className="text-sm font-semibold text-white transition-colors group-hover:text-electric">{template.name}</div>
+              <div className="mt-0.5 text-xs text-[rgba(255,255,255,0.5)]">{state.templateExercises.filter((row) => row.workoutTemplateId === template.id).length} exercises</div>
             </button>
           ))}
           {!state.templates.length && <EmptyState icon={Dumbbell} title="No templates yet" body="Create your own templates. No premade plans exist in IronLung." />}
@@ -63,9 +63,9 @@ function StartWorkout({ onActive }: { onActive: () => void }) {
         <SectionHeader title="Recent Exercises" icon={Search} />
         <div className="grid grid-cols-2 gap-2">
           {recentExercises.map((exercise) => exercise && (
-            <div key={exercise.id} className="rounded-xl border border-line bg-white/[0.03] p-3">
+            <div key={exercise.id} className="rounded-xl border border-obsidian-strong bg-obsidian-700 p-3">
               <div className="font-medium">{exercise.name}</div>
-              <div className="text-sm text-white/42">{exercise.primaryMuscle}</div>
+              <div className="text-sm text-obsidian-muted">{exercise.primaryMuscle}</div>
             </div>
           ))}
         </div>
@@ -89,9 +89,9 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
     <div className="space-y-5">
       <div className="grid grid-cols-6 gap-4">
         <MetricCard label="Workout volume" value={volume} hint="current" />
-        <MetricCard label="Sets" value={String(sets.length)} hint="logged" />
-        <MetricCard label="Exercises" value={String(rows.length)} hint="active" />
-        <MetricCard label="Workout PRs" value={String(workoutPrs.length)} hint="current" tone={workoutPrs.length ? "good" : "default"} />
+        <MetricCard label="Sets" value={countNumber(sets.length)} hint="logged" />
+        <MetricCard label="Exercises" value={countNumber(rows.length)} hint="active" />
+        <MetricCard label="Workout PRs" value={countNumber(workoutPrs.length)} hint="current" tone={workoutPrs.length ? "good" : "default"} />
         <MetricCard label="Best e1RM" value={bestOneRm ? compactNumber(bestOneRm) : "--"} hint="current" />
         <MetricCard label="Started" value={shortDate(session.startedAt)} hint={session.name} />
       </div>
@@ -120,7 +120,7 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
         </div>
         {!!workoutPrs.length && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {workoutPrs.slice(-8).map((record) => <span key={record.id} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-sm text-mint">{prLabel(record.type)} - {record.importance ?? "legacy"}</span>)}
+            {workoutPrs.slice(-8).map((record) => <span key={record.id} className="inline-block rounded-md bg-electric-muted px-2.5 py-0.5 text-xs font-semibold text-electric">{prLabel(record.type)} - {record.importance ?? "legacy"}</span>)}
           </div>
         )}
       </Card>
@@ -197,20 +197,20 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
     <Card>
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <div className="text-xl font-semibold">{exercise.name}</div>
-          <div className="text-sm text-white/45">{exercise.primaryMuscle} - previous: {previous || "no prior sets"}</div>
+          <div className="text-xl font-semibold text-white">{exercise.name}</div>
+          <div className="text-sm text-obsidian-muted">{exercise.primaryMuscle} - previous: {previous || "no prior sets"}</div>
         </div>
         <RestTimer seconds={120} />
       </div>
       <div className="space-y-2">
         {sets.map((set) => (
-          <div key={set.id} className="grid grid-cols-[70px_1fr_1fr_1fr_1fr_1fr_auto] items-center rounded-lg bg-white/[0.035] p-2 text-sm">
-            <span>#{set.setNumber}</span><span>{set.weight} {state.unitPreference}</span><span>{set.reps} reps</span><span>{set.rpe ?? "--"}</span><span>{set.setType}</span><span>e1RM {oneRmForSet(set)}</span><IconButton label="Delete set" icon={Trash2} variant="danger" onClick={() => state.deleteSet(set.id)} />
+          <div key={set.id} className="grid grid-cols-[70px_1fr_1fr_1fr_1fr_1fr_auto] items-center rounded-lg bg-obsidian-700 p-2 font-mono text-sm text-white/70">
+            <span>#{countNumber(set.setNumber)}</span><span>{set.weight} {state.unitPreference}</span><span>{countNumber(set.reps)} reps</span><span>{set.rpe ?? "--"}</span><span>{set.setType}</span><span>e1RM {compactNumber(oneRmForSet(set))}</span><IconButton label="Delete set" icon={Trash2} variant="danger" onClick={() => state.deleteSet(set.id)} />
           </div>
         ))}
       </div>
       <div className="mt-3 grid grid-cols-[80px_1fr_1fr_1fr_1.1fr_1fr_auto] items-center gap-2">
-        <span className="text-sm text-white/45">Next</span>
+        <span className="text-sm text-obsidian-muted">Next</span>
         <input ref={weightRef} className={fieldClass} inputMode="decimal" placeholder={`Weight ${state.unitPreference}`} value={weight} onChange={(event) => setWeight(event.target.value)} onKeyDown={(event) => event.key === "Enter" && repsRef.current?.focus()} />
         <input ref={repsRef} className={fieldClass} inputMode="numeric" placeholder="5" value={reps} onChange={(event) => setReps(event.target.value)} onKeyDown={(event) => event.key === "Enter" && submit()} />
         <input className={fieldClass} inputMode="decimal" placeholder="8" value={rpe} onChange={(event) => setRpe(event.target.value)} />
@@ -226,8 +226,8 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
           <IconButton label="Log set" icon={CheckCircle2} onClick={submit} />
         </div>
       </div>
-      {!canSubmit && (weight || reps || rpe) && <div className="mt-2 text-xs text-amber-200/70">Enter a valid weight, whole-number reps, and optional RPE from 0-10.</div>}
-      {!!records.length && <div className="mt-4 flex flex-wrap gap-2">{records.map((record) => <span key={record.id} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-sm text-mint">PR - {prLabel(record.type)} {record.value}</span>)}</div>}
+      {!canSubmit && (weight || reps || rpe) && <div className="mt-2 text-xs text-yellow-300">Enter a valid weight, whole-number reps, and optional RPE from 0-10.</div>}
+      {!!records.length && <div className="mt-4 flex flex-wrap gap-2">{records.map((record) => <span key={record.id} className="inline-block rounded-md bg-electric-muted px-2.5 py-0.5 text-xs font-semibold text-electric">PR - {prLabel(record.type)} {record.value}</span>)}</div>}
     </Card>
   );
 }
@@ -254,7 +254,7 @@ function RestTimer({ seconds }: { seconds: number }) {
   const secs = String(remaining % 60).padStart(2, "0");
 
   return (
-    <button type="button" onClick={() => setRunning((value) => !value)} onDoubleClick={() => { setRemaining(seconds); setRunning(false); }} className="rounded-lg border border-line px-3 py-2 text-sm text-white/55 hover:border-accent/50 hover:text-white">
+    <button type="button" onClick={() => setRunning((value) => !value)} onDoubleClick={() => { setRemaining(seconds); setRunning(false); }} className="rounded-lg border border-obsidian-strong bg-obsidian-700 px-3 py-2 text-sm font-semibold text-obsidian-muted hover:border-electric hover:bg-obsidian-600 hover:text-white">
       Rest {minutes}:{secs} {running ? "pause" : "start"}
     </button>
   );
@@ -278,13 +278,13 @@ function TrainingJournal({ onEdit }: { onEdit: () => void }) {
         const rpes = sets.map((set) => set.rpe).filter((value): value is number => typeof value === "number");
         return [dateTime(session.startedAt), session.name, rows.length, sets.length, compactNumber(exerciseSessionVolume(sets)), rpes.length ? (rpes.reduce((a, b) => a + b, 0) / rpes.length).toFixed(1) : "--", state.personalRecords.filter((record) => record.workoutSessionId === session.id).length, "delete"];
       })} />
-      {status && <div className="mt-3 rounded-xl border border-line bg-black/20 p-3 text-sm text-white/55">{status}</div>}
+      {status && <div className="mt-3 rounded-xl border border-obsidian bg-obsidian-700 p-3 text-sm text-obsidian-muted">{status}</div>}
       <div className="mt-3 grid gap-2">
         {sessions.slice(0, 20).map((session) => (
-          <div key={session.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.03] p-3">
+          <div key={session.id} className="flex items-center justify-between gap-3 rounded-xl border border-obsidian-strong bg-obsidian-700 p-3">
             <div>
-              <div className="font-medium">{session.name}</div>
-              <div className="text-sm text-white/42">{shortDate(session.startedAt)}</div>
+              <div className="font-medium text-white">{session.name}</div>
+              <div className="text-sm text-obsidian-muted">{shortDate(session.startedAt)}</div>
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => {
@@ -322,7 +322,7 @@ function Templates() {
           <Button icon={Plus} onClick={() => { if (!name.trim()) return; const template = state.createTemplate(name.trim()); setSelectedId(template.id); setName(""); }}>Create template</Button>
         </div>
         <div className="mt-5 space-y-2">
-          {state.templates.map((template) => <button key={template.id} onClick={() => setSelectedId(template.id)} className={`w-full rounded-xl border p-3 text-left ${selected?.id === template.id ? "border-accent/60 bg-accent/10" : "border-line bg-white/[0.03]"}`}>{template.name}</button>)}
+          {state.templates.map((template) => <button key={template.id} onClick={() => setSelectedId(template.id)} className={`w-full rounded-lg border p-3 text-left text-sm font-semibold text-white transition-colors hover:text-electric ${selected?.id === template.id ? "border-electric bg-electric-muted" : "border-obsidian-strong bg-obsidian-700 hover:border-electric hover:bg-obsidian-600"}`}>{template.name}</button>)}
         </div>
       </Card>
       <Card>
@@ -339,7 +339,7 @@ function Templates() {
             <div className="space-y-2">
               {state.templateExercises.filter((row) => row.workoutTemplateId === selected.id).sort((a, b) => a.orderIndex - b.orderIndex).map((row) => {
                 const exercise = state.exercises.find((item) => item.id === row.exerciseId);
-                return <div key={row.id} className="grid grid-cols-[1fr_90px_110px_110px_auto] items-center gap-2 rounded-xl border border-line bg-white/[0.03] p-3"><div>{exercise?.name}</div><Input value={String(row.targetSets)} onChange={(value) => state.updateTemplateExercise(row.id, { targetSets: Number(value) || 0 })} placeholder="sets" /><Input value={row.targetReps} onChange={(value) => state.updateTemplateExercise(row.id, { targetReps: value })} placeholder="reps" /><Input value={String(row.targetRestSeconds)} onChange={(value) => state.updateTemplateExercise(row.id, { targetRestSeconds: Number(value) || 0 })} placeholder="rest" /><IconButton label="Remove" icon={Trash2} onClick={() => state.removeTemplateExercise(row.id)} /></div>;
+                return <div key={row.id} className="grid grid-cols-[1fr_90px_110px_110px_auto] items-center gap-2 rounded-xl border border-obsidian-strong bg-obsidian-700 p-3"><div>{exercise?.name}</div><Input value={String(row.targetSets)} onChange={(value) => state.updateTemplateExercise(row.id, { targetSets: Number(value) || 0 })} placeholder="sets" /><Input value={row.targetReps} onChange={(value) => state.updateTemplateExercise(row.id, { targetReps: value })} placeholder="reps" /><Input value={String(row.targetRestSeconds)} onChange={(value) => state.updateTemplateExercise(row.id, { targetRestSeconds: Number(value) || 0 })} placeholder="rest" /><IconButton label="Remove" icon={Trash2} onClick={() => state.removeTemplateExercise(row.id)} /></div>;
               })}
             </div>
           </>

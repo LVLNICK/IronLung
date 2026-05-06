@@ -115,12 +115,12 @@ export function PhotosPage() {
 
   return (
     <ScreenShell title="Photos" subtitle="Local progress photos, same-pose comparisons, quality checks, and explicit opt-in analysis.">
-      <Card className="border-violet/25 bg-violet/8">
+      <Card className="border-electric bg-electric-muted">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-violet">Privacy-safe progress photos</div>
-            <p className="mt-2 max-w-4xl text-sm leading-6 text-white/62">{safetyText}</p>
-            <p className="mt-1 max-w-4xl text-sm leading-6 text-white/45">Photos stay local by default. IronLung does not upload photos, compare you against other users, or rate attractiveness.</p>
+            <div className="text-sm font-semibold text-electric">Privacy-safe progress photos</div>
+            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-obsidian-muted">{safetyText}</p>
+            <p className="mt-1 max-w-4xl text-sm leading-relaxed text-obsidian-subtle">Photos stay local by default. IronLung does not upload photos, compare you against other users, or rate attractiveness.</p>
           </div>
           <Button variant="danger" icon={Trash2} onClick={() => setDeleteAllOpen(true)}>Delete all photo data</Button>
         </div>
@@ -151,7 +151,7 @@ export function PhotosPage() {
             <option value="pump">Pump</option>
             <option value="unknown">Unknown</option>
           </Select>
-          <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-medium text-ink transition hover:bg-accent">
+          <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg bg-electric px-4 text-sm font-bold text-white shadow-[0_0_24px_rgba(59,130,246,0.35)] transition-colors hover:bg-blue-500">
             <FolderUp className="h-4 w-4" />
             Upload
             <input className="hidden" type="file" accept="image/*" onChange={(event) => handleUpload(event.target.files?.[0])} />
@@ -161,10 +161,10 @@ export function PhotosPage() {
         <div className="mt-3">
           <TextArea placeholder="Photo notes, conditions, or pose reminders" value={notes} onChange={setNotes} />
         </div>
-        {(status || cameraError) && <div className="mt-3 text-sm text-white/55">{status || cameraError}</div>}
+        {(status || cameraError) && <div className="mt-3 text-sm text-obsidian-muted">{status || cameraError}</div>}
         {cameraOpen && (
-          <div className="mt-4 overflow-hidden rounded-xl border border-line bg-black/35">
-            <video ref={videoRef} autoPlay playsInline muted className="max-h-[380px] w-full bg-black object-contain" />
+          <div className="mt-4 overflow-hidden rounded-xl border border-obsidian bg-obsidian-700">
+            <video ref={videoRef} autoPlay playsInline muted className="max-h-[380px] w-full bg-obsidian-900 object-contain" />
             <div className="flex justify-end gap-2 p-3">
               <Button variant="ghost" onClick={stopCamera}>Close</Button>
               <Button icon={Camera} onClick={capturePhoto}>Capture</Button>
@@ -204,18 +204,18 @@ export function PhotosPage() {
             <SectionHeader title="Progress Photo Index Trend" icon={Sparkles} />
             <ResponsiveContainer width="100%" height={230}>
               <LineChart data={trend}>
-                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                <XAxis dataKey="date" stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} />
-                <YAxis domain={[0, 100]} stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Line dataKey="score" name="Progress Photo Index" stroke="#b9a7ff" strokeWidth={2} dot={{ r: 3 }} />
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.35)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} stroke="rgba(255,255,255,0.35)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
+                <Line dataKey="score" name="Progress Photo Index" stroke="#60a5fa" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
             {latestAnalysis && <QualitySignals analysis={latestAnalysis} />}
           </Card>
           <Card>
             <SectionHeader title="Retake Guidance" icon={Camera} />
-            <div className="space-y-2 text-sm leading-6 text-white/52">
+            <div className="space-y-2 text-sm leading-relaxed text-obsidian-muted">
               <p>Use the same room, distance, lens, pose, lighting, and time of day when possible.</p>
               <p>Tag pump/no pump and bodyweight so the Progress Photo Index trend is easier to interpret.</p>
               <p>Review quality signals before comparing photos across weeks.</p>
@@ -226,7 +226,7 @@ export function PhotosPage() {
 
       <Card>
         <SectionHeader title="Export Notes" icon={FolderDown} />
-        <p className="text-sm leading-6 text-white/52">Photo export is handled through Data & Settings. Metadata exports as JSON; image files remain local references unless you manually copy them into your backup folder.</p>
+        <p className="text-sm leading-relaxed text-obsidian-muted">Photo export is handled through Data & Settings. Metadata exports as JSON; image files remain local references unless you manually copy them into your backup folder.</p>
       </Card>
       {deletePhotoId && (
         <ConfirmModal
@@ -252,23 +252,23 @@ export function PhotosPage() {
 
 function PhotoCard({ photo, analysis, analyzing, onAnalyze, onDelete, unit }: { photo: ProgressPhoto; analysis?: BodyAnalysis; analyzing: boolean; onAnalyze: (id: string) => void; onDelete: (id: string) => void; unit: string }) {
   return (
-    <div className="group overflow-hidden rounded-xl border border-line bg-black/25 transition hover:border-accent/45">
+    <div className="group overflow-hidden rounded-xl border border-obsidian bg-obsidian-700 transition hover:border-electric">
       <div className="relative">
         <img src={photo.imagePath} alt={`${photo.poseType} progress`} className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-        {analysis && <div className="absolute right-3 top-3 rounded-full border border-black/30 bg-white px-3 py-1 text-sm font-semibold text-ink">PPI {Math.round(analysis.score)}</div>}
+        {analysis && <div className="absolute right-3 top-3 rounded-md bg-electric-muted px-3 py-1 text-[0.7rem] font-bold text-electric">PPI {Math.round(analysis.score)}</div>}
       </div>
       <div className="space-y-3 p-3 text-sm">
         <div className="flex items-center justify-between">
-          <span className="capitalize text-white/70">{photo.poseType}</span>
-          <span className="text-white/40">{shortDate(photo.capturedAt)}</span>
+          <span className="capitalize text-white">{photo.poseType}</span>
+          <span className="text-obsidian-subtle">{shortDate(photo.capturedAt)}</span>
         </div>
-        <div className="flex flex-wrap gap-2 text-xs text-white/45">
-          <span className="rounded-full border border-line px-2 py-1">{photo.bodyweight ? `${photo.bodyweight} ${unit}` : "weight missing"}</span>
-          <span className="rounded-full border border-line px-2 py-1">{photo.lightingTag || "lighting missing"}</span>
-          <span className="rounded-full border border-line px-2 py-1">{photo.pumpTag || "pump tag missing"}</span>
+        <div className="flex flex-wrap gap-2 text-xs text-obsidian-subtle">
+          <span className="rounded-md border border-obsidian px-2 py-1 font-mono">{photo.bodyweight ? `${photo.bodyweight} ${unit}` : "weight missing"}</span>
+          <span className="rounded-md border border-obsidian px-2 py-1">{photo.lightingTag || "lighting missing"}</span>
+          <span className="rounded-md border border-obsidian px-2 py-1">{photo.pumpTag || "pump tag missing"}</span>
         </div>
         {analysis ? (
-          <div className="text-mint">Progress Photo Index {Math.round(analysis.score)} - {Math.round(analysis.confidence * 100)}% confidence</div>
+          <div className="text-electric">Progress Photo Index {Math.round(analysis.score)} - {Math.round(analysis.confidence * 100)}% confidence</div>
         ) : (
           <Button disabled={analyzing} icon={Sparkles} onClick={() => onAnalyze(photo.id)}>{analyzing ? "Analyzing..." : "Analyze with consent"}</Button>
         )}
@@ -282,11 +282,11 @@ function PhotoCard({ photo, analysis, analyzing, onAnalyze, onDelete, unit }: { 
 
 function CompareImage({ label, photo }: { label: string; photo: ProgressPhoto }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-black/25">
+    <div className="overflow-hidden rounded-xl border border-obsidian bg-obsidian-700">
       <img src={photo.imagePath} alt={`${label} ${photo.poseType}`} className="h-56 w-full object-cover" />
       <div className="p-3 text-sm">
         <div className="font-medium">{label}</div>
-        <div className="text-white/42">{shortDate(photo.capturedAt)}</div>
+        <div className="text-obsidian-subtle">{shortDate(photo.capturedAt)}</div>
       </div>
     </div>
   );
@@ -304,7 +304,7 @@ function QualitySignals({ analysis }: { analysis: BodyAnalysis }) {
   return (
     <div className="mt-4 space-y-4">
       <StatRows rows={rows} />
-      <div className="rounded-xl border border-line bg-black/20 p-3 text-sm leading-6 text-white/50">
+      <div className="rounded-xl border border-obsidian bg-obsidian-700 p-3 text-sm leading-relaxed text-obsidian-muted">
         {warnings.length ? warnings.map((warning) => <p key={warning}>{warning}</p>) : <p>No analysis warnings.</p>}
       </div>
     </div>

@@ -5,17 +5,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#08090d",
-        panel: "#11131a",
-        panelSoft: "#171a23",
+        ink: "#08090e",
+        panel: "#13161f",
+        panelSoft: "#1c2133",
+        panelHigh: "#252c42",
         line: "rgba(255,255,255,0.10)",
-        accent: "#64d2ff",
-        mint: "#7ee7bf",
-        violet: "#b9a7ff",
-        danger: "#ff6b7a"
+        lineStrong: "rgba(255,255,255,0.16)",
+        accent: "#3b82f6",
+        accentText: "#60a5fa",
+        mint: "#60a5fa",
+        violet: "#60a5fa",
+        warn: "#facc15",
+        danger: "#f87171",
+        electric: "#3b82f6",
+        "electric-text": "#60a5fa",
+        obsidian: {
+          900: "#08090e",
+          800: "#13161f",
+          700: "#1c2133",
+          600: "#252c42"
+        }
       },
       boxShadow: {
-        soft: "0 18px 60px rgba(0,0,0,0.32)"
+        soft: "0 18px 60px rgba(0,0,0,0.32)",
+        glow: "0 0 24px rgba(59,130,246,0.35)"
       }
     }
   },

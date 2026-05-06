@@ -3,11 +3,10 @@ import { BarChart3, CalendarDays, Flame, Gauge, Layers, LineChart as LineIcon, T
 import { type DateRangePreset } from "@ironlung/core";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
-import { Select } from "../components/forms/controls";
 import { ScreenShell } from "../components/layout/ScreenShell";
 import { AnalyticsTable, StatRows } from "../components/tables/AnalyticsTable";
 import { chartColors, tooltipStyle } from "../components/charts/ChartPrimitives";
-import { compactNumber, shortDate } from "../lib/format";
+import { compactNumber, countNumber, shortDate, wholeNumber } from "../lib/format";
 import { useTrainingAnalytics } from "../features/analytics/useTrainingAnalytics";
 import { useIronLungStore } from "../lib/store";
 import { prLabel } from "@ironlung/core";
@@ -20,10 +19,10 @@ export function AnalyticsPage() {
   const analytics = useTrainingAnalytics(range);
 
   return (
-    <ScreenShell title="Analytics" subtitle="Strength, volume, muscle balance, PRs, consistency, intensity, recovery, and rule-based insights." action={<Select value={range} onChange={(value) => setRange(value as DateRangePreset)}><option value="7d">7D</option><option value="30d">30D</option><option value="90d">90D</option><option value="1y">1Y</option><option value="all">All time</option></Select>}>
-      <div className="flex flex-wrap gap-2">
+    <ScreenShell title="Analytics" subtitle="Strength, volume, muscle balance, PRs, consistency, intensity, recovery, and rule-based insights." action={<RangeSelector value={range} onChange={setRange} />}>
+      <div className="inline-flex flex-wrap gap-2">
         {(["Overview", "Strength", "Volume", "Muscle Balance", "PRs", "Consistency", "Intensity & Recovery", "Insights"] as AnalyticsTab[]).map((item) => (
-          <button key={item} onClick={() => setTab(item)} className={`rounded-lg px-4 py-2 text-sm transition ${tab === item ? "bg-white text-ink" : "border border-line bg-white/[0.04] text-white/65 hover:text-white"}`}>{item}</button>
+          <button key={item} onClick={() => setTab(item)} className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === item ? "bg-electric text-white" : "border border-obsidian-strong bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.65)] hover:bg-[rgba(255,255,255,0.08)]"}`}>{item}</button>
         ))}
       </div>
       {tab === "Overview" && <Overview analytics={analytics} />}
@@ -38,6 +37,24 @@ export function AnalyticsPage() {
   );
 }
 
+function RangeSelector({ value, onChange }: { value: DateRangePreset; onChange: (value: DateRangePreset) => void }) {
+  const options: Array<[DateRangePreset, string]> = [["7d", "7D"], ["30d", "30D"], ["90d", "90D"], ["1y", "1Y"], ["all", "All time"]];
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-obsidian-strong bg-obsidian-700 p-1">
+      {options.map(([nextValue, label]) => (
+        <button
+          key={nextValue}
+          type="button"
+          onClick={() => onChange(nextValue)}
+          className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors ${value === nextValue ? "bg-electric text-white" : "text-[rgba(255,255,255,0.55)] hover:text-white"}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Overview({ analytics }: { analytics: ReturnType<typeof useTrainingAnalytics> }) {
   const { core } = analytics;
   const most = core.muscleVolume[0];
@@ -48,9 +65,9 @@ function Overview({ analytics }: { analytics: ReturnType<typeof useTrainingAnaly
     <>
       <div className="grid grid-cols-5 gap-4">
         <MetricCard label="Volume" value={compactNumber(core.totals.volume)} hint={`${core.comparison.volumeDeltaPercent}% vs previous`} />
-        <MetricCard label="Sets" value={compactNumber(core.totals.sets)} hint="completed" />
-        <MetricCard label="Sessions" value={String(core.totals.sessions)} hint={`${core.totals.activeDays} active days`} />
-        <MetricCard label="PRs" value={String(core.totals.prs)} hint="by type" />
+        <MetricCard label="Sets" value={countNumber(core.totals.sets)} hint="completed" />
+        <MetricCard label="Sessions" value={countNumber(core.totals.sessions)} hint={`${countNumber(core.totals.activeDays)} active days`} />
+        <MetricCard label="PRs" value={countNumber(core.totals.prs)} hint="by type" />
         <MetricCard label="Balance" value={`${core.balance.overall}/100`} hint="muscle score" />
       </div>
       <div className="grid grid-cols-[1fr_.8fr] gap-5">
@@ -83,7 +100,7 @@ function Strength({ analytics }: { analytics: ReturnType<typeof useTrainingAnaly
         <TrendChart title="Max weight leaderboard" data={[...topSets].sort((a, b) => b.maxWeight - a.maxWeight).slice(0, 12)} x="name" bars={["maxWeight"]} layout="vertical" />
         <Card>
           <SectionHeader title="Plateau Detection" icon={Target} />
-          <StatRows rows={analytics.core.exerciseMetrics.filter((row) => row.plateau).slice(0, 8).map((row) => [row.name, `${row.sessionsSincePr} sessions since PR`])} />
+          <StatRows rows={analytics.core.exerciseMetrics.filter((row) => row.plateau).slice(0, 8).map((row) => [row.name, `${countNumber(row.sessionsSincePr ?? 0)} sessions since PR`])} />
         </Card>
       </div>
       <Card><SectionHeader title="Best Sets Leaderboard" icon={Trophy} /><AnalyticsTable headers={["Exercise", "Best e1RM", "Max Weight", "Best Set Volume", "Strength Trend", "PRs"]} rows={topSets.map((row) => [row.name, row.estimatedOneRepMax, row.maxWeight, row.bestSetVolume, row.strengthTrend, row.prs])} /></Card>
@@ -114,7 +131,7 @@ function MuscleBalance({ analytics }: { analytics: ReturnType<typeof useTraining
         <MetricCard label="Chest/back" value={`${analytics.core.balance.chestBack}/100`} hint="ratio" />
         <MetricCard label="Quad/hamstring" value={`${analytics.core.balance.quadHamstring}/100`} hint="ratio" />
       </div>
-      <div className="grid grid-cols-[.9fr_1.1fr] gap-5"><BodyHeatMap muscles={analytics.desktop.muscleHeatStats} /><Card><SectionHeader title="Muscle Drilldown" icon={Layers} /><AnalyticsTable headers={["Muscle", "Volume", "Sets", "Exercises", "PRs", "Last trained"]} rows={analytics.core.muscleVolume.map((row) => [row.muscle, compactNumber(row.volume), row.sets, row.exercises, row.prs, row.lastTrained ? shortDate(row.lastTrained) : "--"])} /></Card></div>
+      <div className="grid grid-cols-[.9fr_1.1fr] gap-5"><BodyHeatMap muscles={analytics.desktop.muscleHeatStats} /><Card><SectionHeader title="Muscle Drilldown" icon={Layers} /><AnalyticsTable headers={["Muscle", "Volume", "Sets", "Exercises", "PRs", "Last trained"]} rows={analytics.core.muscleVolume.map((row) => [row.muscle, compactNumber(row.volume), countNumber(row.sets), countNumber(row.exercises), countNumber(row.prs), row.lastTrained ? shortDate(row.lastTrained) : "--"])} /></Card></div>
     </>
   );
 }
@@ -129,8 +146,8 @@ function PRs({ analytics }: { analytics: ReturnType<typeof useTrainingAnalytics>
   return (
     <div className="grid grid-cols-[.8fr_1.2fr] gap-5">
       <div className="space-y-5">
-        <Card><SectionHeader title="PR Breakdown" icon={Trophy} /><StatRows rows={analytics.core.prGroups.map((row) => [prLabel(row.type), `${row.count} - ${row.lastAchievedAt ? shortDate(row.lastAchievedAt) : "--"}`])} /></Card>
-        <Card><SectionHeader title="PR Importance" icon={Trophy} /><StatRows rows={importance.map((row) => [row.level, String(row.count)])} /></Card>
+        <Card><SectionHeader title="PR Breakdown" icon={Trophy} /><StatRows rows={analytics.core.prGroups.map((row) => [prLabel(row.type), `${countNumber(row.count)} - ${row.lastAchievedAt ? shortDate(row.lastAchievedAt) : "--"}`])} /></Card>
+        <Card><SectionHeader title="PR Importance" icon={Trophy} /><StatRows rows={importance.map((row) => [row.level, countNumber(row.count)])} /></Card>
       </div>
       <Card><SectionHeader title="Trophy Room" icon={Trophy} /><AnalyticsTable headers={["Date", "Exercise", "Type", "Importance", "Value"]} rows={records.map((record) => [shortDate(record.achievedAt), state.exercises.find((exercise) => exercise.id === record.exerciseId)?.name ?? "Exercise", prLabel(record.type), record.importance ?? "legacy", `${record.value} ${record.unit}`])} /></Card>
     </div>
@@ -141,7 +158,7 @@ function Consistency({ analytics }: { analytics: ReturnType<typeof useTrainingAn
   return (
     <>
       <div className="grid grid-cols-3 gap-5"><TrendChart title="Active days / week" data={analytics.core.weeklyVolume} x="weekStart" bars={["sessions"]} /><TrendChart title="Daily sessions" data={analytics.core.dailyVolume} x="date" bars={["sessions", "prs"]} /><TrendChart title="Daily sets" data={analytics.core.dailyVolume} x="date" bars={["sets"]} /></div>
-      <Card><SectionHeader title="Not-trained-in-X-days warnings" icon={CalendarDays} /><AnalyticsTable headers={["Exercise", "Last trained", "Sessions", "Volume"]} rows={[...analytics.core.exerciseMetrics].sort((a, b) => String(a.lastTrained ?? "").localeCompare(String(b.lastTrained ?? ""))).slice(0, 20).map((row) => [row.name, row.lastTrained ? shortDate(row.lastTrained) : "--", row.sessions, compactNumber(row.volume)])} /></Card>
+      <Card><SectionHeader title="Not-trained-in-X-days warnings" icon={CalendarDays} /><AnalyticsTable headers={["Exercise", "Last trained", "Sessions", "Volume"]} rows={[...analytics.core.exerciseMetrics].sort((a, b) => String(a.lastTrained ?? "").localeCompare(String(b.lastTrained ?? ""))).slice(0, 20).map((row) => [row.name, row.lastTrained ? shortDate(row.lastTrained) : "--", countNumber(row.sessions), compactNumber(row.volume)])} /></Card>
     </>
   );
 }
@@ -149,8 +166,8 @@ function Consistency({ analytics }: { analytics: ReturnType<typeof useTrainingAn
 function IntensityRecovery({ analytics }: { analytics: ReturnType<typeof useTrainingAnalytics> }) {
   return (
     <div className="grid grid-cols-[.9fr_1.1fr] gap-5">
-      <Card><SectionHeader title="Recovery Flags" icon={Flame} /><StatRows rows={analytics.core.fatigueFlags.map((flag) => [flag.muscle, `${flag.severity} - ${flag.recentSets} sets - ${flag.recentHardSets} hard`])} /></Card>
-      <Card><SectionHeader title="Hard Set Estimate" icon={Gauge} /><p className="text-sm leading-6 text-white/55">Hard sets are estimated from AMRAP/failure sets and sets with RPE 9+. This is a workload signal, not medical advice.</p><AnalyticsTable headers={["Muscle", "Detail"]} rows={analytics.core.fatigueFlags.map((flag) => [flag.muscle, flag.detail])} /></Card>
+      <Card><SectionHeader title="Recovery Flags" icon={Flame} /><StatRows rows={analytics.core.fatigueFlags.map((flag) => [flag.muscle, `${flag.severity} - ${countNumber(flag.recentSets)} sets - ${countNumber(flag.recentHardSets)} hard`])} /></Card>
+      <Card><SectionHeader title="Hard Set Estimate" icon={Gauge} /><p className="text-sm leading-relaxed text-obsidian-muted">Hard sets are estimated from AMRAP/failure sets and sets with RPE 9+. This is a workload signal, not medical advice.</p><AnalyticsTable headers={["Muscle", "Detail"]} rows={analytics.core.fatigueFlags.map((flag) => [flag.muscle, flag.detail])} /></Card>
     </div>
   );
 }
@@ -159,8 +176,8 @@ function Insights({ analytics, compact = false }: { analytics: ReturnType<typeof
   const items = compact ? analytics.core.insights.slice(0, 6) : analytics.core.insights;
   return (
     <div className="grid grid-cols-2 gap-5">
-      <Card><SectionHeader title="Rule-Based Analyst" icon={Target} /><div className="space-y-3">{items.map((item) => <div key={item.id} className="rounded-xl border border-line bg-white/[0.035] p-3"><div className="font-medium">{item.title}</div><div className="mt-1 text-sm leading-5 text-white/50">{item.detail}</div>{item.metric && <div className="mt-2 text-xs uppercase tracking-wide text-white/35">{item.metric}</div>}</div>)}</div></Card>
-      <Card><SectionHeader title="Current Focus Recommendations" icon={Flame} /><div className="space-y-3">{analytics.core.recommendations.map((item) => <div key={item.id} className="rounded-xl border border-accent/20 bg-accent/8 p-3"><div className="font-medium">{item.title}</div><div className="mt-1 text-sm leading-5 text-white/50">{item.recommendation}</div></div>)}</div></Card>
+      <Card><SectionHeader title="Rule-Based Analyst" icon={Target} /><div className="space-y-3">{items.map((item) => <div key={item.id} className="rounded-xl border border-obsidian-strong bg-obsidian-700 p-3"><div className="font-medium text-white">{item.title}</div><div className="mt-1 text-sm leading-relaxed text-obsidian-muted">{item.detail}</div>{item.metric && <div className="mt-2 text-xs font-semibold uppercase tracking-wider text-obsidian-subtle">{item.metric}</div>}</div>)}</div></Card>
+      <Card><SectionHeader title="Current Focus Recommendations" icon={Flame} /><div className="space-y-3">{analytics.core.recommendations.map((item) => <div key={item.id} className="rounded-xl border border-electric bg-electric-muted p-3"><div className="font-medium text-white">{item.title}</div><div className="mt-1 text-sm leading-relaxed text-obsidian-muted">{item.recommendation}</div></div>)}</div></Card>
     </div>
   );
 }
@@ -178,21 +195,30 @@ function goalLabel(goal: ReturnType<typeof useTrainingAnalytics>["core"]["traini
 }
 
 function TrendChart({ title, data, x, bars, layout }: { title: string; data: any[]; x: string; bars: string[]; layout?: "vertical" }) {
+  const displayData = data.map((row) => {
+    const next = { ...row };
+    for (const bar of bars) {
+      if (countKeys.has(bar) && typeof next[bar] === "number") next[bar] = wholeNumber(next[bar]);
+    }
+    return next;
+  });
   return (
     <Card>
       <SectionHeader title={title} icon={BarChart3} />
       <ResponsiveContainer width="100%" height={290}>
-        <BarChart data={data} layout={layout} margin={layout ? { left: 80 } : undefined}>
-          <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-          {layout ? <XAxis type="number" stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} /> : <XAxis dataKey={x} stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} minTickGap={20} />}
-          {layout ? <YAxis type="category" dataKey={x} width={120} stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} /> : <YAxis stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} />}
-          <Tooltip contentStyle={tooltipStyle} />
-          {bars.map((bar, index) => <Bar key={bar} dataKey={bar} fill={chartColors[index % chartColors.length]} radius={layout ? [0, 7, 7, 0] : [7, 7, 2, 2]} />)}
+        <BarChart data={displayData} layout={layout} margin={layout ? { left: 80 } : undefined}>
+          <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+          {layout ? <XAxis type="number" stroke="rgba(255,255,255,0.35)" fontSize={12} tickLine={false} axisLine={false} /> : <XAxis dataKey={x} stroke="rgba(255,255,255,0.35)" fontSize={12} tickLine={false} axisLine={false} minTickGap={20} />}
+          {layout ? <YAxis type="category" dataKey={x} width={120} stroke="rgba(255,255,255,0.35)" fontSize={12} tickLine={false} axisLine={false} /> : <YAxis stroke="rgba(255,255,255,0.35)" fontSize={12} tickLine={false} axisLine={false} />}
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
+          {bars.map((bar, index) => <Bar key={bar} dataKey={bar} fill={index === 0 ? "#3b82f6" : "rgba(96,165,250,0.4)"} radius={layout ? [0, 4, 4, 0] : [4, 4, 0, 0]} />)}
         </BarChart>
       </ResponsiveContainer>
     </Card>
   );
 }
+
+const countKeys = new Set(["sets", "sessions", "prs", "exercises", "reps", "workouts", "activeDays"]);
 
 function BodyHeatMap({ muscles }: { muscles: ReturnType<typeof useTrainingAnalytics>["desktop"]["muscleHeatStats"] }) {
   const [hovered, setHovered] = useState("Pectoralis major");
@@ -208,7 +234,7 @@ function BodyHeatMap({ muscles }: { muscles: ReturnType<typeof useTrainingAnalyt
     <Card>
       <SectionHeader title="Interactive Body Heat Map" icon={Flame} />
       <div className="grid grid-cols-[1fr_210px] gap-4">
-        <svg viewBox="0 0 560 520" className="h-[500px] w-full rounded-xl border border-line bg-black/18">
+        <svg viewBox="0 0 560 520" className="h-[500px] w-full rounded-xl border border-obsidian bg-obsidian-700">
           <text x="140" y="28" textAnchor="middle" fill="rgba(255,255,255,.55)" fontSize="13">Front</text><text x="420" y="28" textAnchor="middle" fill="rgba(255,255,255,.55)" fontSize="13">Back</text>
           <circle cx="140" cy="58" r="24" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.2)" /><circle cx="420" cy="58" r="24" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.2)" />
           {region("Pectoralis major", "M82 120 C108 96 137 111 138 153 L138 196 C110 193 88 175 75 146 Z M146 153 C147 111 176 96 202 120 L211 146 C198 175 176 193 146 196 Z")}
@@ -230,10 +256,10 @@ function BodyHeatMap({ muscles }: { muscles: ReturnType<typeof useTrainingAnalyt
           {region("Glutes", "M366 311 C392 294 417 307 418 344 L411 384 C380 377 357 352 366 311 Z M424 344 C425 307 450 294 476 311 C485 352 462 377 431 384 Z")}
           {region("Hamstrings", "M348 386 C374 373 403 386 398 426 L386 510 C356 499 337 455 338 421 Z M442 426 C437 386 466 373 492 386 C503 421 484 499 454 510 Z")}
         </svg>
-        <div className="rounded-xl border border-line bg-black/18 p-4">
-          <div className="text-xs uppercase tracking-wide text-white/35">Selected</div>
+        <div className="rounded-xl border border-obsidian bg-obsidian-700 p-4">
+          <div className="text-xs font-semibold uppercase tracking-wider text-obsidian-subtle">Selected</div>
           <div className="mt-1 text-xl font-semibold">{selected?.muscle ?? hovered}</div>
-          <StatRows rows={[["Heat", selected ? `${Math.round(selected.heat * 100)}%` : "0%"], ["Exposure", selected ? compactNumber(selected.totalExposure) : "0"], ["Primary", selected ? compactNumber(selected.primaryVolume) : "0"], ["Secondary", selected ? compactNumber(selected.secondaryVolume) : "0"], ["Sets", selected ? String(selected.sets) : "0"], ["Last trained", selected?.lastTrained ? shortDate(selected.lastTrained) : "--"]]} />
+          <StatRows rows={[["Heat", selected ? `${Math.round(selected.heat * 100)}%` : "0%"], ["Exposure", selected ? compactNumber(selected.totalExposure) : "0"], ["Primary", selected ? compactNumber(selected.primaryVolume) : "0"], ["Secondary", selected ? compactNumber(selected.secondaryVolume) : "0"], ["Sets", selected ? countNumber(selected.sets) : "0"], ["Last trained", selected?.lastTrained ? shortDate(selected.lastTrained) : "--"]]} />
         </div>
       </div>
     </Card>

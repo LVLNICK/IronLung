@@ -3,6 +3,7 @@
 The repo is organized as a monorepo so the backend/data contracts can be reused by future mobile clients.
 
 - `apps/desktop`: Tauri + React desktop shell.
+- `apps/mobile-pwa`: installable React/Vite PWA companion for phone-local workout logging.
 - `apps/desktop/src/app`: app composition and command palette.
 - `apps/desktop/src/layout`: desktop sidebar shell.
 - `apps/desktop/src/pages`: six primary pages.
@@ -17,4 +18,6 @@ The shared analytics engine lives in `packages/core/src/analytics` so future des
 
 Boostcamp support has two boundaries: flexible CSV/JSON normalization in `packages/core/src/importers`, and an optional personal Tauri command that calls a local `boostcamp-mcp` helper and passes the resulting JSON through the same dry-run importer. Credentials stay in the helper folder, not in IronLung app state.
 
-Future sync should be optional. The local schema remains the source of truth, with a sync API resolving conflicts around immutable set logs, edited sessions, and photo references.
+Mobile/PWA sync is file-based in the MVP. Desktop exports a seed bundle with exercises, templates, training blocks, and settings. The phone stores logs in IndexedDB and exports a `.ironlung-mobile.json` bundle. Desktop imports that bundle through a dry-run merge path in `apps/desktop/src/features/mobile-sync`, matching stable IDs first and then skipping duplicate sets by workout/exercise/set signatures.
+
+Future sync should be optional. The local schema remains the source of truth, with any later sync API resolving conflicts around immutable set logs, edited sessions, and photo references.

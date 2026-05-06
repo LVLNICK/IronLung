@@ -1,17 +1,17 @@
 import { clsx } from "clsx";
 import type { ButtonHTMLAttributes, ComponentType, ReactNode } from "react";
 
-export const fieldClass = "h-10 rounded-lg border border-line bg-black/24 px-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/70";
+export const fieldClass = "h-10 rounded-md border border-obsidian-strong bg-obsidian-900 px-3 text-sm text-white outline-none transition placeholder:text-obsidian-subtle focus-visible:border-electric focus-visible:ring-1 focus-visible:ring-electric";
 
 export function Button({ children, icon: Icon, variant = "primary", className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { icon?: ComponentType<{ className?: string }>; variant?: "primary" | "ghost" | "danger" }) {
   return (
     <button
       {...props}
       className={clsx(
-        "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition disabled:opacity-40",
-        variant === "primary" && "bg-white text-ink hover:bg-accent",
-        variant === "ghost" && "border border-line bg-white/[0.04] text-white/70 hover:border-accent/50 hover:text-white",
-        variant === "danger" && "border border-red-400/30 bg-red-500/10 text-red-100 hover:bg-red-500/15",
+        "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:opacity-40",
+        variant === "primary" && "h-12 border-0 bg-electric font-bold text-white shadow-[0_0_24px_rgba(59,130,246,0.35)] hover:bg-blue-500",
+        variant === "ghost" && "border border-obsidian-strong bg-obsidian-700 font-semibold text-obsidian-muted hover:border-electric hover:text-white",
+        variant === "danger" && "border border-red-400/30 bg-danger-muted text-danger hover:bg-red-500/15",
         className
       )}
     >
@@ -29,7 +29,7 @@ export function IconButton({ label, icon: Icon, onClick, variant = "ghost" }: { 
       onClick={onClick}
       className={clsx(
         "grid h-10 w-10 place-items-center rounded-lg border transition",
-        variant === "danger" ? "border-red-400/30 bg-red-500/10 text-red-100" : "border-line bg-white/[0.04] text-white/70 hover:border-accent/50 hover:text-white"
+        variant === "danger" ? "border-red-400/30 bg-danger-muted text-danger" : "border-obsidian-strong bg-obsidian-700 text-obsidian-muted hover:border-electric hover:text-white"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -46,5 +46,5 @@ export function Select({ value, onChange, children }: { value: string; onChange:
 }
 
 export function TextArea({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
-  return <textarea className="min-h-24 rounded-lg border border-line bg-black/24 px-3 py-2 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-accent/70" placeholder={placeholder} value={value} onChange={(event) => onChange(event.target.value)} />;
+  return <textarea className="min-h-24 rounded-md border border-obsidian-strong bg-obsidian-900 px-3 py-2 text-sm text-white outline-none transition placeholder:text-obsidian-subtle focus-visible:border-electric focus-visible:ring-1 focus-visible:ring-electric" placeholder={placeholder} value={value} onChange={(event) => onChange(event.target.value)} />;
 }

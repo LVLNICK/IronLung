@@ -43,7 +43,7 @@ export function App() {
   }
 
   return (
-    <main className={state.theme === "light" ? "light min-h-screen bg-slate-100 text-slate-950" : "min-h-screen bg-ink text-white"}>
+    <main className={state.theme === "light" ? "min-h-screen bg-obsidian-900 text-white" : "min-h-screen bg-obsidian-900 text-white"}>
       <AppShell screen={screen} onNavigate={setScreen}>
         {screen === "Command Center" && <CommandCenter onNavigate={setScreen} />}
         {screen === "Train" && <TrainPage />}
@@ -55,7 +55,7 @@ export function App() {
       <button
         type="button"
         onClick={() => setPaletteOpen(true)}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-xl border border-line bg-panel/90 px-4 py-2 text-sm text-white/70 shadow-soft backdrop-blur transition hover:border-accent/50 hover:text-white"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-obsidian-strong bg-obsidian-700 px-4 py-2 text-sm font-semibold text-obsidian-muted shadow-soft transition-colors hover:border-electric hover:text-white"
       >
         <Command className="h-4 w-4" />
         Ctrl+K
@@ -83,26 +83,26 @@ function CommandPalette({ onClose, onNavigate, onStartWorkout, onExport }: { onC
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 p-8 backdrop-blur-sm" onMouseDown={onClose}>
-      <div className="mx-auto mt-20 w-full max-w-2xl overflow-hidden rounded-2xl border border-line bg-ink shadow-soft" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-          <Command className="h-5 w-5 text-accent" />
+      <div className="mx-auto mt-20 w-full max-w-2xl overflow-hidden rounded-xl border border-obsidian-strong bg-obsidian-800 shadow-soft" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="flex items-center gap-3 border-b border-obsidian-strong px-4 py-3">
+          <Command className="h-5 w-5 text-electric" />
           <input
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search commands..."
-            className="h-11 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+            className="h-11 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-obsidian-subtle"
           />
         </div>
         <div className="max-h-[420px] overflow-auto p-2">
           {filtered.map((command) => {
             const Icon = command.icon;
             return (
-              <button key={command.label} onClick={command.action} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-white/[0.06]">
-                <div className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-white/[0.04]"><Icon className="h-4 w-4 text-accent" /></div>
+              <button key={command.label} onClick={command.action} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-obsidian-600">
+                <div className="grid h-10 w-10 place-items-center rounded-lg border border-obsidian-strong bg-obsidian-700"><Icon className="h-4 w-4 text-electric" /></div>
                 <div>
-                  <div className="text-sm font-medium">{command.label}</div>
-                  <div className="text-xs text-white/42">{command.hint}</div>
+                  <div className="text-sm font-semibold text-white">{command.label}</div>
+                  <div className="text-xs text-obsidian-muted">{command.hint}</div>
                 </div>
               </button>
             );
@@ -120,7 +120,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed right-5 top-5 z-50 rounded-xl border border-line bg-panel px-4 py-3 text-sm text-white/75 shadow-soft">
+    <div className="fixed right-5 top-5 z-50 rounded-xl border border-obsidian-strong bg-obsidian-800 px-4 py-3 text-sm text-obsidian-muted shadow-soft">
       <div className="flex items-center gap-3">
         <span>{message}</span>
         <Button variant="ghost" onClick={onClose}>Dismiss</Button>

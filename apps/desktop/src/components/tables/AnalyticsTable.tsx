@@ -21,12 +21,12 @@ export function AnalyticsTable({ headers, rows }: { headers: string[]; rows: Arr
   }
 
   return (
-    <div className="overflow-auto rounded-xl border border-line">
+    <div className="overflow-hidden rounded-xl border border-obsidian-strong bg-obsidian-800">
       <table className="min-w-full border-collapse text-sm">
-        <thead className="sticky top-0 bg-ink text-white/52">
+        <thead className="sticky top-0 bg-obsidian-800 text-left text-[rgba(255,255,255,0.45)]">
           <tr>
             {headers.map((header, index) => (
-              <th key={header} className="border-b border-line px-3 py-2 text-left font-medium">
+              <th key={header} className="border-b border-obsidian-strong px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                 <button type="button" onClick={() => toggleSort(index)} className="inline-flex items-center gap-1 text-left hover:text-white">
                   {header}
                   {sort?.index === index && <span className="text-xs">{sort.direction === "asc" ? "up" : "down"}</span>}
@@ -37,13 +37,13 @@ export function AnalyticsTable({ headers, rows }: { headers: string[]; rows: Arr
         </thead>
         <tbody>
           {sortedRows.map((row, index) => (
-            <tr key={index} className="odd:bg-white/[0.025] hover:bg-white/[0.055]">
-              {row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`} className="whitespace-nowrap border-b border-white/6 px-3 py-2 text-white/72">{cell}</td>)}
+            <tr key={index} className="border-b border-obsidian-strong transition-colors last:border-0 hover:bg-obsidian-700">
+              {row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`} className="whitespace-nowrap px-5 py-3.5 font-mono text-sm text-[rgba(255,255,255,0.7)]">{formatCell(cell, headers[cellIndex])}</td>)}
             </tr>
           ))}
           {!rows.length && (
             <tr>
-              <td colSpan={headers.length} className="px-3 py-8 text-center text-white/42">No data yet.</td>
+              <td colSpan={headers.length} className="px-3 py-8 text-center text-obsidian-subtle">No data yet.</td>
             </tr>
           )}
         </tbody>
@@ -52,13 +52,32 @@ export function AnalyticsTable({ headers, rows }: { headers: string[]; rows: Arr
   );
 }
 
+function formatCell(cell: string | number, header: string): string | number {
+  if (typeof cell !== "number") return cell;
+  return countHeaders.has(header.toLowerCase())
+    ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(cell))
+    : cell;
+}
+
+const countHeaders = new Set([
+  "sets",
+  "sessions",
+  "exercises",
+  "prs",
+  "reps",
+  "workouts",
+  "active days",
+  "photos",
+  "analyses"
+]);
+
 export function StatRows({ rows }: { rows: Array<[string, string]> }) {
   return (
-    <div className="divide-y divide-white/8 rounded-xl border border-line">
+    <div className="divide-y divide-white/10 rounded-xl border border-obsidian-strong bg-obsidian-800">
       {rows.map(([label, value]) => (
         <div key={label} className="flex items-center justify-between gap-4 px-4 py-3">
-          <div className="text-sm text-white/48">{label}</div>
-          <div className="text-right text-sm font-medium text-white">{value}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-obsidian-muted">{label}</div>
+          <div className="text-right font-mono text-sm text-white/70">{value}</div>
         </div>
       ))}
     </div>

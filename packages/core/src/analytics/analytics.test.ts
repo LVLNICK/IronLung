@@ -3,6 +3,7 @@ import {
   buildTrainingAnalytics,
   detectWeakPoints,
   filterDatasetByRange,
+  generateFatigueFlags,
   muscleBalanceScore,
   resolveDateRange,
   type AnalyticsDataset
@@ -81,6 +82,28 @@ describe("core analytics engine", () => {
     expect(summary.trainingGoal).toBe("strength");
     expect(summary.currentBlock?.name).toBe("Bench Focus");
     expect(summary.insights.length).toBeGreaterThan(0);
+  });
+
+  it("formats fatigue flag related set counts without decimal noise", () => {
+    const data = fixture();
+    const heavyRecentData: AnalyticsDataset = {
+      ...data,
+      setLogs: Array.from({ length: 30 }, (_, index) => ({
+        id: `heavy-${index}`,
+        workoutSessionExerciseId: "r2",
+        setNumber: index + 1,
+        weight: 220,
+        reps: 5,
+        rpe: 9,
+        setType: "working",
+        isCompleted: true,
+        createdAt: "2026-01-08T12:05:00.000Z"
+      }))
+    };
+    const flags = generateFatigueFlags(heavyRecentData, new Date("2026-01-09T12:00:00.000Z"));
+
+    expect(flags.length).toBeGreaterThan(0);
+    expect(flags.every((flag) => !/\d+\.\d/.test(flag.detail))).toBe(true);
   });
 
   it("detects imbalance weak points deterministically", () => {

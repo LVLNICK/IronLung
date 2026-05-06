@@ -42,12 +42,33 @@ Open the Vite URL shown in the terminal. For the native desktop shell:
 npm run desktop
 ```
 
+## Mobile/PWA Companion
+
+IronLung also includes a phone-local installable PWA in `apps/mobile-pwa`. It is a companion logger for the gym, not a cloud sync app.
+
+```powershell
+npm run mobile:dev
+npm run mobile:build
+npm run mobile:preview
+```
+
+Phone workflow:
+
+1. In Desktop `Data & Settings`, export a mobile seed bundle.
+2. Move the `.ironlung-mobile-seed.json` file to your phone and import it in the PWA `Sync` tab.
+3. Log workouts offline at the gym. Data stays in phone IndexedDB.
+4. Export `.ironlung-mobile.json` from the PWA.
+5. Import it in Desktop `Data & Settings -> Mobile/PWA Sync`, review the dry-run preview, then merge.
+
+Privacy: no account, no cloud sync, no server, no analytics tracking, and no uploads. Export files are user-controlled and may contain sensitive training data.
+
 ## Verification
 
 ```powershell
 npm run test
 npm run typecheck
 npm run build
+npm run mobile:build
 ```
 
 ## Production Polish Notes
@@ -62,6 +83,7 @@ The MVP is local-first and does not require an account. Workout data is stored i
 
 ```text
 apps/desktop        React/Tauri desktop app
+apps/mobile-pwa     Installable offline phone companion PWA
 apps/desktop/src/app        App composition and command palette
 apps/desktop/src/layout     Desktop shell and sidebar
 apps/desktop/src/pages      Six primary product pages

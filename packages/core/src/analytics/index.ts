@@ -365,7 +365,7 @@ export function generateFatigueFlags(dataset: AnalyticsDataset, now = new Date()
         severity,
         recentSets: row.sets,
         recentHardSets,
-        detail: `${row.muscle} has ${row.sets} related sets in the last 7 days.`
+        detail: `${row.muscle} has ${compact(row.sets)} related sets in the last 7 days.`
       } satisfies FatigueFlag;
     })
     .filter((flag) => flag.severity !== "low")
@@ -388,7 +388,7 @@ export function generateSmartInsights(input: {
   if (comparison.volumeDeltaPercent <= -15) insights.push(insight("volume-down", "Training volume is down", `Volume is down ${Math.abs(comparison.volumeDeltaPercent)}% versus the previous matched period.`, "medium"));
   if (comparison.volumeDeltaPercent >= 20) insights.push(insight("volume-up", "Training volume jumped", `Volume is up ${comparison.volumeDeltaPercent}% versus the previous matched period.`, "medium", undefined, "Watch recovery if RPE or fatigue flags are also rising."));
   for (const flag of input.fatigueFlags.slice(0, 5)) {
-    insights.push(insight("fatigue-" + flag.muscle, `${flag.muscle} fatigue flag`, flag.detail, flag.severity, `${flag.recentSets} sets`, "Treat this as a workload warning, not medical advice."));
+    insights.push(insight("fatigue-" + flag.muscle, `${flag.muscle} fatigue flag`, flag.detail, flag.severity, `${compact(flag.recentSets)} sets`, "Treat this as a workload warning, not medical advice."));
   }
   const improving = input.exercises.filter((exercise) => exercise.strengthTrend > 0).sort((a, b) => b.strengthTrend - a.strengthTrend)[0];
   if (improving) insights.push(insight("improving-" + improving.exerciseId, `${improving.name} is improving`, `Estimated strength is up by ${improving.strengthTrend} over recent sets.`, "positive"));
