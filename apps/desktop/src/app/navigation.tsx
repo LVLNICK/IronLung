@@ -7,6 +7,6 @@ export const navigationItems: Array<{ screen: AppScreen; icon: LucideIcon; descr
   { screen: "Train", icon: Dumbbell, description: "Start, log, journal, templates" },
   { screen: "Exercises", icon: LibraryBig, description: "Library and exercise intelligence" },
   { screen: "Analytics", icon: BarChart3, description: "Strength, volume, balance, recovery" },
-  { screen: "Photos", icon: Camera, description: "Local progress photos and score trend" },
+  { screen: "Photos", icon: Camera, description: "Local progress photos and index trend" },
   { screen: "Data & Settings", icon: Database, description: "Import, export, privacy, preferences" }
 ];

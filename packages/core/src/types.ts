@@ -1,7 +1,9 @@
 export type UnitPreference = "lbs" | "kg";
 export type ThemePreference = "dark" | "light" | "system";
+export type TrainingGoal = "strength" | "hypertrophy" | "lean_bulk" | "cutting" | "powerbuilding" | "general_fitness";
 
 export type SetType = "warmup" | "working" | "drop" | "failure" | "amrap";
+export type PRImportance = "baseline" | "small" | "medium" | "major";
 export type PRType =
   | "max_weight"
   | "estimated_1rm"
@@ -12,6 +14,12 @@ export type PRType =
   | "workout_session_volume";
 
 export type PoseType = "front" | "side" | "back" | "other";
+
+export interface MuscleContribution {
+  muscle: string;
+  percent: number;
+  role?: "primary" | "secondary" | "stabilizer";
+}
 
 export interface UserSettings {
   id: string;
@@ -26,6 +34,7 @@ export interface Exercise {
   name: string;
   primaryMuscle: string;
   secondaryMuscles: string[];
+  muscleContributions?: MuscleContribution[];
   equipment: string;
   movementPattern: string;
   isUnilateral: boolean;
@@ -61,6 +70,7 @@ export interface WorkoutSession {
   finishedAt?: string | null;
   notes?: string;
   bodyweight?: number | null;
+  trainingBlockId?: string | null;
   importSource?: string;
   importedMetadataJson?: Record<string, unknown>;
   createdAt: string;
@@ -101,7 +111,19 @@ export interface PersonalRecord {
   type: PRType;
   value: number;
   unit: string;
+  importance?: PRImportance;
   achievedAt: string;
+}
+
+export interface TrainingBlock {
+  id: string;
+  name: string;
+  goal?: TrainingGoal;
+  startedAt: string;
+  endedAt?: string | null;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProgressPhoto {

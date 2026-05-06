@@ -31,6 +31,7 @@
 6. Keep desktop-only view aggregation in `apps/desktop/src/features/analytics` where it depends on UI-specific shapes.
 7. Add deterministic rule-based insights, muscle balance, fatigue flags, plateau detection, and period comparison.
 8. Keep the implementation local-first and privacy-first. No cloud sync, no accounts, no medical/body-fat/attractiveness claims.
+9. Final polish adds weighted muscle contributions, PR importance, training goals, and training blocks without changing the six-page navigation.
 
 ## Safe Step Order
 

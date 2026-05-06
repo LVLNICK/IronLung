@@ -5,11 +5,14 @@ import {
   setVolume,
   workoutSessionVolume
 } from "../calculations";
+import { distributedMuscleVolume } from "../muscle-contributions";
 import type {
   Exercise,
   PersonalRecord,
   PRType,
   SetLog,
+  TrainingBlock,
+  TrainingGoal,
   WorkoutSession,
   WorkoutSessionExercise
 } from "../types";
@@ -23,6 +26,9 @@ export interface AnalyticsDataset {
   sessionExercises: WorkoutSessionExercise[];
   setLogs: SetLog[];
   personalRecords: PersonalRecord[];
+  trainingGoal?: TrainingGoal;
+  trainingBlocks?: TrainingBlock[];
+  currentTrainingBlockId?: string | null;
 }
 
 export interface DateRange {
@@ -38,6 +44,18 @@ export interface MuscleMetric {
   exercises: number;
   prs: number;
   lastTrained: string | null;
+}
+
+export interface TrainingBlockMetric {
+  blockId: string;
+  name: string;
+  goal?: TrainingGoal;
+  sessions: number;
+  sets: number;
+  volume: number;
+  prs: number;
+  startedAt: string;
+  endedAt: string | null;
 }
 
 export interface ExerciseMetric {
@@ -117,6 +135,9 @@ export interface AnalyticsSummary {
   weakPoints: SmartInsight[];
   insights: SmartInsight[];
   recommendations: SmartInsight[];
+  trainingGoal: TrainingGoal;
+  trainingBlocks: TrainingBlockMetric[];
+  currentBlock: TrainingBlockMetric | null;
 }
 
 export function buildTrainingAnalytics(dataset: AnalyticsDataset, preset: DateRangePreset = "30d", now = new Date()): AnalyticsSummary {
@@ -130,8 +151,11 @@ export function buildTrainingAnalytics(dataset: AnalyticsDataset, preset: DateRa
   const balance = muscleBalanceScore(muscles);
   const fatigueFlags = generateFatigueFlags(current, now);
   const weakPoints = detectWeakPoints({ muscles, exercises, balance });
-  const insights = generateSmartInsights({ current, previous, muscles, exercises, balance, fatigueFlags, weakPoints });
-  const recommendations = generateTrainingRecommendations(insights);
+  const trainingGoal = dataset.trainingGoal ?? "general_fitness";
+  const blocks = trainingBlockMetrics(current, dataset.trainingBlocks ?? []);
+  const currentBlock = (dataset.currentTrainingBlockId ? blocks.find((block) => block.blockId === dataset.currentTrainingBlockId) : blocks.find((block) => !block.endedAt)) ?? null;
+  const insights = generateSmartInsights({ current, previous, muscles, exercises, balance, fatigueFlags, weakPoints, trainingGoal, currentBlock });
+  const recommendations = generateTrainingRecommendations(insights, trainingGoal);
 
   return {
     range,
@@ -148,7 +172,10 @@ export function buildTrainingAnalytics(dataset: AnalyticsDataset, preset: DateRa
     fatigueFlags,
     weakPoints,
     insights,
-    recommendations
+    recommendations,
+    trainingGoal,
+    trainingBlocks: blocks,
+    currentBlock
   };
 }
 
@@ -214,15 +241,17 @@ export function muscleVolume(dataset: AnalyticsDataset): MuscleMetric[] {
   const setMap = groupBy(dataset.setLogs, (set) => set.workoutSessionExerciseId);
   const sessionById = new Map(dataset.sessions.map((session) => [session.id, session]));
   const totals = new Map<string, MuscleMetric>();
+  const exerciseIdsByMuscle = new Map<string, Set<string>>();
 
   for (const row of dataset.sessionExercises) {
     const exercise = exerciseById.get(row.exerciseId);
     if (!exercise) continue;
     const sets = setMap.get(row.id) ?? [];
     const baseVolume = exerciseSessionVolume(sets);
-    addMuscleVolume(totals, exercise.primaryMuscle, baseVolume, sets.length, row.exerciseId, dataset.personalRecords.filter((record) => record.exerciseId === row.exerciseId).length, sessionById.get(row.workoutSessionId)?.startedAt ?? null);
-    for (const secondary of exercise.secondaryMuscles) {
-      addMuscleVolume(totals, cleanMuscleLabel(secondary), baseVolume * 0.35, sets.length, row.exerciseId, 0, sessionById.get(row.workoutSessionId)?.startedAt ?? null);
+    const prs = dataset.personalRecords.filter((record) => record.exerciseId === row.exerciseId).length;
+    const lastTrained = sessionById.get(row.workoutSessionId)?.startedAt ?? null;
+    for (const contribution of distributedMuscleVolume(exercise, baseVolume)) {
+      addMuscleVolume(totals, exerciseIdsByMuscle, contribution.muscle, contribution.volume, round(sets.length * contribution.percent), row.exerciseId, Math.round(prs * contribution.percent), lastTrained);
     }
   }
   return [...totals.values()].sort((a, b) => b.volume - a.volume);
@@ -266,7 +295,6 @@ export function exerciseMetrics(dataset: AnalyticsDataset): ExerciseMetric[] {
         plateau: rows.length >= 4 && (sessionsSincePr ?? 0) >= 4 && strengthTrend <= 0
       };
     })
-    .filter((exercise) => exercise.sets > 0)
     .sort((a, b) => b.volume - a.volume);
 }
 
@@ -351,6 +379,8 @@ export function generateSmartInsights(input: {
   balance: BalanceScore;
   fatigueFlags: FatigueFlag[];
   weakPoints: SmartInsight[];
+  trainingGoal?: TrainingGoal;
+  currentBlock?: TrainingBlockMetric | null;
 }): SmartInsight[] {
   const insights: SmartInsight[] = [...input.weakPoints];
   const comparison = comparePeriods(input.current, input.previous);
@@ -362,10 +392,14 @@ export function generateSmartInsights(input: {
   const improving = input.exercises.filter((exercise) => exercise.strengthTrend > 0).sort((a, b) => b.strengthTrend - a.strengthTrend)[0];
   if (improving) insights.push(insight("improving-" + improving.exerciseId, `${improving.name} is improving`, `Estimated strength is up by ${improving.strengthTrend} over recent sets.`, "positive"));
   if (input.balance.overall >= 82) insights.push(insight("balance-good", "Muscle balance looks solid", `Overall balance score is ${input.balance.overall}/100.`, "positive"));
+  insights.push(...goalInsights(input.trainingGoal ?? "general_fitness", input));
+  if (input.currentBlock) {
+    insights.push(insight("current-block", `${input.currentBlock.name} block is active`, `${input.currentBlock.sessions} sessions, ${compact(input.currentBlock.volume)} volume, and ${input.currentBlock.prs} PRs are assigned to this block.`, "positive", undefined, "Use block trends to judge the phase, not one isolated workout."));
+  }
   return dedupeInsights(insights).slice(0, 18);
 }
 
-export function generateTrainingRecommendations(insights: SmartInsight[]): SmartInsight[] {
+export function generateTrainingRecommendations(insights: SmartInsight[], goal: TrainingGoal = "general_fitness"): SmartInsight[] {
   return insights
     .filter((item) => item.recommendation || item.severity === "high" || item.severity === "medium")
     .slice(0, 6)
@@ -373,7 +407,7 @@ export function generateTrainingRecommendations(insights: SmartInsight[]): Smart
       ...item,
       id: `recommendation-${index}-${item.id}`,
       title: item.title.replace(" is ", " focus: "),
-      recommendation: item.recommendation ?? "Use this signal to decide your next self-built workout focus."
+      recommendation: item.recommendation ?? fallbackRecommendation(goal)
     }));
 }
 
@@ -401,6 +435,24 @@ export function totals(dataset: AnalyticsDataset) {
   };
 }
 
+export function trainingBlockMetrics(dataset: AnalyticsDataset, blocks: TrainingBlock[]): TrainingBlockMetric[] {
+  const setsBySessionId = setsBySession(dataset);
+  return blocks.map((block) => {
+    const sessions = dataset.sessions.filter((session) => session.trainingBlockId === block.id);
+    return {
+      blockId: block.id,
+      name: block.name,
+      goal: block.goal,
+      sessions: sessions.length,
+      sets: sessions.reduce((count, session) => count + (setsBySessionId.get(session.id) ?? []).flat().length, 0),
+      volume: round(sessions.reduce((total, session) => total + workoutSessionVolume(setsBySessionId.get(session.id) ?? []), 0)),
+      prs: dataset.personalRecords.filter((record) => sessions.some((session) => session.id === record.workoutSessionId)).length,
+      startedAt: block.startedAt,
+      endedAt: block.endedAt ?? null
+    };
+  }).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+}
+
 function previousRange(range: DateRange): DateRange {
   if (!range.start || !range.end || range.preset === "all") return { ...range, start: null, end: null };
   const start = new Date(range.start);
@@ -420,15 +472,17 @@ function setsBySession(dataset: AnalyticsDataset) {
   return result;
 }
 
-function addMuscleVolume(map: Map<string, MuscleMetric>, muscle: string, volume: number, sets: number, exerciseId: string, prs: number, lastTrained: string | null) {
+function addMuscleVolume(map: Map<string, MuscleMetric>, exerciseIdsByMuscle: Map<string, Set<string>>, muscle: string, volume: number, sets: number, exerciseId: string, prs: number, lastTrained: string | null) {
   const row = map.get(muscle) ?? { muscle, volume: 0, sets: 0, exercises: 0, prs: 0, lastTrained: null };
+  const exerciseIds = exerciseIdsByMuscle.get(muscle) ?? new Set<string>();
+  exerciseIds.add(exerciseId);
+  exerciseIdsByMuscle.set(muscle, exerciseIds);
   row.volume = round(row.volume + volume);
   row.sets += sets;
-  row.exercises += row.exercises ? 0 : 1;
+  row.exercises = exerciseIds.size;
   row.prs += prs;
   if (lastTrained && (!row.lastTrained || lastTrained > row.lastTrained)) row.lastTrained = lastTrained;
   map.set(muscle, row);
-  void exerciseId;
 }
 
 function aggregateExerciseProperty(dataset: AnalyticsDataset, property: "equipment" | "movementPattern") {
@@ -450,10 +504,6 @@ function ratioScore(a: number, b: number) {
 function hardSetRatio(dataset: AnalyticsDataset) {
   if (!dataset.setLogs.length) return 0;
   return dataset.setLogs.filter((set) => set.setType === "failure" || set.setType === "amrap" || (set.rpe ?? 0) >= 9).length / dataset.setLogs.length;
-}
-
-function cleanMuscleLabel(value: string) {
-  return value.split(" - ")[0].trim();
 }
 
 function groupBy<T, K extends string>(items: T[], getKey: (item: T) => K) {
@@ -520,3 +570,38 @@ const severityRank = {
   medium: 1,
   low: 2
 } as const;
+
+function goalInsights(goal: TrainingGoal, input: { exercises: ExerciseMetric[]; muscles: MuscleMetric[]; balance: BalanceScore; fatigueFlags: FatigueFlag[]; current: AnalyticsDataset; previous: AnalyticsDataset }): SmartInsight[] {
+  const insights: SmartInsight[] = [];
+  const bestStrength = [...input.exercises].sort((a, b) => b.estimatedOneRepMax - a.estimatedOneRepMax)[0];
+  const mostVolume = input.muscles[0];
+  const comparison = comparePeriods(input.current, input.previous);
+  if (goal === "strength" && bestStrength) {
+    insights.push(insight("goal-strength", "Strength goal focus", `${bestStrength.name} is currently your strongest tracked lift by estimated 1RM. Prioritize heavy-set quality and plateau monitoring.`, "positive", `${bestStrength.estimatedOneRepMax} e1RM`, "Favor high-quality top sets and keep fatigue flags in view."));
+  }
+  if (goal === "hypertrophy" && mostVolume) {
+    insights.push(insight("goal-hypertrophy", "Hypertrophy goal focus", `${mostVolume.muscle} has the most distributed volume this period. Watch whether other target muscles are falling behind.`, "medium", compact(mostVolume.volume), "Use weekly sets and muscle balance as the primary decision signals."));
+  }
+  if (goal === "lean_bulk") {
+    insights.push(insight("goal-lean-bulk", "Lean bulk focus", `Volume is ${comparison.volumeDeltaPercent}% versus the previous period. A small upward trend with consistent sessions is the cleanest signal.`, "medium", `${comparison.volumeDeltaPercent}%`, "Look for progressive overload without a large fatigue spike."));
+  }
+  if (goal === "cutting") {
+    insights.push(insight("goal-cutting", "Cutting focus", "Strength retention, consistency, and fatigue management are more useful than chasing every small PR.", "medium", undefined, "Treat major strength drops and high fatigue flags as review signals."));
+  }
+  if (goal === "powerbuilding") {
+    insights.push(insight("goal-powerbuilding", "Powerbuilding focus", `Balance score is ${input.balance.overall}/100 while strength trends are tracked per lift.`, "medium", `${input.balance.overall}/100`, "Balance top-set progress with enough distributed muscle volume."));
+  }
+  return insights;
+}
+
+function fallbackRecommendation(goal: TrainingGoal) {
+  const copy: Record<TrainingGoal, string> = {
+    strength: "Use estimated 1RM, max weight, and plateau signals to choose your next self-built focus.",
+    hypertrophy: "Use weekly sets, distributed muscle volume, and frequency to choose your next self-built focus.",
+    lean_bulk: "Use progressive overload, volume growth, and consistency as the main decision signals.",
+    cutting: "Use strength retention, fatigue flags, and consistency as the main decision signals.",
+    powerbuilding: "Balance heavy top-set progress with enough weekly muscle volume.",
+    general_fitness: "Use this signal to decide your next self-built workout focus."
+  };
+  return copy[goal];
+}

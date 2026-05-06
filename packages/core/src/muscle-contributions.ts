@@ -1,0 +1,150 @@
+import type { Exercise, MuscleContribution } from "./types";
+
+const presets: Array<{ match: RegExp; contributions: MuscleContribution[] }> = [
+  {
+    match: /bench|chest press/,
+    contributions: [
+      { muscle: "Pectoralis major", percent: 0.55, role: "primary" },
+      { muscle: "Anterior deltoids", percent: 0.2, role: "secondary" },
+      { muscle: "Triceps brachii", percent: 0.2, role: "secondary" },
+      { muscle: "Serratus anterior", percent: 0.05, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /incline.*bench|incline.*press/,
+    contributions: [
+      { muscle: "Upper pectoralis major", percent: 0.5, role: "primary" },
+      { muscle: "Anterior deltoids", percent: 0.25, role: "secondary" },
+      { muscle: "Triceps brachii", percent: 0.2, role: "secondary" },
+      { muscle: "Serratus anterior", percent: 0.05, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /row/,
+    contributions: [
+      { muscle: "Latissimus dorsi", percent: 0.35, role: "primary" },
+      { muscle: "Rhomboids", percent: 0.25, role: "secondary" },
+      { muscle: "Traps", percent: 0.15, role: "secondary" },
+      { muscle: "Rear delts", percent: 0.15, role: "secondary" },
+      { muscle: "Biceps brachii", percent: 0.1, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /pulldown|pull up|chin up/,
+    contributions: [
+      { muscle: "Latissimus dorsi", percent: 0.5, role: "primary" },
+      { muscle: "Teres major", percent: 0.15, role: "secondary" },
+      { muscle: "Biceps brachii", percent: 0.15, role: "secondary" },
+      { muscle: "Rhomboids", percent: 0.1, role: "stabilizer" },
+      { muscle: "Forearms", percent: 0.1, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /squat|leg press|hack squat/,
+    contributions: [
+      { muscle: "Quads", percent: 0.55, role: "primary" },
+      { muscle: "Glutes", percent: 0.25, role: "secondary" },
+      { muscle: "Adductors", percent: 0.1, role: "secondary" },
+      { muscle: "Hamstrings", percent: 0.1, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /deadlift|romanian|rdl|hip hinge/,
+    contributions: [
+      { muscle: "Hamstrings", percent: 0.35, role: "primary" },
+      { muscle: "Glutes", percent: 0.3, role: "secondary" },
+      { muscle: "Erector spinae", percent: 0.2, role: "secondary" },
+      { muscle: "Lats", percent: 0.1, role: "stabilizer" },
+      { muscle: "Forearms", percent: 0.05, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /shoulder press|military press|overhead press/,
+    contributions: [
+      { muscle: "Anterior deltoids", percent: 0.45, role: "primary" },
+      { muscle: "Lateral deltoids", percent: 0.2, role: "secondary" },
+      { muscle: "Triceps brachii", percent: 0.25, role: "secondary" },
+      { muscle: "Upper traps", percent: 0.1, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /lateral raise/,
+    contributions: [
+      { muscle: "Lateral deltoids", percent: 0.75, role: "primary" },
+      { muscle: "Supraspinatus", percent: 0.15, role: "secondary" },
+      { muscle: "Upper traps", percent: 0.1, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /curl/,
+    contributions: [
+      { muscle: "Biceps brachii", percent: 0.65, role: "primary" },
+      { muscle: "Brachialis", percent: 0.2, role: "secondary" },
+      { muscle: "Forearms", percent: 0.15, role: "stabilizer" }
+    ]
+  },
+  {
+    match: /tricep|pushdown|pressdown|skull crusher|french press/,
+    contributions: [
+      { muscle: "Triceps brachii", percent: 0.8, role: "primary" },
+      { muscle: "Forearms", percent: 0.1, role: "stabilizer" },
+      { muscle: "Anterior deltoids", percent: 0.1, role: "stabilizer" }
+    ]
+  }
+];
+
+export function resolveMuscleContributions(exercise: Exercise): MuscleContribution[] {
+  if (exercise.muscleContributions?.length) return normalizeContributions(exercise.muscleContributions);
+  const name = normalizeExerciseName(exercise.name);
+  const preset = presets.find((item) => item.match.test(name));
+  if (preset) return normalizeContributions(preset.contributions);
+  return fallbackContributions(exercise);
+}
+
+export function distributedMuscleVolume(exercise: Exercise, volume: number) {
+  return resolveMuscleContributions(exercise).map((contribution) => ({
+    ...contribution,
+    volume: round(volume * contribution.percent)
+  }));
+}
+
+function fallbackContributions(exercise: Exercise): MuscleContribution[] {
+  const secondary = exercise.secondaryMuscles.map(cleanMuscleLabel).filter(Boolean);
+  if (!secondary.length) {
+    return [{ muscle: exercise.primaryMuscle || "Full body", percent: 1, role: "primary" }];
+  }
+  const secondaryShare = 0.35 / secondary.length;
+  return normalizeContributions([
+    { muscle: exercise.primaryMuscle || "Full body", percent: 0.65, role: "primary" },
+    ...secondary.map((muscle) => ({ muscle, percent: secondaryShare, role: "secondary" as const }))
+  ]);
+}
+
+function normalizeContributions(contributions: MuscleContribution[]): MuscleContribution[] {
+  const combined = new Map<string, MuscleContribution>();
+  for (const contribution of contributions) {
+    const muscle = cleanMuscleLabel(contribution.muscle);
+    if (!muscle || contribution.percent <= 0) continue;
+    const current = combined.get(muscle);
+    combined.set(muscle, {
+      muscle,
+      percent: (current?.percent ?? 0) + contribution.percent,
+      role: current?.role ?? contribution.role
+    });
+  }
+  const total = [...combined.values()].reduce((sum, item) => sum + item.percent, 0);
+  if (total <= 0) return [{ muscle: "Full body", percent: 1, role: "primary" }];
+  return [...combined.values()].map((item) => ({ ...item, percent: round(item.percent / total) }));
+}
+
+function cleanMuscleLabel(value: string) {
+  return value.split(" - ")[0].trim();
+}
+
+function normalizeExerciseName(value: string) {
+  return value.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function round(value: number) {
+  return Math.round((value + Number.EPSILON) * 1000) / 1000;
+}

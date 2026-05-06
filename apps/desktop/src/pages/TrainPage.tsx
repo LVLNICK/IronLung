@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, Copy, Dumbbell, Flame, Plus, Search, Trash2 } from "lucide-react";
 import { exerciseSessionVolume, prLabel, setVolume, type PersonalRecord, type SetType, type WorkoutSession } from "@ironlung/core";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
@@ -72,16 +72,21 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
   const state = useIronLungStore();
   const [exerciseId, setExerciseId] = useState("");
   const [notes, setNotes] = useState("");
+  const [discardOpen, setDiscardOpen] = useState(false);
   const rows = state.sessionExercises.filter((row) => row.workoutSessionId === session.id).sort((a, b) => a.orderIndex - b.orderIndex);
   const sets = rows.flatMap((row) => state.setLogs.filter((set) => set.workoutSessionExerciseId === row.id));
   const volume = compactNumber(sets.reduce((total, set) => total + setVolume(set.weight, set.reps), 0));
+  const workoutPrs = state.personalRecords.filter((record) => record.workoutSessionId === session.id);
+  const bestOneRm = Math.max(0, ...sets.map(oneRmForSet));
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <MetricCard label="Workout volume" value={volume} hint="current" />
         <MetricCard label="Sets" value={String(sets.length)} hint="logged" />
         <MetricCard label="Exercises" value={String(rows.length)} hint="active" />
+        <MetricCard label="Workout PRs" value={String(workoutPrs.length)} hint="current" tone={workoutPrs.length ? "good" : "default"} />
+        <MetricCard label="Best e1RM" value={bestOneRm ? compactNumber(bestOneRm) : "--"} hint="current" />
         <MetricCard label="Started" value={shortDate(session.startedAt)} hint={session.name} />
       </div>
       <Card>
@@ -93,6 +98,7 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
               {state.exercises.map((exercise) => <option key={exercise.id} value={exercise.id}>{exercise.name}</option>)}
             </Select>
             <Button onClick={() => { if (exerciseId) state.addExerciseToSession(session.id, exerciseId); setExerciseId(""); }} icon={Plus}>Add</Button>
+            <Button variant="danger" icon={Trash2} onClick={() => setDiscardOpen(true)}>Discard</Button>
           </div>
         </div>
       </Card>
@@ -106,7 +112,13 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
           <Input placeholder="Finish notes" value={notes} onChange={setNotes} />
           <Button icon={CheckCircle2} onClick={() => state.finishWorkout(session.id, notes)}>Finish workout</Button>
         </div>
+        {!!workoutPrs.length && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {workoutPrs.slice(-8).map((record) => <span key={record.id} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-sm text-mint">{prLabel(record.type)} - {record.importance ?? "legacy"}</span>)}
+          </div>
+        )}
       </Card>
+      {discardOpen && <ConfirmModal title="Discard active workout?" body="This deletes the active workout, logged sets, and PRs created during this session." confirmLabel="Discard workout" onCancel={() => setDiscardOpen(false)} onConfirm={() => { state.deleteWorkout(session.id); setDiscardOpen(false); }} />}
     </div>
   );
 }
@@ -153,6 +165,23 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
     repsRef.current?.focus();
   }
 
+  function duplicateLast() {
+    const last = sets.at(-1);
+    if (!last) return;
+    const result = state.logSet({
+      workoutSessionExerciseId: sessionExerciseId,
+      exerciseId,
+      workoutSessionId: session.id,
+      weight: last.weight,
+      reps: last.reps,
+      rpe: last.rpe,
+      setType: last.setType,
+      notes: last.notes
+    });
+    setRecords(result);
+    weightRef.current?.focus();
+  }
+
   return (
     <Card>
       <div className="mb-4 flex items-start justify-between">
@@ -160,7 +189,7 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
           <div className="text-xl font-semibold">{exercise.name}</div>
           <div className="text-sm text-white/45">{exercise.primaryMuscle} - previous: {previous || "no prior sets"}</div>
         </div>
-        <div className="rounded-lg border border-line px-3 py-2 text-sm text-white/55">Rest 2:00</div>
+        <RestTimer seconds={120} />
       </div>
       <div className="space-y-2">
         {sets.map((set) => (
@@ -182,11 +211,40 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
           <Button variant="ghost" onClick={() => setWeight(String(Math.max(0, Number(weight || 0) - 5)))}>-5</Button>
           <Button variant="ghost" onClick={() => setWeight(String(Number(weight || 0) + 5))}>+5</Button>
           <IconButton label="Same as last set" icon={Copy} onClick={useLast} />
+          <Button variant="ghost" onClick={duplicateLast} disabled={!sets.length}>Duplicate</Button>
           <IconButton label="Log set" icon={CheckCircle2} onClick={submit} />
         </div>
       </div>
       {!!records.length && <div className="mt-4 flex flex-wrap gap-2">{records.map((record) => <span key={record.id} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-sm text-mint">PR - {prLabel(record.type)} {record.value}</span>)}</div>}
     </Card>
+  );
+}
+
+function RestTimer({ seconds }: { seconds: number }) {
+  const [remaining, setRemaining] = useState(seconds);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setInterval(() => {
+      setRemaining((value) => {
+        if (value <= 1) {
+          setRunning(false);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [running]);
+
+  const minutes = Math.floor(remaining / 60);
+  const secs = String(remaining % 60).padStart(2, "0");
+
+  return (
+    <button type="button" onClick={() => setRunning((value) => !value)} onDoubleClick={() => { setRemaining(seconds); setRunning(false); }} className="rounded-lg border border-line px-3 py-2 text-sm text-white/55 hover:border-accent/50 hover:text-white">
+      Rest {minutes}:{secs} {running ? "pause" : "start"}
+    </button>
   );
 }
 

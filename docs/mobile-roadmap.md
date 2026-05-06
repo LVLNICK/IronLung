@@ -2,7 +2,7 @@
 
 IronLung is structured so a future mobile app can reuse the same product concepts and logic.
 
-- Keep `packages/core` shared for types, validation schemas, importers, analytics, PR calculations, and fitness math.
+- Keep `packages/core` shared for types, validation schemas, importers, muscle contribution analytics, training goals, training blocks, PR calculations, and fitness math.
 - Keep schema concepts aligned with `packages/db`.
 - Build mobile later with React Native or Expo.
 - Use a mobile SQLite adapter with the same entities.

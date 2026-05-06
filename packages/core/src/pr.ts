@@ -1,5 +1,5 @@
 import { estimatedOneRepMax, exerciseSessionVolume, maxRepsAtWeight, round, setVolume } from "./calculations";
-import type { PersonalRecord, PRType, SetLog } from "./types";
+import type { PersonalRecord, PRImportance, PRType, SetLog } from "./types";
 
 export interface PRCheckInput {
   exerciseId: string;
@@ -17,39 +17,40 @@ export function detectPersonalRecords(input: PRCheckInput): PersonalRecord[] {
   const completedHistoricalSets = input.historicalSetsForExercise.filter((set) => set.isCompleted);
 
   if (!input.newSet.isCompleted || input.newSet.reps <= 0) return records;
+  const isBaseline = completedHistoricalSets.length === 0 && input.historicalSessionVolumesForExercise.length === 0;
 
   const historicalMaxWeight = Math.max(0, ...completedHistoricalSets.map((set) => set.weight));
   if (input.newSet.weight > historicalMaxWeight) {
-    records.push(makeRecord(input, "max_weight", input.newSet.weight, input.unit));
+    records.push(makeRecord(input, "max_weight", input.newSet.weight, input.unit, classifyImportance(input.newSet.weight, historicalMaxWeight, isBaseline)));
   }
 
   const newOneRm = estimatedOneRepMax(input.newSet.weight, input.newSet.reps);
   const historicalOneRm = Math.max(0, ...completedHistoricalSets.map((set) => estimatedOneRepMax(set.weight, set.reps)));
   if (newOneRm > historicalOneRm) {
-    records.push(makeRecord(input, "estimated_1rm", newOneRm, input.unit));
+    records.push(makeRecord(input, "estimated_1rm", newOneRm, input.unit, classifyImportance(newOneRm, historicalOneRm, isBaseline)));
   }
 
   const newSessionVolume = exerciseSessionVolume(input.sessionSetsForExercise);
   const oldBestSessionVolume = Math.max(0, ...input.historicalSessionVolumesForExercise);
   if (newSessionVolume > oldBestSessionVolume) {
-    records.push(makeRecord(input, "session_volume", newSessionVolume, `${input.unit} total`));
+    records.push(makeRecord(input, "session_volume", newSessionVolume, `${input.unit} total`, classifyImportance(newSessionVolume, oldBestSessionVolume, isBaseline)));
   }
 
   const oldRepsAtWeight = maxRepsAtWeight(completedHistoricalSets, input.newSet.weight);
   if (input.newSet.reps > oldRepsAtWeight) {
-    records.push(makeRecord(input, "reps_at_weight", input.newSet.reps, `reps @ ${input.newSet.weight}${input.unit}`));
+    records.push(makeRecord(input, "reps_at_weight", input.newSet.reps, `reps @ ${input.newSet.weight}${input.unit}`, classifyImportance(input.newSet.reps, oldRepsAtWeight, isBaseline)));
   }
 
   const newSetVolume = setVolume(input.newSet.weight, input.newSet.reps);
   const historicalSetVolume = Math.max(0, ...completedHistoricalSets.map((set) => setVolume(set.weight, set.reps)));
   if (newSetVolume > historicalSetVolume) {
-    records.push(makeRecord(input, "best_set", newSetVolume, `${input.unit} set volume`));
+    records.push(makeRecord(input, "best_set", newSetVolume, `${input.unit} set volume`, classifyImportance(newSetVolume, historicalSetVolume, isBaseline)));
   }
 
   return records;
 }
 
-function makeRecord(input: PRCheckInput, type: PRType, value: number, unit: string): PersonalRecord {
+function makeRecord(input: PRCheckInput, type: PRType, value: number, unit: string, importance: PRImportance): PersonalRecord {
   return {
     id: crypto.randomUUID(),
     exerciseId: input.exerciseId,
@@ -58,8 +59,21 @@ function makeRecord(input: PRCheckInput, type: PRType, value: number, unit: stri
     type,
     value: round(value),
     unit,
+    importance,
     achievedAt: input.achievedAt
   };
+}
+
+export function classifyImportance(current: number, previous: number, isBaseline = false): PRImportance {
+  if (isBaseline || previous <= 0) return "baseline";
+  const lift = (current - previous) / previous;
+  if (lift >= 0.05) return "major";
+  if (lift >= 0.02) return "medium";
+  return "small";
+}
+
+export function isMeaningfulPr(record: PersonalRecord): boolean {
+  return record.importance === "major" || record.importance === "medium" || record.importance === undefined;
 }
 
 export function prLabel(type: PRType): string {

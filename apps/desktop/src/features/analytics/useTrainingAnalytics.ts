@@ -11,11 +11,14 @@ export function useTrainingAnalytics(range: DateRangePreset = "30d") {
       sessions: state.sessions,
       sessionExercises: state.sessionExercises,
       setLogs: state.setLogs,
-      personalRecords: state.personalRecords
+      personalRecords: state.personalRecords,
+      trainingGoal: state.trainingGoal,
+      trainingBlocks: state.trainingBlocks,
+      currentTrainingBlockId: state.currentTrainingBlockId
     };
     return {
       core: buildTrainingAnalytics(dataset, range),
       desktop: buildAnalyticsSnapshot({ ...dataset, photos: state.photos, analyses: state.analyses })
     };
-  }, [range, state.exercises, state.sessions, state.sessionExercises, state.setLogs, state.personalRecords, state.photos, state.analyses]);
+  }, [range, state.exercises, state.sessions, state.sessionExercises, state.setLogs, state.personalRecords, state.trainingGoal, state.trainingBlocks, state.currentTrainingBlockId, state.photos, state.analyses]);
 }

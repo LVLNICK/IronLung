@@ -36,7 +36,7 @@ function fixture(): AnalyticsDataset {
     ],
     sessions: [
       { id: "s1", name: "Push", startedAt: "2026-01-01T12:00:00.000Z", finishedAt: "2026-01-01T13:00:00.000Z", createdAt: "2026-01-01T12:00:00.000Z", updatedAt: "2026-01-01T13:00:00.000Z" },
-      { id: "s2", name: "Push", startedAt: "2026-01-08T12:00:00.000Z", finishedAt: "2026-01-08T13:00:00.000Z", createdAt: "2026-01-08T12:00:00.000Z", updatedAt: "2026-01-08T13:00:00.000Z" },
+      { id: "s2", name: "Push", trainingBlockId: "block-1", startedAt: "2026-01-08T12:00:00.000Z", finishedAt: "2026-01-08T13:00:00.000Z", createdAt: "2026-01-08T12:00:00.000Z", updatedAt: "2026-01-08T13:00:00.000Z" },
       { id: "s3", name: "Pull", startedAt: "2026-01-09T12:00:00.000Z", finishedAt: "2026-01-09T13:00:00.000Z", createdAt: "2026-01-09T12:00:00.000Z", updatedAt: "2026-01-09T13:00:00.000Z" }
     ],
     sessionExercises: [
@@ -51,6 +51,11 @@ function fixture(): AnalyticsDataset {
     ],
     personalRecords: [
       { id: "pr1", exerciseId: "bench", workoutSessionId: "s2", setLogId: "set2", type: "estimated_1rm", value: 257, unit: "lbs", achievedAt: "2026-01-08T12:05:00.000Z" }
+    ],
+    trainingGoal: "strength",
+    currentTrainingBlockId: "block-1",
+    trainingBlocks: [
+      { id: "block-1", name: "Bench Focus", goal: "strength", startedAt: "2026-01-08T00:00:00.000Z", createdAt: "2026-01-08T00:00:00.000Z", updatedAt: "2026-01-08T00:00:00.000Z" }
     ]
   };
 }
@@ -71,7 +76,10 @@ describe("core analytics engine", () => {
     expect(summary.totals.volume).toBe(2740);
     expect(summary.exerciseMetrics.find((exercise) => exercise.name === "Bench Press")?.estimatedOneRepMax).toBeGreaterThan(250);
     expect(summary.prGroups[0].type).toBe("estimated_1rm");
+    expect(summary.muscleVolume.find((row) => row.muscle === "Pectoralis major")?.volume).toBe(1155);
     expect(summary.balance.overall).toBeGreaterThanOrEqual(0);
+    expect(summary.trainingGoal).toBe("strength");
+    expect(summary.currentBlock?.name).toBe("Bench Focus");
     expect(summary.insights.length).toBeGreaterThan(0);
   });
 

@@ -1,5 +1,5 @@
 import { Activity, Camera, CheckCircle2, Dumbbell, Flame, Plus, Target, Trophy } from "lucide-react";
-import { prLabel, type DateRangePreset } from "@ironlung/core";
+import { isMeaningfulPr, prLabel, type DateRangePreset } from "@ironlung/core";
 import { useState } from "react";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, Select } from "../components/forms/controls";
@@ -18,9 +18,18 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
   const openSession = selectOpenSession(state);
   const latestPhoto = [...state.photos].sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))[0];
   const latestAnalysis = [...state.analyses].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  const recentPrs = [...state.personalRecords].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt)).slice(0, 6);
+  const meaningfulPrs = state.personalRecords.filter(isMeaningfulPr);
+  const recentPrs = [...meaningfulPrs].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt)).slice(0, 6);
   const recentTemplates = [...state.templates].slice(-3).reverse();
   const lastMuscles = desktop.muscleHeatStats.slice(0, 5).map((row) => row.muscle).join(", ") || "No training yet";
+  const mostImproved = [...core.exerciseMetrics].sort((a, b) => b.strengthTrend - a.strengthTrend)[0];
+  const mostNeglected = [...core.exerciseMetrics].filter((exercise) => exercise.lastTrained).sort((a, b) => String(a.lastTrained).localeCompare(String(b.lastTrained)))[0];
+  const bestRecentPr = recentPrs[0];
+  const lastSession = [...state.sessions].filter((session) => session.finishedAt).sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+  const lastSessionRows = lastSession ? state.sessionExercises.filter((row) => row.workoutSessionId === lastSession.id) : [];
+  const lastSessionSets = lastSessionRows.flatMap((row) => state.setLogs.filter((set) => set.workoutSessionExerciseId === row.id));
+  const recoveryConcern = core.fatigueFlags[0];
+  const nextFocus = core.recommendations[0] ?? core.insights.find((item) => item.severity !== "positive");
 
   return (
     <ScreenShell
@@ -39,8 +48,29 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
       <div className="grid grid-cols-4 gap-4">
         <MetricCard label="Muscle balance" value={`${core.balance.overall}/100`} hint="overall score" tone={core.balance.overall >= 75 ? "good" : "warn"} />
         <MetricCard label="Volume trend" value={`${core.comparison.volumeDeltaPercent}%`} hint="vs previous period" tone={core.comparison.volumeDeltaPercent >= 0 ? "good" : "warn"} />
-        <MetricCard label="PRs" value={String(core.totals.prs)} hint="meaningful events" />
+        <MetricCard label="Meaningful PRs" value={String(meaningfulPrs.length)} hint="major/medium only" />
         <MetricCard label="Fatigue flags" value={String(core.fatigueFlags.length)} hint="rule-based" tone={core.fatigueFlags.length ? "warn" : "good"} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-5">
+        <Card>
+          <SectionHeader title="What To Focus On Next" icon={Target} />
+          {nextFocus ? (
+            <div className="rounded-xl border border-accent/25 bg-accent/8 p-4">
+              <div className="font-semibold">{nextFocus.title}</div>
+              <p className="mt-2 text-sm leading-6 text-white/55">{nextFocus.recommendation ?? nextFocus.detail}</p>
+              {core.currentBlock && <p className="mt-3 text-xs uppercase tracking-wide text-white/35">Current block: {core.currentBlock.name}</p>}
+            </div>
+          ) : <EmptyState icon={Target} title="No focus signal yet" body="Log or import enough sessions for IronLung to compare trends." />}
+        </Card>
+        <Card>
+          <SectionHeader title="Most Improved This Period" icon={CheckCircle2} />
+          {mostImproved ? <StatRows rows={[["Exercise", mostImproved.name], ["Estimated 1RM", compactNumber(mostImproved.estimatedOneRepMax)], ["Trend", `${mostImproved.strengthTrend}`], ["Last trained", mostImproved.lastTrained ? shortDate(mostImproved.lastTrained) : "--"]]} /> : <EmptyState icon={CheckCircle2} title="No improvement signal" body="Strength trends appear after multiple sets or sessions." />}
+        </Card>
+        <Card>
+          <SectionHeader title="Potential Recovery Concern" icon={Flame} />
+          {recoveryConcern ? <StatRows rows={[["Muscle", recoveryConcern.muscle], ["Severity", recoveryConcern.severity], ["Recent sets", String(recoveryConcern.recentSets)], ["Hard sets", String(recoveryConcern.recentHardSets)]]} /> : <EmptyState icon={Flame} title="No recovery concern" body="No high recent distributed volume or hard-set flag is active." />}
+        </Card>
       </div>
 
       <div className="grid grid-cols-[1.05fr_.95fr] gap-5">
@@ -148,7 +178,7 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
             <div className="space-y-3">
               <img src={latestPhoto.imagePath} alt="Latest progress" className="h-52 w-full rounded-xl border border-line object-cover" />
               <StatRows rows={[
-                ["Latest score", latestAnalysis ? String(Math.round(latestAnalysis.score)) : "--"],
+                ["Progress Photo Index", latestAnalysis ? String(Math.round(latestAnalysis.score)) : "--"],
                 ["Confidence", latestAnalysis ? String(latestAnalysis.confidence) : "--"],
                 ["Captured", shortDate(latestPhoto.capturedAt)]
               ]} />
@@ -157,6 +187,21 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
           ) : (
             <EmptyState icon={Camera} title="No progress photos" body="Photos stay local and analysis requires explicit consent." action={<Button variant="ghost" onClick={() => onNavigate("Photos")}>Open Photos</Button>} />
           )}
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-3 gap-5">
+        <Card>
+          <SectionHeader title="Most Neglected This Period" icon={Activity} />
+          {mostNeglected ? <StatRows rows={[["Exercise", mostNeglected.name], ["Last trained", mostNeglected.lastTrained ? shortDate(mostNeglected.lastTrained) : "--"], ["Sessions", String(mostNeglected.sessions)], ["Volume", `${compactNumber(mostNeglected.volume)} ${state.unitPreference}`]]} /> : <EmptyState icon={Activity} title="No neglected lift yet" body="Neglect signals need at least one logged exercise history." />}
+        </Card>
+        <Card>
+          <SectionHeader title="Best Recent PR" icon={Trophy} />
+          {bestRecentPr ? <StatRows rows={[["Exercise", state.exercises.find((item) => item.id === bestRecentPr.exerciseId)?.name ?? "Exercise"], ["Type", prLabel(bestRecentPr.type)], ["Value", `${bestRecentPr.value} ${bestRecentPr.unit}`], ["Importance", bestRecentPr.importance ?? "legacy"]]} /> : <EmptyState icon={Trophy} title="No meaningful recent PR" body="Baseline and tiny PRs are kept in history but filtered from the cockpit." />}
+        </Card>
+        <Card>
+          <SectionHeader title="Last Workout Summary" icon={Dumbbell} />
+          {lastSession ? <StatRows rows={[["Workout", lastSession.name], ["Date", shortDate(lastSession.startedAt)], ["Exercises", String(lastSessionRows.length)], ["Sets", String(lastSessionSets.length)], ["Volume", `${compactNumber(lastSessionSets.reduce((total, set) => total + set.weight * set.reps, 0))} ${state.unitPreference}`]]} /> : <EmptyState icon={Dumbbell} title="No finished workout" body="Finish a workout to see the last-session summary here." />}
         </Card>
       </div>
     </ScreenShell>

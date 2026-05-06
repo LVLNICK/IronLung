@@ -10,6 +10,6 @@ IronLung Desktop is local-first.
 - Data export and import use local JSON.
 - Photos and Data & Settings include deleting all local photo data.
 - Boostcamp import processes user-provided files only. It does not scrape Boostcamp, request credentials, or automate requests.
-- Photo scoring is an experimental progress metric. It is not a medical diagnosis, body-fat measurement, or attractiveness rating.
+- Progress Photo Index is an experimental progress metric. It is not a medical diagnosis, body-fat measurement, or attractiveness rating.
 
 Users should be able to remove local workout data, progress photos, and analysis outputs without contacting a server.

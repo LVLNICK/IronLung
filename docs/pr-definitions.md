@@ -18,3 +18,12 @@ Legacy imported/exported records named `exercise_session_volume` display as Sess
 - Analytics groups PRs by type, exercise, muscle, and date.
 - Command Center shows recent meaningful PRs only.
 - PR values are calculated from local workout data and are not compared against other users.
+
+## Importance
+
+- `baseline`: first-ever records for an exercise. These establish history but are not major PRs.
+- `small`: improvement below 2%.
+- `medium`: improvement from 2% to below 5%.
+- `major`: improvement of 5% or more.
+
+Legacy records without importance are displayed as legacy and treated as meaningful until recalculated or superseded.

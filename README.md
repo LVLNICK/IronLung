@@ -1,6 +1,6 @@
 # IronLung Desktop
 
-IronLung Desktop is a local-first, desktop-priority fitness tracker for users who build their own workouts. It includes custom exercises, workout templates, set logging, PR detection, analytics charts, progress photos, JSON import/export, and a privacy-first local approximate body progress analyzer.
+IronLung Desktop is a local-first, desktop-priority fitness tracker for users who build their own workouts. It includes custom exercises, workout templates, set logging, PR detection, muscle-contribution analytics, training goals, training blocks, progress photos, JSON import/export, and a privacy-first local approximate Progress Photo Index.
 
 No premade workout programs are included.
 
@@ -23,7 +23,7 @@ IronLung now uses six desktop-first destinations:
 - Exercises: exercise library, drilldowns, charts, PRs, and plateau signals
 - Analytics: strength, volume, muscle balance, PRs, consistency, intensity, recovery, and insights
 - Photos: local progress photos, same-pose comparisons, quality checks, and opt-in analysis
-- Data & Settings: preferences, Boostcamp import, JSON import/export, privacy, and backups
+- Data & Settings: preferences, training goal, training blocks, Boostcamp import, JSON import/export, privacy, and backups
 
 ## Boostcamp Import
 

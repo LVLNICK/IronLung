@@ -63,7 +63,9 @@ function Overview({ analytics }: { analytics: ReturnType<typeof useTrainingAnaly
             ["Best progressing exercise", best?.name ?? "--"],
             ["Most neglected exercise", neglected?.name ?? "--"],
             ["Push/pull score", `${core.balance.pushPull}/100`],
-            ["Upper/lower score", `${core.balance.upperLower}/100`]
+            ["Upper/lower score", `${core.balance.upperLower}/100`],
+            ["Training goal", goalLabel(core.trainingGoal)],
+            ["Current block", core.currentBlock?.name ?? "--"]
           ]} />
         </Card>
       </div>
@@ -120,10 +122,17 @@ function MuscleBalance({ analytics }: { analytics: ReturnType<typeof useTraining
 function PRs({ analytics }: { analytics: ReturnType<typeof useTrainingAnalytics> }) {
   const state = useIronLungStore();
   const records = [...state.personalRecords].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
+  const importance = ["major", "medium", "small", "baseline"].map((level) => ({
+    level,
+    count: records.filter((record) => (record.importance ?? "medium") === level).length
+  }));
   return (
     <div className="grid grid-cols-[.8fr_1.2fr] gap-5">
-      <Card><SectionHeader title="PR Breakdown" icon={Trophy} /><StatRows rows={analytics.core.prGroups.map((row) => [prLabel(row.type), `${row.count} - ${row.lastAchievedAt ? shortDate(row.lastAchievedAt) : "--"}`])} /></Card>
-      <Card><SectionHeader title="Trophy Room" icon={Trophy} /><AnalyticsTable headers={["Date", "Exercise", "Type", "Value"]} rows={records.map((record) => [shortDate(record.achievedAt), state.exercises.find((exercise) => exercise.id === record.exerciseId)?.name ?? "Exercise", prLabel(record.type), `${record.value} ${record.unit}`])} /></Card>
+      <div className="space-y-5">
+        <Card><SectionHeader title="PR Breakdown" icon={Trophy} /><StatRows rows={analytics.core.prGroups.map((row) => [prLabel(row.type), `${row.count} - ${row.lastAchievedAt ? shortDate(row.lastAchievedAt) : "--"}`])} /></Card>
+        <Card><SectionHeader title="PR Importance" icon={Trophy} /><StatRows rows={importance.map((row) => [row.level, String(row.count)])} /></Card>
+      </div>
+      <Card><SectionHeader title="Trophy Room" icon={Trophy} /><AnalyticsTable headers={["Date", "Exercise", "Type", "Importance", "Value"]} rows={records.map((record) => [shortDate(record.achievedAt), state.exercises.find((exercise) => exercise.id === record.exerciseId)?.name ?? "Exercise", prLabel(record.type), record.importance ?? "legacy", `${record.value} ${record.unit}`])} /></Card>
     </div>
   );
 }
@@ -154,6 +163,18 @@ function Insights({ analytics, compact = false }: { analytics: ReturnType<typeof
       <Card><SectionHeader title="Current Focus Recommendations" icon={Flame} /><div className="space-y-3">{analytics.core.recommendations.map((item) => <div key={item.id} className="rounded-xl border border-accent/20 bg-accent/8 p-3"><div className="font-medium">{item.title}</div><div className="mt-1 text-sm leading-5 text-white/50">{item.recommendation}</div></div>)}</div></Card>
     </div>
   );
+}
+
+function goalLabel(goal: ReturnType<typeof useTrainingAnalytics>["core"]["trainingGoal"]) {
+  const labels = {
+    strength: "Strength",
+    hypertrophy: "Hypertrophy",
+    lean_bulk: "Lean bulk",
+    cutting: "Cutting",
+    powerbuilding: "Powerbuilding",
+    general_fitness: "General fitness"
+  };
+  return labels[goal];
 }
 
 function TrendChart({ title, data, x, bars, layout }: { title: string; data: any[]; x: string; bars: string[]; layout?: "vertical" }) {

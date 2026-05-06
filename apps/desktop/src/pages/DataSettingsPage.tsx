@@ -9,13 +9,15 @@ import {
   type ImportCommitSummary,
   type ImportPreview,
   type ImportUnitPreference,
-  type NormalizedWorkoutImport
+  type NormalizedWorkoutImport,
+  type TrainingGoal
 } from "@ironlung/core";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, Input, Select, TextArea } from "../components/forms/controls";
 import { ScreenShell } from "../components/layout/ScreenShell";
 import { EmptyState } from "../components/empty-states/EmptyState";
 import { AnalyticsTable, StatRows } from "../components/tables/AnalyticsTable";
+import { ConfirmModal } from "../components/modals/ConfirmModal";
 import { shortDate } from "../lib/format";
 import { createExport, validateImportPayload } from "../lib/importExport";
 import { type IronLungStateData, useIronLungStore } from "../lib/store";
@@ -23,6 +25,7 @@ import { type IronLungStateData, useIronLungStore } from "../lib/store";
 export function DataSettingsPage() {
   const state = useIronLungStore();
   const [status, setStatus] = useState("");
+  const [confirmAction, setConfirmAction] = useState<"photos" | "reset" | null>(null);
   const exportJson = useMemo(() => JSON.stringify(createExport(pickStateData(state)), null, 2), [state]);
 
   async function copyExport() {
@@ -63,6 +66,18 @@ export function DataSettingsPage() {
               <option value="light">Light</option>
               <option value="system">System</option>
             </Select>
+            <Select value={state.trainingGoal} onChange={(value) => state.updateSettings({ trainingGoal: value as TrainingGoal })}>
+              <option value="strength">Strength</option>
+              <option value="hypertrophy">Hypertrophy</option>
+              <option value="lean_bulk">Lean bulk</option>
+              <option value="cutting">Cutting</option>
+              <option value="powerbuilding">Powerbuilding</option>
+              <option value="general_fitness">General fitness</option>
+            </Select>
+            <Select value={state.currentTrainingBlockId ?? ""} onChange={(value) => state.setCurrentTrainingBlock(value || null)}>
+              <option value="">No active block</option>
+              {state.trainingBlocks.map((block) => <option key={block.id} value={block.id}>{block.name}</option>)}
+            </Select>
           </div>
           <div className="mt-5">
             <StatRows rows={[
@@ -82,11 +97,13 @@ export function DataSettingsPage() {
             <p>Future sync is intentionally left as a documented roadmap item, not a hidden service.</p>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button variant="danger" icon={Trash2} onClick={() => state.deleteAllPhotoData()}>Delete all photos</Button>
-            <Button variant="danger" icon={Trash2} onClick={() => state.clearAllData()}>Reset all local data</Button>
+            <Button variant="danger" icon={Trash2} onClick={() => setConfirmAction("photos")}>Delete all photos</Button>
+            <Button variant="danger" icon={Trash2} onClick={() => setConfirmAction("reset")}>Reset all local data</Button>
           </div>
         </Card>
       </div>
+
+      <TrainingBlocksPanel />
 
       <BoostcampImportPanel />
 
@@ -113,7 +130,94 @@ export function DataSettingsPage() {
           <p>Sync later: add an optional encrypted sync API only after local-first behavior is stable and documented.</p>
         </div>
       </Card>
+      {confirmAction === "photos" && (
+        <ConfirmModal
+          title="Delete all photo data?"
+          body="This removes local progress photos and analysis outputs from IronLung storage. Workout logs stay intact."
+          confirmLabel="Delete photos"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { state.deleteAllPhotoData(); setConfirmAction(null); }}
+        />
+      )}
+      {confirmAction === "reset" && (
+        <ConfirmModal
+          title="Reset all local data?"
+          body="This removes local workouts, exercises, templates, PRs, photos, analyses, goals, and blocks from IronLung storage."
+          confirmLabel="Reset everything"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => { state.clearAllData(); setConfirmAction(null); }}
+        />
+      )}
     </ScreenShell>
+  );
+}
+
+function TrainingBlocksPanel() {
+  const state = useIronLungStore();
+  const [name, setName] = useState("");
+  const [goal, setGoal] = useState<TrainingGoal>(state.trainingGoal);
+  const [notes, setNotes] = useState("");
+  const [deleteBlockId, setDeleteBlockId] = useState<string | null>(null);
+  const today = new Date().toISOString();
+  const deleteBlock = state.trainingBlocks.find((block) => block.id === deleteBlockId);
+
+  function createBlock() {
+    if (!name.trim()) return;
+    const block = state.createTrainingBlock({ name: name.trim(), goal, notes, startedAt: today, endedAt: null });
+    state.setCurrentTrainingBlock(block.id);
+    setName("");
+    setNotes("");
+  }
+
+  return (
+    <Card>
+      <SectionHeader title="Training Blocks" icon={Database} />
+      <div className="grid grid-cols-[1fr_220px_1.2fr_auto] gap-3">
+        <Input placeholder="Block name, e.g. Bench Focus Block" value={name} onChange={setName} />
+        <Select value={goal} onChange={(value) => setGoal(value as TrainingGoal)}>
+          <option value="strength">Strength</option>
+          <option value="hypertrophy">Hypertrophy</option>
+          <option value="lean_bulk">Lean bulk</option>
+          <option value="cutting">Cutting</option>
+          <option value="powerbuilding">Powerbuilding</option>
+          <option value="general_fitness">General fitness</option>
+        </Select>
+        <Input placeholder="Block notes" value={notes} onChange={setNotes} />
+        <Button onClick={createBlock}>Create block</Button>
+      </div>
+      <div className="mt-5">
+        <AnalyticsTable
+          headers={["Block", "Goal", "Started", "Status", "Actions"]}
+          rows={state.trainingBlocks.map((block) => [
+            block.name,
+            goalLabel(block.goal ?? "general_fitness"),
+            shortDate(block.startedAt),
+            state.currentTrainingBlockId === block.id ? "Active" : block.endedAt ? "Ended" : "Open",
+            state.currentTrainingBlockId === block.id ? "active" : "set active"
+          ])}
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {state.trainingBlocks.map((block) => (
+          <div key={block.id} className="flex items-center gap-2 rounded-xl border border-line bg-white/[0.03] p-2">
+            <span className="px-2 text-sm text-white/65">{block.name}</span>
+            <Button variant="ghost" onClick={() => state.setCurrentTrainingBlock(block.id)}>Set active</Button>
+            <Button variant="ghost" onClick={() => state.updateTrainingBlock(block.id, { endedAt: block.endedAt ? null : new Date().toISOString() })}>{block.endedAt ? "Reopen" : "End"}</Button>
+            <Button variant="danger" onClick={() => setDeleteBlockId(block.id)}>Delete</Button>
+          </div>
+        ))}
+      </div>
+      {!state.trainingBlocks.length && <div className="mt-5"><EmptyState icon={Database} title="No training blocks yet" body="Create a block to group sessions into phases like Lean Bulk 2026, Cut Phase, or Bench Focus Block." /></div>}
+      {deleteBlock && (
+        <ConfirmModal
+          title="Delete training block?"
+          body={`This deletes "${deleteBlock.name}" as a grouping label and unassigns its workouts. The workout history stays intact.`}
+          confirmLabel="Delete block"
+          onCancel={() => setDeleteBlockId(null)}
+          onConfirm={() => { state.deleteTrainingBlock(deleteBlock.id); setDeleteBlockId(null); }}
+        />
+      )}
+    </Card>
   );
 }
 
@@ -308,10 +412,25 @@ function ImportDetail({ title, body }: { title: string; body: string }) {
   );
 }
 
+function goalLabel(goal: TrainingGoal) {
+  const labels: Record<TrainingGoal, string> = {
+    strength: "Strength",
+    hypertrophy: "Hypertrophy",
+    lean_bulk: "Lean bulk",
+    cutting: "Cutting",
+    powerbuilding: "Powerbuilding",
+    general_fitness: "General fitness"
+  };
+  return labels[goal];
+}
+
 function pickStateData(state: ReturnType<typeof useIronLungStore.getState>): IronLungStateData {
   return {
     unitPreference: state.unitPreference,
     theme: state.theme,
+    trainingGoal: state.trainingGoal,
+    currentTrainingBlockId: state.currentTrainingBlockId,
+    trainingBlocks: state.trainingBlocks,
     exercises: state.exercises,
     templates: state.templates,
     templateExercises: state.templateExercises,

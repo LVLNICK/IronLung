@@ -126,7 +126,7 @@ export function PhotosPage() {
       <div className="grid grid-cols-4 gap-4">
         <MetricCard label="Photos" value={String(state.photos.length)} hint="local timeline" />
         <MetricCard label="Analyses" value={String(state.analyses.length)} hint="explicit consent" />
-        <MetricCard label="Latest score" value={latestAnalysis ? String(Math.round(latestAnalysis.score)) : "--"} hint="0-100 progress metric" />
+        <MetricCard label="Progress Photo Index" value={latestAnalysis ? String(Math.round(latestAnalysis.score)) : "--"} hint="0-100 private index" />
         <MetricCard label="Confidence" value={latestAnalysis ? `${Math.round(latestAnalysis.confidence * 100)}%` : "--"} hint={latestAnalysis?.modelVersion ?? "stub-v0"} />
       </div>
 
@@ -198,14 +198,14 @@ export function PhotosPage() {
             )}
           </Card>
           <Card>
-            <SectionHeader title="Score Trend" icon={Sparkles} />
+            <SectionHeader title="Progress Photo Index Trend" icon={Sparkles} />
             <ResponsiveContainer width="100%" height={230}>
               <LineChart data={trend}>
                 <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
                 <XAxis dataKey="date" stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} />
                 <YAxis domain={[0, 100]} stroke="rgba(255,255,255,0.34)" tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Line dataKey="score" stroke="#b9a7ff" strokeWidth={2} dot={{ r: 3 }} />
+                <Line dataKey="score" name="Progress Photo Index" stroke="#b9a7ff" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
             {latestAnalysis && <QualitySignals analysis={latestAnalysis} />}
@@ -214,7 +214,7 @@ export function PhotosPage() {
             <SectionHeader title="Retake Guidance" icon={Camera} />
             <div className="space-y-2 text-sm leading-6 text-white/52">
               <p>Use the same room, distance, lens, pose, lighting, and time of day when possible.</p>
-              <p>Tag pump/no pump and bodyweight so the score trend is easier to interpret.</p>
+              <p>Tag pump/no pump and bodyweight so the Progress Photo Index trend is easier to interpret.</p>
               <p>Review quality signals before comparing photos across weeks.</p>
             </div>
           </Card>
@@ -234,7 +234,7 @@ function PhotoCard({ photo, analysis, analyzing, onAnalyze, onDelete, unit }: { 
     <div className="group overflow-hidden rounded-xl border border-line bg-black/25 transition hover:border-accent/45">
       <div className="relative">
         <img src={photo.imagePath} alt={`${photo.poseType} progress`} className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-        {analysis && <div className="absolute right-3 top-3 rounded-full border border-black/30 bg-white px-3 py-1 text-sm font-semibold text-ink">{Math.round(analysis.score)}</div>}
+        {analysis && <div className="absolute right-3 top-3 rounded-full border border-black/30 bg-white px-3 py-1 text-sm font-semibold text-ink">PPI {Math.round(analysis.score)}</div>}
       </div>
       <div className="space-y-3 p-3 text-sm">
         <div className="flex items-center justify-between">
@@ -247,7 +247,7 @@ function PhotoCard({ photo, analysis, analyzing, onAnalyze, onDelete, unit }: { 
           <span className="rounded-full border border-line px-2 py-1">{photo.pumpTag || "pump tag missing"}</span>
         </div>
         {analysis ? (
-          <div className="text-mint">Score {Math.round(analysis.score)} - {Math.round(analysis.confidence * 100)}% confidence</div>
+          <div className="text-mint">Progress Photo Index {Math.round(analysis.score)} - {Math.round(analysis.confidence * 100)}% confidence</div>
         ) : (
           <Button disabled={analyzing} icon={Sparkles} onClick={() => onAnalyze(photo.id)}>{analyzing ? "Analyzing..." : "Analyze with consent"}</Button>
         )}

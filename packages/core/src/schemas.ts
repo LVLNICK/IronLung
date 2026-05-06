@@ -2,11 +2,18 @@ import { z } from "zod";
 
 export const setTypeSchema = z.enum(["warmup", "working", "drop", "failure", "amrap"]);
 export const poseTypeSchema = z.enum(["front", "side", "back", "other"]);
+export const trainingGoalSchema = z.enum(["strength", "hypertrophy", "lean_bulk", "cutting", "powerbuilding", "general_fitness"]);
+export const muscleContributionSchema = z.object({
+  muscle: z.string().trim().min(1),
+  percent: z.coerce.number().min(0).max(1),
+  role: z.enum(["primary", "secondary", "stabilizer"]).optional()
+});
 
 export const exerciseInputSchema = z.object({
   name: z.string().trim().min(1, "Exercise name is required"),
   primaryMuscle: z.string().trim().min(1, "Primary muscle is required"),
   secondaryMuscles: z.array(z.string().trim()).default([]),
+  muscleContributions: z.array(muscleContributionSchema).optional(),
   equipment: z.string().trim().min(1, "Equipment is required"),
   movementPattern: z.string().trim().min(1, "Movement pattern is required"),
   isUnilateral: z.boolean().default(false),
@@ -44,6 +51,9 @@ export const importPayloadSchema = z.object({
   data: z.object({
     unitPreference: z.enum(["lbs", "kg"]),
     theme: z.enum(["dark", "light", "system"]),
+    trainingGoal: trainingGoalSchema.optional(),
+    currentTrainingBlockId: z.string().nullable().optional(),
+    trainingBlocks: z.array(z.unknown()).optional(),
     exercises: z.array(z.unknown()),
     templates: z.array(z.unknown()),
     templateExercises: z.array(z.unknown()),

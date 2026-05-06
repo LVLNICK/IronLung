@@ -67,10 +67,36 @@ export function ExercisesPage() {
           </div>
         </Card>
 
-        {selected && detail ? <ExerciseDetail selected={selected} detail={detail} /> : <Card><EmptyState icon={Dumbbell} title="No exercise data" body="Import or log workouts to populate exercise intelligence." /></Card>}
+        {selected && detail ? <ExerciseDetail selected={selected} detail={detail} /> : selected ? <NeverTrainedExercise selected={selected} /> : <Card><EmptyState icon={Dumbbell} title="No exercise data" body="Create, import, or log workouts to populate exercise intelligence." /></Card>}
       </div>
       {createOpen && <CreateExerciseDrawer onClose={() => setCreateOpen(false)} />}
     </ScreenShell>
+  );
+}
+
+function NeverTrainedExercise({ selected }: { selected: ReturnType<typeof useTrainingAnalytics>["core"]["exerciseMetrics"][number] }) {
+  const warnings = [
+    !selected.primaryMuscle || selected.primaryMuscle === "Full body" ? "Primary muscle needs review." : "",
+    !selected.equipment || selected.equipment === "Unspecified" ? "Equipment is missing." : "",
+    !selected.movementPattern || selected.movementPattern === "General strength" ? "Movement pattern is generic." : ""
+  ].filter(Boolean);
+  return (
+    <div className="space-y-5">
+      <Card>
+        <div className="text-2xl font-semibold">{selected.name}</div>
+        <div className="mt-1 text-sm text-white/45">{selected.primaryMuscle} - {selected.equipment} - {selected.movementPattern}</div>
+      </Card>
+      <div className="grid grid-cols-4 gap-4">
+        <MetricCard label="Status" value="Never trained" hint="no sets logged" />
+        <MetricCard label="Sessions" value="0" hint="total" />
+        <MetricCard label="Volume" value="0" hint="no data" />
+        <MetricCard label="PRs" value="0" hint="no records" />
+      </div>
+      <Card>
+        <SectionHeader title="Exercise Quality Warnings" icon={Activity} />
+        {warnings.length ? <div className="space-y-2">{warnings.map((warning) => <div key={warning} className="rounded-xl border border-amber-300/20 bg-amber-300/8 p-3 text-sm text-white/60">{warning}</div>)}</div> : <EmptyState icon={Activity} title="Metadata looks usable" body="Log this exercise to unlock trends, PRs, and plateau detection." />}
+      </Card>
+    </div>
   );
 }
 

@@ -35,6 +35,9 @@ describe("IronLung desktop command center", () => {
     useIronLungStore.getState().importData({
       unitPreference: "lbs",
       theme: "dark",
+      trainingGoal: "general_fitness",
+      currentTrainingBlockId: null,
+      trainingBlocks: [],
       exercises: [{
         id: "ex-bench",
         name: "Bench Press",

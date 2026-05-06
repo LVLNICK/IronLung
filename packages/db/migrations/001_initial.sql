@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
   id TEXT PRIMARY KEY,
   unit_preference TEXT NOT NULL CHECK (unit_preference IN ('lbs', 'kg')),
   theme TEXT NOT NULL CHECK (theme IN ('dark', 'light', 'system')),
+  training_goal TEXT NOT NULL DEFAULT 'general_fitness' CHECK (training_goal IN ('strength', 'hypertrophy', 'lean_bulk', 'cutting', 'powerbuilding', 'general_fitness')),
+  current_training_block_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -13,6 +15,7 @@ CREATE TABLE IF NOT EXISTS exercise (
   name TEXT NOT NULL,
   primary_muscle TEXT NOT NULL,
   secondary_muscles TEXT NOT NULL DEFAULT '[]',
+  muscle_contributions TEXT NOT NULL DEFAULT '[]',
   equipment TEXT NOT NULL,
   movement_pattern TEXT NOT NULL,
   is_unilateral INTEGER NOT NULL DEFAULT 0,
@@ -25,6 +28,17 @@ CREATE TABLE IF NOT EXISTS workout_template (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS training_block (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  goal TEXT CHECK (goal IN ('strength', 'hypertrophy', 'lean_bulk', 'cutting', 'powerbuilding', 'general_fitness')),
+  started_at TEXT NOT NULL,
+  ended_at TEXT,
+  notes TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -48,6 +62,7 @@ CREATE TABLE IF NOT EXISTS workout_session (
   finished_at TEXT,
   notes TEXT,
   bodyweight REAL,
+  training_block_id TEXT REFERENCES training_block(id) ON DELETE SET NULL,
   import_source TEXT,
   imported_metadata_json TEXT,
   created_at TEXT NOT NULL,
@@ -85,9 +100,10 @@ CREATE TABLE IF NOT EXISTS personal_record (
   exercise_id TEXT NOT NULL REFERENCES exercise(id) ON DELETE CASCADE,
   workout_session_id TEXT NOT NULL REFERENCES workout_session(id) ON DELETE CASCADE,
   set_log_id TEXT REFERENCES set_log(id) ON DELETE SET NULL,
-  type TEXT NOT NULL CHECK (type IN ('max_weight', 'estimated_1rm', 'exercise_session_volume', 'reps_at_weight', 'workout_session_volume')),
+  type TEXT NOT NULL CHECK (type IN ('max_weight', 'estimated_1rm', 'session_volume', 'exercise_session_volume', 'reps_at_weight', 'best_set', 'workout_session_volume')),
   value REAL NOT NULL,
   unit TEXT NOT NULL,
+  importance TEXT CHECK (importance IN ('baseline', 'small', 'medium', 'major')),
   achieved_at TEXT NOT NULL
 );
 

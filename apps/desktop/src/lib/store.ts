@@ -15,6 +15,8 @@ import {
   type SetLog,
   type SetType,
   type ThemePreference,
+  type TrainingBlock,
+  type TrainingGoal,
   type UnitPreference,
   type WorkoutSession,
   type WorkoutSessionExercise,
@@ -28,6 +30,9 @@ import { analyzeProgressPhotoLocally } from "./photoAnalysis";
 export interface IronLungStateData {
   unitPreference: UnitPreference;
   theme: ThemePreference;
+  trainingGoal: TrainingGoal;
+  currentTrainingBlockId: string | null;
+  trainingBlocks: TrainingBlock[];
   exercises: Exercise[];
   templates: WorkoutTemplate[];
   templateExercises: WorkoutTemplateExercise[];
@@ -67,9 +72,14 @@ interface IronLungStore extends IronLungStateData {
   addPhoto(input: Omit<ProgressPhoto, "id" | "createdAt">): ProgressPhoto;
   analyzePhoto(photoId: string, consentGiven: boolean): Promise<BodyAnalysis>;
   importNormalizedWorkouts(input: NormalizedWorkoutImport, mappings: ExerciseMapping[], unit: ImportUnitPreference): ImportCommitSummary;
+  createTrainingBlock(input: Pick<TrainingBlock, "name" | "goal" | "startedAt" | "endedAt" | "notes">): TrainingBlock;
+  updateTrainingBlock(id: string, input: Partial<Pick<TrainingBlock, "name" | "goal" | "startedAt" | "endedAt" | "notes">>): void;
+  deleteTrainingBlock(id: string): void;
+  setCurrentTrainingBlock(id: string | null): void;
+  assignWorkoutToBlock(sessionId: string, blockId: string | null): void;
   deletePhoto(photoId: string): void;
   deleteAllPhotoData(): void;
-  updateSettings(input: Partial<Pick<IronLungStateData, "unitPreference" | "theme">>): void;
+  updateSettings(input: Partial<Pick<IronLungStateData, "unitPreference" | "theme" | "trainingGoal">>): void;
   importData(data: IronLungStateData): void;
   clearAllData(): void;
 }
@@ -77,6 +87,9 @@ interface IronLungStore extends IronLungStateData {
 const initialData: IronLungStateData = {
   unitPreference: "lbs",
   theme: "dark",
+  trainingGoal: "general_fitness",
+  currentTrainingBlockId: null,
+  trainingBlocks: [],
   exercises: [],
   templates: [],
   templateExercises: [],
@@ -176,6 +189,7 @@ export const useIronLungStore = create<IronLungStore>()(
           name: template?.name ?? "Untitled Workout",
           startedAt: now,
           finishedAt: null,
+          trainingBlockId: get().currentTrainingBlockId,
           createdAt: now,
           updatedAt: now
         };
@@ -424,6 +438,39 @@ export const useIronLungStore = create<IronLungStore>()(
         set({ exercises, sessions, sessionExercises, setLogs, personalRecords });
         if (setsImported === 0) warnings.push("No new sets were imported. This may be a duplicate file.");
         return { workoutsImported, exercisesCreated, setsImported, prsDetected, skippedRows, warnings, errors };
+      },
+      createTrainingBlock: (input) => {
+        const now = new Date().toISOString();
+        const block: TrainingBlock = {
+          id: crypto.randomUUID(),
+          name: input.name,
+          goal: input.goal,
+          startedAt: input.startedAt,
+          endedAt: input.endedAt ?? null,
+          notes: input.notes,
+          createdAt: now,
+          updatedAt: now
+        };
+        set((state) => ({ trainingBlocks: [...state.trainingBlocks, block], currentTrainingBlockId: state.currentTrainingBlockId ?? block.id }));
+        return block;
+      },
+      updateTrainingBlock: (id, input) => {
+        set((state) => ({
+          trainingBlocks: state.trainingBlocks.map((block) => block.id === id ? { ...block, ...input, updatedAt: new Date().toISOString() } : block)
+        }));
+      },
+      deleteTrainingBlock: (id) => {
+        set((state) => ({
+          trainingBlocks: state.trainingBlocks.filter((block) => block.id !== id),
+          currentTrainingBlockId: state.currentTrainingBlockId === id ? null : state.currentTrainingBlockId,
+          sessions: state.sessions.map((session) => session.trainingBlockId === id ? { ...session, trainingBlockId: null, updatedAt: new Date().toISOString() } : session)
+        }));
+      },
+      setCurrentTrainingBlock: (id) => set({ currentTrainingBlockId: id }),
+      assignWorkoutToBlock: (sessionId, blockId) => {
+        set((state) => ({
+          sessions: state.sessions.map((session) => session.id === sessionId ? { ...session, trainingBlockId: blockId, updatedAt: new Date().toISOString() } : session)
+        }));
       },
       deletePhoto: (photoId) => set((state) => ({
         photos: state.photos.filter((photo) => photo.id !== photoId),

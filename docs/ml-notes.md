@@ -1,6 +1,6 @@
 # ML Notes
 
-The Body Progress Score is intentionally framed as a private, experimental progress metric.
+The Progress Photo Index is intentionally framed as a private, experimental progress metric.
 
 It must not be:
 
@@ -9,7 +9,7 @@ It must not be:
 - a body-fat guarantee
 - a shaming or ranking tool
 
-The MVP local model returns a 0-100 approximate score, confidence, model version, measurements JSON, and warnings. It uses local image quality features plus capture context such as age, height, weight, pose, lighting, and pump tag. A trained model should preserve this interface so the app does not need UI or data model rewrites.
+The MVP local model returns a 0-100 approximate Progress Photo Index, confidence, model version, measurements JSON, and warnings. It uses local image quality features plus capture context such as age, height, weight, pose, lighting, and pump tag. A trained model should preserve this interface so the app does not need UI or data model rewrites.
 
 Future model work should prioritize:
 
