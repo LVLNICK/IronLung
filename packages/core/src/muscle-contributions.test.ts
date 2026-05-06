@@ -31,6 +31,22 @@ describe("muscle contribution model", () => {
     expect(contributions.reduce((sum, item) => sum + item.percent, 0)).toBeCloseTo(1);
   });
 
+  it("falls back safely for legacy imported exercises with missing secondary muscles", () => {
+    const legacy = {
+      id: "legacy",
+      name: "Custom Raise",
+      primaryMuscle: "Shoulders",
+      equipment: "Dumbbell",
+      movementPattern: "Accessory",
+      isUnilateral: false,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z"
+    } as any;
+
+    expect(resolveMuscleContributions(legacy)).toEqual([{ muscle: "Shoulders", percent: 1, role: "primary" }]);
+    expect(muscleContributionWarnings(legacy)).toContain("Using fallback muscle distribution because this exercise has no custom contribution model.");
+  });
+
   it("covers common row, squat, deadlift, curl, and pulldown presets", () => {
     const cases = [
       ["Cable Row", "Latissimus dorsi"],

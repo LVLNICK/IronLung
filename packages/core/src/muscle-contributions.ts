@@ -94,7 +94,8 @@ const presets: Array<{ match: RegExp; contributions: MuscleContribution[] }> = [
 ];
 
 export function resolveMuscleContributions(exercise: Exercise): MuscleContribution[] {
-  if (exercise.muscleContributions?.length) return normalizeContributions(exercise.muscleContributions);
+  const customContributions = safeMuscleContributions(exercise.muscleContributions);
+  if (customContributions.length) return normalizeContributions(customContributions);
   const name = normalizeExerciseName(exercise.name);
   const preset = presets.find((item) => item.match.test(name));
   if (preset) return normalizeContributions(preset.contributions);
@@ -110,7 +111,7 @@ export function distributedMuscleVolume(exercise: Exercise, volume: number) {
 
 export function muscleContributionWarnings(exercise: Exercise): string[] {
   const warnings: string[] = [];
-  const raw = exercise.muscleContributions ?? [];
+  const raw = safeMuscleContributions(exercise.muscleContributions);
   const rawTotal = raw.reduce((sum, item) => sum + item.percent, 0);
   if (raw.length && Math.abs(rawTotal - 1) > 0.02) {
     warnings.push(`Custom muscle contributions total ${round(rawTotal * 100)}%, so IronLung normalizes them to 100%.`);
@@ -125,7 +126,7 @@ export function muscleContributionWarnings(exercise: Exercise): string[] {
 }
 
 function fallbackContributions(exercise: Exercise): MuscleContribution[] {
-  const secondary = exercise.secondaryMuscles.map(cleanMuscleLabel).filter(Boolean);
+  const secondary = safeStringArray(exercise.secondaryMuscles).map(cleanMuscleLabel).filter(Boolean);
   if (!secondary.length) {
     return [{ muscle: exercise.primaryMuscle || "Full body", percent: 1, role: "primary" }];
   }
@@ -157,8 +158,22 @@ function cleanMuscleLabel(value: string) {
   return value.split(" - ")[0].trim();
 }
 
-function normalizeExerciseName(value: string) {
-  return value.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim();
+function normalizeExerciseName(value: unknown) {
+  return typeof value === "string" ? value.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim() : "";
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function safeMuscleContributions(value: unknown): MuscleContribution[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is MuscleContribution =>
+    Boolean(item) &&
+    typeof item === "object" &&
+    typeof (item as MuscleContribution).muscle === "string" &&
+    typeof (item as MuscleContribution).percent === "number"
+  );
 }
 
 function round(value: number) {
