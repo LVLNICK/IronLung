@@ -502,13 +502,17 @@ export const useIronLungStore = create<IronLungStore>()(
       deleteAllPhotoData: () => set({ photos: [], analyses: [] }),
       updateSettings: (input) => set((state) => ({ ...state, ...input })),
       importData: (data) => {
-        const next = { ...initialData, ...data };
+        const next = normalizeStoredData({ ...initialData, ...data });
         set({ ...next, personalRecords: recalculatePersonalRecords(next) });
       },
       clearAllData: () => set(initialData)
     }),
     {
-      name: "ironlung-desktop-local"
+      name: "ironlung-desktop-local",
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState && typeof persistedState === "object" ? persistedState as Partial<IronLungStateData> : {};
+        return { ...currentState, ...normalizeStoredData({ ...initialData, ...persisted }) };
+      }
     }
   )
 );
@@ -596,4 +600,77 @@ function mergePersonalRecords(existing: PersonalRecord[], incoming: PersonalReco
 
 function recordKey(record: PersonalRecord) {
   return [record.exerciseId, record.workoutSessionId, record.type, record.unit].join("|");
+}
+
+function normalizeStoredData(data: IronLungStateData): IronLungStateData {
+  return {
+    ...data,
+    exercises: Array.isArray(data.exercises) ? data.exercises.map(normalizeExercise) : [],
+    templates: Array.isArray(data.templates) ? data.templates.map((template, index) => ({
+      ...template,
+      id: safeText(template.id, `template-${index}`),
+      name: safeText(template.name, "Untitled Template"),
+      description: optionalText(template.description),
+      createdAt: safeText(template.createdAt, new Date().toISOString()),
+      updatedAt: safeText(template.updatedAt, new Date().toISOString())
+    })) : [],
+    sessions: Array.isArray(data.sessions) ? data.sessions.map((session, index) => ({
+      ...session,
+      id: safeText(session.id, `session-${index}`),
+      name: safeText(session.name, "Untitled Workout"),
+      notes: optionalText(session.notes),
+      startedAt: safeText(session.startedAt, new Date().toISOString()),
+      finishedAt: optionalText(session.finishedAt),
+      createdAt: safeText(session.createdAt, session.startedAt || new Date().toISOString()),
+      updatedAt: safeText(session.updatedAt, session.finishedAt || session.startedAt || new Date().toISOString())
+    })) : [],
+    templateExercises: Array.isArray(data.templateExercises) ? data.templateExercises : [],
+    sessionExercises: Array.isArray(data.sessionExercises) ? data.sessionExercises : [],
+    setLogs: Array.isArray(data.setLogs) ? data.setLogs : [],
+    personalRecords: Array.isArray(data.personalRecords) ? data.personalRecords : [],
+    photos: Array.isArray(data.photos) ? data.photos : [],
+    analyses: Array.isArray(data.analyses) ? data.analyses : [],
+    trainingBlocks: Array.isArray(data.trainingBlocks) ? data.trainingBlocks : []
+  };
+}
+
+function normalizeExercise(exercise: Exercise, index: number): Exercise {
+  return {
+    ...exercise,
+    id: safeText(exercise.id, `exercise-${index}`),
+    name: safeText(exercise.name, "Unnamed exercise"),
+    primaryMuscle: safeText(exercise.primaryMuscle, "Unknown"),
+    secondaryMuscles: safeStringArray(exercise.secondaryMuscles),
+    muscleContributions: safeMuscleContributions(exercise.muscleContributions),
+    equipment: safeText(exercise.equipment, "Unspecified"),
+    movementPattern: safeText(exercise.movementPattern, "General strength"),
+    isUnilateral: Boolean(exercise.isUnilateral),
+    notes: optionalText(exercise.notes),
+    createdAt: safeText(exercise.createdAt, new Date().toISOString()),
+    updatedAt: safeText(exercise.updatedAt, new Date().toISOString())
+  };
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function safeMuscleContributions(value: unknown) {
+  if (!Array.isArray(value)) return undefined;
+  const contributions = value.filter((item) =>
+    Boolean(item) &&
+    typeof item === "object" &&
+    typeof item.muscle === "string" &&
+    typeof item.percent === "number" &&
+    item.percent > 0
+  );
+  return contributions.length ? contributions : undefined;
+}
+
+function safeText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
+}
+
+function optionalText(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }

@@ -109,10 +109,11 @@ describe("IronLung desktop command center", () => {
       exercises: [{
         id: "ex-legacy",
         name: "Legacy Row",
-        primaryMuscle: "Back",
-        equipment: "Cable",
-        movementPattern: "Horizontal Pull",
+        primaryMuscle: { legacy: "Back" },
+        equipment: { legacy: "Cable" },
+        movementPattern: null,
         isUnilateral: false,
+        notes: { legacy: "do not render objects as React children" },
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z"
       } as any],
@@ -155,6 +156,7 @@ describe("IronLung desktop command center", () => {
 
     expect(screen.getAllByText("Legacy Row").length).toBeGreaterThan(0);
     expect(screen.getByText("No secondary muscles listed.")).toBeInTheDocument();
+    expect(screen.getByText("No exercise notes yet.")).toBeInTheDocument();
 
     await userEvent.clear(screen.getByPlaceholderText("Search exercises"));
     await userEvent.type(screen.getByPlaceholderText("Search exercises"), "not real");

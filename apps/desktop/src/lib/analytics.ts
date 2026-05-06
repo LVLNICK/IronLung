@@ -85,11 +85,11 @@ export function buildAnalyticsSnapshot(input: AnalyticsInput) {
       const trainedSessions = new Set(rows.map((row) => row.workoutSessionId));
       return {
         exerciseId: exercise.id,
-        name: exercise.name || "Unnamed exercise",
-        primaryMuscle: exercise.primaryMuscle || "Unknown",
+        name: safeText(exercise.name, "Unnamed exercise"),
+        primaryMuscle: safeText(exercise.primaryMuscle, "Unknown"),
         secondaryMuscles: safeSecondaryMuscles(exercise.secondaryMuscles),
-        equipment: exercise.equipment || "Unspecified",
-        movementPattern: exercise.movementPattern || "General strength",
+        equipment: safeText(exercise.equipment, "Unspecified"),
+        movementPattern: safeText(exercise.movementPattern, "General strength"),
         sessions: trainedSessions.size,
         sets: sets.length,
         reps: sum(sets.map((set) => set.reps)),
@@ -678,6 +678,10 @@ function cleanMuscleLabel(value: string) {
 
 function safeSecondaryMuscles(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function safeText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
 }
 
 function median(values: number[]) {

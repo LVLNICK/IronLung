@@ -127,12 +127,13 @@ export function muscleContributionWarnings(exercise: Exercise): string[] {
 
 function fallbackContributions(exercise: Exercise): MuscleContribution[] {
   const secondary = safeStringArray(exercise.secondaryMuscles).map(cleanMuscleLabel).filter(Boolean);
+  const primary = safeText(exercise.primaryMuscle, "Full body");
   if (!secondary.length) {
-    return [{ muscle: exercise.primaryMuscle || "Full body", percent: 1, role: "primary" }];
+    return [{ muscle: primary, percent: 1, role: "primary" }];
   }
   const secondaryShare = 0.35 / secondary.length;
   return normalizeContributions([
-    { muscle: exercise.primaryMuscle || "Full body", percent: 0.65, role: "primary" },
+    { muscle: primary, percent: 0.65, role: "primary" },
     ...secondary.map((muscle) => ({ muscle, percent: secondaryShare, role: "secondary" as const }))
   ]);
 }
@@ -174,6 +175,10 @@ function safeMuscleContributions(value: unknown): MuscleContribution[] {
     typeof (item as MuscleContribution).muscle === "string" &&
     typeof (item as MuscleContribution).percent === "number"
   );
+}
+
+function safeText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
 }
 
 function round(value: number) {

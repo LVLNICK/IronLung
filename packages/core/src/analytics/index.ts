@@ -276,11 +276,11 @@ export function exerciseMetrics(dataset: AnalyticsDataset): ExerciseMetric[] {
       const strengthTrend = slope(oneRepMaxes.slice(-8));
       return {
         exerciseId: exercise.id,
-        name: exercise.name || "Unnamed exercise",
-        primaryMuscle: exercise.primaryMuscle || "Unknown",
+        name: safeText(exercise.name, "Unnamed exercise"),
+        primaryMuscle: safeText(exercise.primaryMuscle, "Unknown"),
         secondaryMuscles: safeSecondaryMuscles(exercise.secondaryMuscles),
-        equipment: exercise.equipment || "Unspecified",
-        movementPattern: exercise.movementPattern || "General strength",
+        equipment: safeText(exercise.equipment, "Unspecified"),
+        movementPattern: safeText(exercise.movementPattern, "General strength"),
         sessions: new Set(rows.map((row) => row.workoutSessionId)).size,
         sets: sets.length,
         reps: sum(sets.map((set) => set.reps)),
@@ -568,6 +568,10 @@ function sum(values: number[]) {
 
 function safeSecondaryMuscles(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function safeText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
 }
 
 const severityRank = {

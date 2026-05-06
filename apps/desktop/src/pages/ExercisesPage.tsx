@@ -189,7 +189,7 @@ function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useT
         </Card>
         <Card>
           <SectionHeader title="Notes History" icon={Activity} />
-          <div className="text-sm leading-6 text-white/52">{exercise?.notes || "No exercise notes yet."}</div>
+          <div className="text-sm leading-6 text-white/52">{safeText(exercise?.notes, "No exercise notes yet.")}</div>
         </Card>
       </div>
       <Card>
@@ -202,6 +202,10 @@ function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useT
 
 function safeSecondaryMuscles(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function safeText(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
 }
 
 function CreateExerciseDrawer({ onClose }: { onClose: () => void }) {
