@@ -14,9 +14,20 @@ No premade workout programs are included.
 - Python ML scaffold in `packages/ml`
 - Vitest and React Testing Library
 
+## Navigation
+
+IronLung now uses six desktop-first destinations:
+
+- Command Center: training status, weak points, fatigue flags, recent PRs, and next actions
+- Train: start workouts, active logging, journal, and user-created templates
+- Exercises: exercise library, drilldowns, charts, PRs, and plateau signals
+- Analytics: strength, volume, muscle balance, PRs, consistency, intensity, recovery, and insights
+- Photos: local progress photos, same-pose comparisons, quality checks, and opt-in analysis
+- Data & Settings: preferences, Boostcamp import, JSON import/export, privacy, and backups
+
 ## Boostcamp Import
 
-IronLung can import user-provided Boostcamp-style CSV or JSON files from `Settings -> Import Data -> Boostcamp Import`. The importer runs locally, starts with a dry-run preview, supports exercise mapping, and skips duplicate sets using stable import hashes. It does not scrape Boostcamp or ask for Boostcamp credentials. See `docs/importing-boostcamp.md`.
+IronLung can import user-provided Boostcamp-style CSV or JSON files from `Data & Settings -> Boostcamp Import`. The importer runs locally, starts with a dry-run preview, supports exercise mapping, and skips duplicate sets using stable import hashes. It does not scrape Boostcamp or ask for Boostcamp credentials. See `docs/importing-boostcamp.md`.
 
 ## Setup
 
@@ -41,12 +52,16 @@ npm run build
 
 ## Data
 
-The MVP is local-first and does not require an account. Workout data is stored in a local SQLite-compatible database image in browser storage during Vite development, with the same schema and repository boundaries intended for Tauri-native SQLite later. Progress photos are represented as local file references or data URLs in the MVP and are exportable/deletable from Settings.
+The MVP is local-first and does not require an account. Workout data is stored in a local SQLite-compatible database image in browser storage during Vite development, with the same schema and repository boundaries intended for Tauri-native SQLite later. Progress photos are represented as local file references or data URLs in the MVP and are exportable/deletable from Photos or Data & Settings.
 
 ## Repository Layout
 
 ```text
 apps/desktop        React/Tauri desktop app
+apps/desktop/src/app        App composition and command palette
+apps/desktop/src/layout     Desktop shell and sidebar
+apps/desktop/src/pages      Six primary product pages
+apps/desktop/src/features   Feature-level desktop hooks and adapters
 packages/core       Shared types, schemas, PR logic, and fitness math
 packages/db         SQLite schema, migrations, local repository adapter
 packages/ml         Python ML training/inference scaffold

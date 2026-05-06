@@ -1,0 +1,21 @@
+import { useMemo } from "react";
+import { buildTrainingAnalytics, type DateRangePreset } from "@ironlung/core";
+import { buildAnalyticsSnapshot } from "../../lib/analytics";
+import { useIronLungStore } from "../../lib/store";
+
+export function useTrainingAnalytics(range: DateRangePreset = "30d") {
+  const state = useIronLungStore();
+  return useMemo(() => {
+    const dataset = {
+      exercises: state.exercises,
+      sessions: state.sessions,
+      sessionExercises: state.sessionExercises,
+      setLogs: state.setLogs,
+      personalRecords: state.personalRecords
+    };
+    return {
+      core: buildTrainingAnalytics(dataset, range),
+      desktop: buildAnalyticsSnapshot({ ...dataset, photos: state.photos, analyses: state.analyses })
+    };
+  }, [range, state.exercises, state.sessions, state.sessionExercises, state.setLogs, state.personalRecords, state.photos, state.analyses]);
+}

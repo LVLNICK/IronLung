@@ -8,6 +8,7 @@ import {
 import type {
   Exercise,
   PersonalRecord,
+  PRType,
   SetLog,
   WorkoutSession,
   WorkoutSessionExercise
@@ -110,7 +111,7 @@ export interface AnalyticsSummary {
   equipmentVolume: Array<{ equipment: string; volume: number; sets: number }>;
   movementPatternVolume: Array<{ movementPattern: string; volume: number; sets: number }>;
   exerciseMetrics: ExerciseMetric[];
-  prGroups: Array<{ type: string; count: number; lastAchievedAt: string | null }>;
+  prGroups: Array<{ type: PRType; count: number; lastAchievedAt: string | null }>;
   balance: BalanceScore;
   fatigueFlags: FatigueFlag[];
   weakPoints: SmartInsight[];
@@ -277,7 +278,7 @@ export function movementPatternVolume(dataset: AnalyticsDataset) {
   return aggregateExerciseProperty(dataset, "movementPattern");
 }
 
-export function groupPrsByType(records: PersonalRecord[]) {
+export function groupPrsByType(records: PersonalRecord[]): Array<{ type: PRType; count: number; lastAchievedAt: string | null }> {
   return [...groupBy(records, (record) => record.type).entries()].map(([type, rows]) => ({
     type,
     count: rows.length,
@@ -455,8 +456,8 @@ function cleanMuscleLabel(value: string) {
   return value.split(" - ")[0].trim();
 }
 
-function groupBy<T>(items: T[], getKey: (item: T) => string) {
-  const map = new Map<string, T[]>();
+function groupBy<T, K extends string>(items: T[], getKey: (item: T) => K) {
+  const map = new Map<K, T[]>();
   for (const item of items) map.set(getKey(item), [...(map.get(getKey(item)) ?? []), item]);
   return map;
 }

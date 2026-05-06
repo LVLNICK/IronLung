@@ -2,10 +2,10 @@
 
 ## Current Audit
 
-- Desktop UI entrypoint: `apps/desktop/src/App.tsx`.
-- Current navigation is defined in `apps/desktop/src/App.tsx` through `type Screen` and `nav`.
+- Desktop UI entrypoint: `apps/desktop/src/App.tsx`, which now re-exports `apps/desktop/src/app/App.tsx`.
+- Navigation is defined in `apps/desktop/src/app/navigation.tsx`.
 - App state and local-first persistence are in `apps/desktop/src/lib/store.ts` using Zustand persist.
-- Workout creation, active workout logging, templates, photo UI, Boostcamp import UI, and settings currently live in the same large `App.tsx`.
+- Workout creation, active workout logging, templates, photo UI, Boostcamp import UI, and settings have been moved into page modules under `apps/desktop/src/pages`.
 - PR detection is implemented in `packages/core/src/pr.ts`.
 - Fitness math is implemented in `packages/core/src/calculations.ts`.
 - Exercise target inference is implemented in `packages/core/src/exercise-targets.ts`.

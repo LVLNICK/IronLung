@@ -32,7 +32,7 @@ export function detectPersonalRecords(input: PRCheckInput): PersonalRecord[] {
   const newSessionVolume = exerciseSessionVolume(input.sessionSetsForExercise);
   const oldBestSessionVolume = Math.max(0, ...input.historicalSessionVolumesForExercise);
   if (newSessionVolume > oldBestSessionVolume) {
-    records.push(makeRecord(input, "exercise_session_volume", newSessionVolume, `${input.unit} total`));
+    records.push(makeRecord(input, "session_volume", newSessionVolume, `${input.unit} total`));
   }
 
   const oldRepsAtWeight = maxRepsAtWeight(completedHistoricalSets, input.newSet.weight);
@@ -43,7 +43,7 @@ export function detectPersonalRecords(input: PRCheckInput): PersonalRecord[] {
   const newSetVolume = setVolume(input.newSet.weight, input.newSet.reps);
   const historicalSetVolume = Math.max(0, ...completedHistoricalSets.map((set) => setVolume(set.weight, set.reps)));
   if (newSetVolume > historicalSetVolume) {
-    records.push(makeRecord(input, "workout_session_volume", newSetVolume, `${input.unit} set volume`));
+    records.push(makeRecord(input, "best_set", newSetVolume, `${input.unit} set volume`));
   }
 
   return records;
@@ -66,9 +66,11 @@ export function prLabel(type: PRType): string {
   const labels: Record<PRType, string> = {
     max_weight: "Max weight",
     estimated_1rm: "Estimated 1RM",
-    exercise_session_volume: "Exercise volume",
+    session_volume: "Session volume",
     reps_at_weight: "Reps at weight",
-    workout_session_volume: "Set volume"
+    best_set: "Best set",
+    exercise_session_volume: "Session volume",
+    workout_session_volume: "Best set"
   };
   return labels[type];
 }

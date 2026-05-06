@@ -37,7 +37,7 @@ Only use third-party tools if you trust them. Keep `.env`, `.boostcamp/`, and an
 
 1. Get your own CSV or JSON export.
 2. Open IronLung Desktop.
-3. Go to `Settings -> Import Data -> Boostcamp Import`.
+3. Go to `Data & Settings -> Boostcamp Import`.
 4. Upload the file.
 5. Review the dry-run preview.
 6. Choose units: `lbs`, `kg`, or auto-detect.

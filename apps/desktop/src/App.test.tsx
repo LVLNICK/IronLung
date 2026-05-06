@@ -4,29 +4,34 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "./App";
 import { useIronLungStore } from "./lib/store";
 
-describe("IronLung analytics desktop", () => {
+describe("IronLung desktop command center", () => {
   beforeEach(() => {
     useIronLungStore.getState().clearAllData();
   });
 
-  it("renders the analytics-only navigation", async () => {
+  it("renders the six-page navigation and preserves photo safety copy", async () => {
     render(<App />);
-    expect(screen.getByText("Analytics Overview")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Command Center" })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Daily Log" }));
-    expect(screen.getByText("Every-Day Training Log")).toBeInTheDocument();
+    for (const name of ["Command Center", "Train", "Exercises", "Analytics", "Photos", "Data & Settings"]) {
+      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    }
 
-    await userEvent.click(screen.getByRole("button", { name: "Data" }));
-    expect(screen.getByText("Data Quality Analytics")).toBeInTheDocument();
+    for (const oldName of ["Overview", "Daily Log", "Strength", "Volume", "Weak Points", "PRs", "Consistency", "Intensity", "Muscles", "Data", "Settings"]) {
+      expect(screen.queryByRole("button", { name: oldName })).not.toBeInTheDocument();
+    }
 
-    await userEvent.click(screen.getByRole("button", { name: "Weak Points" }));
-    expect(screen.getByText("Weak Point Detection")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Train" }));
+    expect(screen.getByRole("heading", { name: "Train" })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Muscles" }));
-    expect(screen.getByText("Body heat map")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Analytics" }));
+    expect(screen.getByRole("heading", { name: "Analytics" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Photos" }));
+    expect(screen.getByText("This is an experimental progress metric. It is not a medical diagnosis, body-fat measurement, or attractiveness rating.")).toBeInTheDocument();
   });
 
-  it("shows imported history in daily analytics", async () => {
+  it("shows imported history in the training journal", async () => {
     useIronLungStore.getState().importData({
       unitPreference: "lbs",
       theme: "dark",
@@ -84,9 +89,10 @@ describe("IronLung analytics desktop", () => {
     });
 
     render(<App />);
-    await userEvent.click(screen.getByRole("button", { name: "Daily Log" }));
+    await userEvent.click(screen.getByRole("button", { name: "Train" }));
+    await userEvent.click(screen.getByRole("button", { name: "Training Journal" }));
 
-    expect(screen.getAllByText("2026-01-01").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("1").length).toBeTruthy();
+    expect(screen.getAllByText(/Jan 1/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Upper")).toBeInTheDocument();
   });
 });

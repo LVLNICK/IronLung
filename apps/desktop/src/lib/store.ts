@@ -44,7 +44,11 @@ interface IronLungStore extends IronLungStateData {
   updateExercise(id: string, input: Partial<Omit<Exercise, "id" | "createdAt" | "updatedAt">>): void;
   deleteExercise(id: string): void;
   createTemplate(name: string, description?: string): WorkoutTemplate;
+  updateTemplate(id: string, input: Partial<Pick<WorkoutTemplate, "name" | "description">>): void;
+  duplicateTemplate(id: string): WorkoutTemplate | null;
+  deleteTemplate(id: string): void;
   addTemplateExercise(templateId: string, exerciseId: string, details: Partial<WorkoutTemplateExercise>): void;
+  updateTemplateExercise(id: string, details: Partial<Omit<WorkoutTemplateExercise, "id" | "workoutTemplateId" | "exerciseId">>): void;
   removeTemplateExercise(id: string): void;
   startWorkout(templateId?: string): WorkoutSession;
   addExerciseToSession(sessionId: string, exerciseId: string): void;
@@ -63,6 +67,7 @@ interface IronLungStore extends IronLungStateData {
   addPhoto(input: Omit<ProgressPhoto, "id" | "createdAt">): ProgressPhoto;
   analyzePhoto(photoId: string, consentGiven: boolean): Promise<BodyAnalysis>;
   importNormalizedWorkouts(input: NormalizedWorkoutImport, mappings: ExerciseMapping[], unit: ImportUnitPreference): ImportCommitSummary;
+  deletePhoto(photoId: string): void;
   deleteAllPhotoData(): void;
   updateSettings(input: Partial<Pick<IronLungStateData, "unitPreference" | "theme">>): void;
   importData(data: IronLungStateData): void;
@@ -109,6 +114,37 @@ export const useIronLungStore = create<IronLungStore>()(
         set((state) => ({ templates: [...state.templates, template] }));
         return template;
       },
+      updateTemplate: (id, input) => {
+        set((state) => ({
+          templates: state.templates.map((template) =>
+            template.id === id ? { ...template, ...input, updatedAt: new Date().toISOString() } : template
+          )
+        }));
+      },
+      duplicateTemplate: (id) => {
+        const state = get();
+        const source = state.templates.find((template) => template.id === id);
+        if (!source) return null;
+        const now = new Date().toISOString();
+        const template: WorkoutTemplate = {
+          ...source,
+          id: crypto.randomUUID(),
+          name: `${source.name} Copy`,
+          createdAt: now,
+          updatedAt: now
+        };
+        const rows = state.templateExercises
+          .filter((row) => row.workoutTemplateId === id)
+          .map((row) => ({ ...row, id: crypto.randomUUID(), workoutTemplateId: template.id }));
+        set((current) => ({ templates: [...current.templates, template], templateExercises: [...current.templateExercises, ...rows] }));
+        return template;
+      },
+      deleteTemplate: (id) => {
+        set((state) => ({
+          templates: state.templates.filter((template) => template.id !== id),
+          templateExercises: state.templateExercises.filter((row) => row.workoutTemplateId !== id)
+        }));
+      },
       addTemplateExercise: (templateId, exerciseId, details) => {
         const orderIndex = get().templateExercises.filter((item) => item.workoutTemplateId === templateId).length;
         const row: WorkoutTemplateExercise = {
@@ -122,6 +158,11 @@ export const useIronLungStore = create<IronLungStore>()(
           notes: details.notes
         };
         set((state) => ({ templateExercises: [...state.templateExercises, row] }));
+      },
+      updateTemplateExercise: (id, details) => {
+        set((state) => ({
+          templateExercises: state.templateExercises.map((row) => row.id === id ? { ...row, ...details } : row)
+        }));
       },
       removeTemplateExercise: (id) => {
         set((state) => ({ templateExercises: state.templateExercises.filter((item) => item.id !== id) }));
@@ -384,6 +425,10 @@ export const useIronLungStore = create<IronLungStore>()(
         if (setsImported === 0) warnings.push("No new sets were imported. This may be a duplicate file.");
         return { workoutsImported, exercisesCreated, setsImported, prsDetected, skippedRows, warnings, errors };
       },
+      deletePhoto: (photoId) => set((state) => ({
+        photos: state.photos.filter((photo) => photo.id !== photoId),
+        analyses: state.analyses.filter((analysis) => analysis.progressPhotoId !== photoId)
+      })),
       deleteAllPhotoData: () => set({ photos: [], analyses: [] }),
       updateSettings: (input) => set((state) => ({ ...state, ...input })),
       importData: (data) => set({ ...initialData, ...data }),

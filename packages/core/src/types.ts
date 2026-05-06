@@ -5,8 +5,10 @@ export type SetType = "warmup" | "working" | "drop" | "failure" | "amrap";
 export type PRType =
   | "max_weight"
   | "estimated_1rm"
-  | "exercise_session_volume"
+  | "session_volume"
   | "reps_at_weight"
+  | "best_set"
+  | "exercise_session_volume"
   | "workout_session_volume";
 
 export type PoseType = "front" | "side" | "back" | "other";

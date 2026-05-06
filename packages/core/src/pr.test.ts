@@ -18,9 +18,9 @@ describe("PR detection", () => {
 
     expect(records.map((record) => record.type)).toEqual([
       "estimated_1rm",
-      "exercise_session_volume",
+      "session_volume",
       "reps_at_weight",
-      "workout_session_volume"
+      "best_set"
     ]);
   });
 });
