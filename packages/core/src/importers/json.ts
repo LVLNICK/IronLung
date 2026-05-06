@@ -131,8 +131,8 @@ function parseNativeBoostcampHistory(input: unknown, options: BoostcampJsonImpor
             skippedRows.push({ rowNumber: setIndex + 1, reason: "Boostcamp set marked skipped.", raw: set });
             return;
           }
-          const reps = asNumber(set.amount ?? set.reps ?? set.repetitions ?? set.target);
-          const rawWeight = asNumber(set.value ?? set.weight ?? set.load);
+          const reps = firstNumber(set.archived_reps, set.amount, set.reps, set.repetitions, set.target);
+          const rawWeight = firstNumber(set.archived_weight, set.value, set.weight, set.load);
           const weight = rawWeight ?? lastWeight ?? 0;
           if (rawWeight !== null) lastWeight = rawWeight;
           if (reps === null) {
@@ -162,8 +162,16 @@ function parseNativeBoostcampHistory(input: unknown, options: BoostcampJsonImpor
     });
   }
 
-  warnings.push("Parsed native Boostcamp training-history export. Blank set weights were filled from the previous non-blank weight for the same exercise; remaining blanks were imported as bodyweight/0 load.");
+  warnings.push("Parsed native Boostcamp training-history export. Completed set archive fields are preferred when Boostcamp leaves visible value fields blank. Remaining blank set weights are filled from the previous non-blank weight for the same exercise; unresolved blanks import as 0 load.");
   return { source: "boostcamp", format: "json", workouts, unknownFields: [...unknown], skippedRows, warnings };
+}
+
+function firstNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const parsed = asNumber(value);
+    if (parsed !== null) return parsed;
+  }
+  return null;
 }
 
 function normalizeRpe(value: number | null): number | null {

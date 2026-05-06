@@ -69,7 +69,7 @@ describe("Boostcamp importers", () => {
                 name: "Seated Military Press (Barbell)",
                 sets: [
                   { value: "95", amount: "12", weight_unit: "lbs", intensity: 7, skipped: false },
-                  { value: "", amount: "10", weight_unit: "lbs", intensity: 7, skipped: false },
+                  { value: "", amount: "10", archived_weight: 100, archived_reps: 9, weight_unit: "lbs", intensity: 7, skipped: false },
                   { value: "105", amount: "8", weight_unit: "lbs", skipped: true }
                 ]
               }
@@ -82,8 +82,40 @@ describe("Boostcamp importers", () => {
 
     expect(result.workouts).toHaveLength(1);
     expect(result.workouts[0].exercises[0].sets).toHaveLength(2);
-    expect(result.workouts[0].exercises[0].sets[1].weight).toBe(95);
+    expect(result.workouts[0].exercises[0].sets[1].weight).toBe(100);
+    expect(result.workouts[0].exercises[0].sets[1].reps).toBe(9);
     expect(result.skippedRows[0].reason).toContain("skipped");
+  });
+
+  it("prefers native Boostcamp archived weights when visible set values are blank", () => {
+    const payload = JSON.stringify({
+      data: {
+        "2026-05-06": [
+          {
+            finished_at: "2026-05-06 10:46:53",
+            title: "Week 1 Day 4",
+            records: [
+              {
+                name: "Bench Press (Barbell)",
+                sets: [
+                  { value: "", amount: "12", archived_weight: 135, archived_reps: 12, weight_unit: "lbs", skipped: false },
+                  { value: "", amount: "10", archived_weight: 185, archived_reps: 10, weight_unit: "lbs", skipped: false },
+                  { value: "", amount: "8", archived_weight: 205, archived_reps: 8, weight_unit: "lbs", skipped: false },
+                  { value: "", amount: "5", archived_weight: 225, archived_reps: 3, weight_unit: "lbs", skipped: false },
+                  { value: "135", amount: "12", archived_weight: 135, archived_reps: 12, weight_unit: "lbs", skipped: false }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    });
+
+    const result = new BoostcampJsonImporter().parse(payload, { unit: "lbs" });
+    const sets = result.workouts[0].exercises[0].sets;
+
+    expect(sets.map((set) => set.weight)).toEqual([135, 185, 205, 225, 135]);
+    expect(sets.map((set) => set.reps)).toEqual([12, 10, 8, 3, 12]);
   });
 
   it("detects duplicate hashes in preview", () => {

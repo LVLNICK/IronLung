@@ -25,6 +25,8 @@ The importer accepts flexible CSV and JSON files. Boostcamp may not have a stabl
 
 Unknown fields are preserved in import metadata for review.
 
+For native Boostcamp training-history JSON, IronLung prefers completed archive fields such as `archived_weight` and `archived_reps` when Boostcamp leaves visible `value` fields blank. This avoids importing completed loaded sets as `0 lbs`.
+
 ## Using `boostcamp-mcp`
 
 The community `boostcamp-mcp` project uses a private Boostcamp API wrapper and has a login script that asks for Boostcamp email/password, then stores a local token. IronLung does not run that login flow and does not store those credentials.
