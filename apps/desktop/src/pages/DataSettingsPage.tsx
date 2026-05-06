@@ -19,6 +19,7 @@ import { EmptyState } from "../components/empty-states/EmptyState";
 import { AnalyticsTable, StatRows } from "../components/tables/AnalyticsTable";
 import { ConfirmModal } from "../components/modals/ConfirmModal";
 import { shortDate } from "../lib/format";
+import { refreshBoostcampFromLocalHelper } from "../lib/boostcampSync";
 import { createExport, validateImportPayload } from "../lib/importExport";
 import { type IronLungStateData, useIronLungStore } from "../lib/store";
 
@@ -224,27 +225,53 @@ function TrainingBlocksPanel() {
 function BoostcampImportPanel() {
   const state = useIronLungStore();
   const [unit, setUnit] = useState<ImportUnitPreference>("auto");
+  const [helperPath, setHelperPath] = useState("D:\\boostcamp-mcp");
+  const [exportDir, setExportDir] = useState("D:\\IronLung");
+  const [timezoneOffset, setTimezoneOffset] = useState("-240");
   const [normalized, setNormalized] = useState<NormalizedWorkoutImport | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mappings, setMappings] = useState<ExerciseMapping[]>([]);
   const [summary, setSummary] = useState<ImportCommitSummary | null>(null);
   const [status, setStatus] = useState("");
+  const [latestExportPath, setLatestExportPath] = useState("");
+
+  function prepareImport(text: string, format: "csv" | "json") {
+    const importer = format === "csv" ? new BoostcampCsvImporter() : new BoostcampJsonImporter();
+    const parsed = importer.parse(text, { unit });
+    const existingHashes = state.setLogs.map((setLog) => setLog.importHash).filter((hash): hash is string => Boolean(hash));
+    const nextPreview = buildImportPreview(parsed, state.exercises, existingHashes);
+    const importedNames = [...new Set(parsed.workouts.flatMap((workout) => workout.exercises.map((exercise) => exercise.exerciseName)))];
+    setNormalized(parsed);
+    setPreview(nextPreview);
+    setMappings(createDefaultExerciseMappings(importedNames, state.exercises));
+    setSummary(null);
+  }
+
+  async function refreshFromBoostcamp() {
+    try {
+      setStatus("Refreshing from local Boostcamp helper...");
+      const result = await refreshBoostcampFromLocalHelper({
+        repoPath: helperPath,
+        exportDir,
+        timezoneOffset: Number(timezoneOffset)
+      });
+      prepareImport(result.content, "json");
+      setLatestExportPath(result.path);
+      setStatus(`Boostcamp refresh complete. Saved ${result.path}. Review the dry-run preview before importing.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not refresh Boostcamp data.");
+      setNormalized(null);
+      setPreview(null);
+      setMappings([]);
+    }
+  }
 
   async function handleFile(file?: File) {
     if (!file) return;
     try {
       setStatus("Parsing locally...");
-      setSummary(null);
-      const text = await file.text();
-      const isCsv = file.name.toLowerCase().endsWith(".csv");
-      const importer = isCsv ? new BoostcampCsvImporter() : new BoostcampJsonImporter();
-      const parsed = importer.parse(text, { unit });
-      const existingHashes = state.setLogs.map((setLog) => setLog.importHash).filter((hash): hash is string => Boolean(hash));
-      const nextPreview = buildImportPreview(parsed, state.exercises, existingHashes);
-      const importedNames = [...new Set(parsed.workouts.flatMap((workout) => workout.exercises.map((exercise) => exercise.exerciseName)))];
-      setNormalized(parsed);
-      setPreview(nextPreview);
-      setMappings(createDefaultExerciseMappings(importedNames, state.exercises));
+      setLatestExportPath("");
+      prepareImport(await file.text(), file.name.toLowerCase().endsWith(".csv") ? "csv" : "json");
       setStatus("Dry run complete. Review mappings before importing.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not parse Boostcamp file.");
@@ -280,8 +307,20 @@ function BoostcampImportPanel() {
   return (
     <Card>
       <SectionHeader title="Boostcamp Import" icon={FolderUp} action={<div className="flex gap-2"><Select value={unit} onChange={(value) => setUnit(value as ImportUnitPreference)}><option value="auto">Auto unit</option><option value="lbs">lbs</option><option value="kg">kg</option></Select><label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-medium text-ink transition hover:bg-accent"><FolderUp className="h-4 w-4" />Upload CSV/JSON<input className="hidden" type="file" accept=".csv,.json,.txt,application/json,text/csv,text/plain" onChange={(event) => handleFile(event.target.files?.[0])} /></label></div>} />
-      <p className="max-w-4xl text-sm leading-6 text-white/50">Import user-provided Boostcamp CSV or JSON files only. IronLung does not scrape Boostcamp, does not ask for Boostcamp credentials, and does not upload imported data.</p>
+      <p className="max-w-4xl text-sm leading-6 text-white/50">Import user-provided Boostcamp files, or refresh through your local authenticated `boostcamp-mcp` helper. IronLung does not store your Boostcamp password, does not upload imported data, and still runs a dry-run preview before writing anything.</p>
+      <div className="mt-5 grid grid-cols-[1.15fr_1.15fr_150px_auto] gap-3 rounded-xl border border-line bg-black/15 p-3">
+        <Input value={helperPath} onChange={setHelperPath} placeholder="Boostcamp helper folder" />
+        <Input value={exportDir} onChange={setExportDir} placeholder="Export folder" />
+        <Select value={timezoneOffset} onChange={setTimezoneOffset}>
+          <option value="-240">Eastern daylight</option>
+          <option value="-300">Eastern standard</option>
+          <option value="0">UTC</option>
+        </Select>
+        <Button icon={FolderDown} onClick={refreshFromBoostcamp}>Refresh Boostcamp</Button>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-white/38">Personal local mode uses the existing token in the helper folder's `.env`. If it fails, run `uv run login` in that folder and try again.</p>
       {status && <div className="mt-4 rounded-xl border border-line bg-black/20 p-3 text-sm text-white/55">{status}</div>}
+      {latestExportPath && <div className="mt-2 text-xs text-white/35">Latest export: {latestExportPath}</div>}
 
       {preview ? (
         <>

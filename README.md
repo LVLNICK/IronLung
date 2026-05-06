@@ -27,7 +27,7 @@ IronLung now uses six desktop-first destinations:
 
 ## Boostcamp Import
 
-IronLung can import user-provided Boostcamp-style CSV or JSON files from `Data & Settings -> Boostcamp Import`. The importer runs locally, starts with a dry-run preview, supports exercise mapping, and skips duplicate sets using stable import hashes. It does not scrape Boostcamp or ask for Boostcamp credentials. See `docs/importing-boostcamp.md`.
+IronLung can import user-provided Boostcamp-style CSV or JSON files from `Data & Settings -> Boostcamp Import`. In the Tauri desktop app, it can also refresh through a local authenticated `D:\boostcamp-mcp` helper and feed that JSON into the same dry-run importer. The importer runs locally, supports exercise mapping, and skips duplicate sets using stable import hashes. It does not store your Boostcamp password or upload imported data. See `docs/importing-boostcamp.md`.
 
 ## Setup
 
