@@ -1,0 +1,19 @@
+# Mobile Roadmap
+
+IronLung is structured so a future mobile app can reuse the same product concepts and logic.
+
+- Keep `packages/core` shared for types, validation schemas, PR calculations, and fitness math.
+- Keep schema concepts aligned with `packages/db`.
+- Build mobile later with React Native or Expo.
+- Use a mobile SQLite adapter with the same entities.
+- Reuse the Body Analysis interface where possible.
+- Add optional sync only after local-first behavior is stable.
+- Keep cloud sync opt-in and preserve local export/delete controls.
+
+Recommended future sequence:
+
+1. Extract a storage-driver interface used by desktop and mobile.
+2. Build a React Native UI around the same domain actions.
+3. Add optional encrypted backup/sync.
+4. Add native camera capture and local photo storage.
+5. Replace or extend the local approximate ML inference behind the existing analysis interface.

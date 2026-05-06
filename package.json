@@ -1,0 +1,21 @@
+{
+  "name": "ironlung-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first desktop fitness tracking app for custom workouts, PRs, analytics, and private progress photos.",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @ironlung/desktop",
+    "desktop": "npm run tauri:dev -w @ironlung/desktop",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
