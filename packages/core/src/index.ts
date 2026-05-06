@@ -5,3 +5,4 @@ export * from "./exercise-targets";
 export * from "./pr";
 export * from "./body-analysis";
 export * from "./importers";
+export * from "./analytics";
