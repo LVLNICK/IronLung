@@ -851,24 +851,28 @@ function MuscleAnalytics() {
 function BodyHeatMap({ muscles }: { muscles: ReturnType<typeof useAnalyticsData>["muscleHeatStats"] }) {
   const [hovered, setHovered] = useState("Pectoralis major");
   const muscleByName = new Map(muscles.map((row) => [row.muscle, row]));
-  const selected = muscleByName.get(hovered) ?? muscles[0];
+  const selected = aggregateMuscleStats(muscles, heatAliases[hovered] ?? [hovered]) ?? muscles[0];
 
   function heatColor(muscle: string) {
-    const heat = muscleByName.get(muscle)?.heat ?? 0;
+    const stats = aggregateMuscleStats(muscles, heatAliases[muscle] ?? [muscle]);
+    const heat = stats?.heat ?? 0;
     if (heat <= 0) return "rgba(255,255,255,0.06)";
-    return `rgba(255, ${Math.round(85 - heat * 55)}, ${Math.round(70 - heat * 45)}, ${0.25 + heat * 0.72})`;
+    return `rgba(255, ${Math.round(96 - heat * 70)}, ${Math.round(76 - heat * 55)}, ${0.24 + heat * 0.74})`;
   }
 
-  function region(muscle: string, d: string) {
+  function region(muscle: string, d: string, title?: string) {
     return (
       <path
+        key={`${muscle}-${d.slice(0, 12)}`}
         d={d}
         fill={heatColor(muscle)}
         stroke={hovered === muscle ? "#ffffff" : "rgba(255,255,255,0.22)"}
         strokeWidth={hovered === muscle ? 2 : 1}
-        className="cursor-pointer transition"
+        className="cursor-pointer transition duration-150 hover:brightness-125"
         onMouseEnter={() => setHovered(muscle)}
-      />
+      >
+        <title>{title ?? muscle}</title>
+      </path>
     );
   }
 
@@ -877,32 +881,78 @@ function BodyHeatMap({ muscles }: { muscles: ReturnType<typeof useAnalyticsData>
       <SectionHeader title="Body heat map" icon={Flame} />
       <div className="grid grid-cols-[1fr_220px] gap-4">
         <div className="rounded-xl border border-line bg-black/18 p-3">
-          <svg viewBox="0 0 360 520" className="h-[520px] w-full" role="img" aria-label="Muscle heat map">
-            <rect x="0" y="0" width="360" height="520" rx="22" fill="rgba(255,255,255,0.02)" />
-            <circle cx="180" cy="52" r="28" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)" />
-            {region("Traps", "M145 88 C158 70 202 70 215 88 L238 122 L215 135 C205 118 155 118 145 135 L122 122 Z")}
-            {region("Pectoralis major", "M126 126 C154 108 178 120 178 156 L178 206 C148 203 123 184 112 151 Z")}
-            {region("Pectoralis major", "M182 156 C182 120 206 108 234 126 L248 151 C237 184 212 203 182 206 Z")}
-            {region("Anterior deltoids", "M92 132 C103 108 123 101 143 120 L112 170 C94 166 84 153 92 132 Z")}
-            {region("Anterior deltoids", "M217 120 C237 101 257 108 268 132 C276 153 266 166 248 170 Z")}
-            {region("Biceps brachii", "M81 174 C100 166 113 175 116 205 L102 273 C84 263 75 240 77 212 Z")}
-            {region("Triceps brachii", "M244 205 C247 175 260 166 279 174 L283 212 C285 240 276 263 258 273 Z")}
-            {region("Forearms", "M96 274 L82 354 C77 381 96 392 110 364 L126 294 Z")}
-            {region("Forearms", "M264 274 L278 354 C283 381 264 392 250 364 L234 294 Z")}
-            {region("Core/abs", "M139 205 C165 215 195 215 221 205 L226 300 C198 318 162 318 134 300 Z")}
-            {region("Serratus anterior", "M112 174 L139 204 L134 282 C114 253 102 218 112 174 Z")}
-            {region("Serratus anterior", "M248 174 L221 204 L226 282 C246 253 258 218 248 174 Z")}
-            {region("Lats", "M105 154 C128 188 136 233 131 300 C108 281 87 223 93 170 Z")}
-            {region("Lats", "M255 154 C232 188 224 233 229 300 C252 281 273 223 267 170 Z")}
-            {region("Glutes", "M132 306 C154 292 176 302 178 337 L175 377 C142 374 122 349 132 306 Z")}
-            {region("Glutes", "M182 337 C184 302 206 292 228 306 C238 349 218 374 185 377 Z")}
-            {region("Quads", "M126 382 C148 374 171 384 172 418 L164 494 C137 487 120 456 121 420 Z")}
-            {region("Quads", "M188 418 C189 384 212 374 234 382 C240 420 223 487 196 494 Z")}
-            {region("Hamstrings", "M100 383 C116 373 131 383 126 421 L116 493 C92 478 84 429 100 383 Z")}
-            {region("Hamstrings", "M260 383 C244 373 229 383 234 421 L244 493 C268 478 276 429 260 383 Z")}
-            {region("Gastrocnemius", "M119 496 C133 487 153 494 154 516 L112 516 Z")}
-            {region("Soleus", "M206 496 C207 494 227 487 241 496 L248 516 L206 516 Z")}
-            <text x="18" y="34" fill="rgba(255,255,255,0.42)" fontSize="12">Hover muscles</text>
+          <svg viewBox="0 0 760 560" className="h-[560px] w-full" role="img" aria-label="Interactive front and back muscle heat map">
+            <rect x="0" y="0" width="760" height="560" rx="22" fill="rgba(255,255,255,0.018)" />
+            <text x="172" y="26" textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="13" fontWeight="600">Front</text>
+            <text x="588" y="26" textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="13" fontWeight="600">Back</text>
+            <text x="18" y="28" fill="rgba(255,255,255,0.38)" fontSize="12">Hover a muscle</text>
+
+            <g opacity="0.88" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="172" cy="58" r="25" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.22)" />
+              <path d="M150 88 C160 98 184 98 194 88" fill="none" stroke="rgba(255,255,255,0.22)" />
+              {region("Traps", "M139 94 C151 78 193 78 205 94 L224 122 L205 134 C195 119 149 119 139 134 L120 122 Z", "Upper traps")}
+              {region("Pectoralis major", "M109 128 C130 103 166 113 168 151 L168 198 C136 194 112 175 99 145 Z", "Left pectoralis major")}
+              {region("Pectoralis major", "M176 151 C178 113 214 103 235 128 L245 145 C232 175 208 194 176 198 Z", "Right pectoralis major")}
+              {region("Anterior deltoids", "M78 135 C90 105 114 103 132 122 L100 174 C82 170 70 156 78 135 Z")}
+              {region("Anterior deltoids", "M212 122 C230 103 254 105 266 135 C274 156 262 170 244 174 Z")}
+              {region("Biceps brachii", "M72 174 C90 166 106 176 110 207 L95 285 C78 274 68 249 70 214 Z")}
+              {region("Biceps brachii", "M272 174 C254 166 238 176 234 207 L249 285 C266 274 276 249 274 214 Z")}
+              {region("Triceps brachii", "M107 178 C119 191 121 219 112 253 L98 283 C101 241 101 205 107 178 Z")}
+              {region("Triceps brachii", "M237 178 C225 191 223 219 232 253 L246 283 C243 241 243 205 237 178 Z")}
+              {region("Forearms", "M93 285 L76 371 C72 397 92 410 107 381 L123 305 Z")}
+              {region("Forearms", "M251 285 L268 371 C272 397 252 410 237 381 L221 305 Z")}
+              {region("Serratus anterior", "M97 162 L128 202 L124 286 C105 258 91 213 97 162 Z")}
+              {region("Serratus anterior", "M247 162 L216 202 L220 286 C239 258 253 213 247 162 Z")}
+              {region("Core/abs", "M128 199 C152 210 192 210 216 199 L222 306 C196 324 148 324 122 306 Z")}
+              {region("Core/abs", "M143 214 L166 214 L164 247 L138 247 Z", "Upper abs")}
+              {region("Core/abs", "M178 214 L201 214 L206 247 L180 247 Z", "Upper abs")}
+              {region("Core/abs", "M139 255 L164 255 L160 293 L132 293 Z", "Lower abs")}
+              {region("Core/abs", "M180 255 L205 255 L212 293 L184 293 Z", "Lower abs")}
+              {region("Lats", "M89 165 C111 194 120 237 118 304 C94 282 76 223 80 174 Z")}
+              {region("Lats", "M255 165 C233 194 224 237 226 304 C250 282 268 223 264 174 Z")}
+              {region("Glutes", "M122 308 C146 295 168 307 169 343 L164 380 C134 374 114 350 122 308 Z")}
+              {region("Glutes", "M176 343 C176 307 198 295 222 308 C230 350 210 374 180 380 Z")}
+              {region("Quads", "M111 384 C135 372 165 384 166 424 L157 514 C126 507 106 467 106 424 Z", "Left quadriceps")}
+              {region("Quads", "M178 424 C179 384 209 372 233 384 C238 424 218 507 187 514 Z", "Right quadriceps")}
+              {region("Adductors", "M160 383 C171 400 174 438 169 492 C153 462 142 420 148 392 Z")}
+              {region("Adductors", "M184 383 C173 400 170 438 175 492 C191 462 202 420 196 392 Z")}
+              {region("Hamstrings", "M92 385 C108 377 122 386 116 426 L104 505 C80 487 75 430 92 385 Z")}
+              {region("Hamstrings", "M252 385 C236 377 222 386 228 426 L240 505 C264 487 269 430 252 385 Z")}
+              {region("Gastrocnemius", "M107 506 C122 492 150 502 150 536 L99 536 Z")}
+              {region("Gastrocnemius", "M194 506 C194 502 222 492 237 506 L245 536 L194 536 Z")}
+              {region("Soleus", "M151 489 C162 506 163 524 158 539 L140 539 C144 520 144 505 151 489 Z")}
+              {region("Soleus", "M193 489 C182 506 181 524 186 539 L204 539 C200 520 200 505 193 489 Z")}
+
+              <circle cx="588" cy="58" r="25" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.22)" />
+              <path d="M563 88 C574 100 602 100 613 88" fill="none" stroke="rgba(255,255,255,0.22)" />
+              {region("Traps", "M542 93 C558 78 618 78 634 93 L657 126 L632 140 C617 120 563 120 548 140 L519 126 Z", "Traps posterior")}
+              {region("Rear delts", "M494 132 C509 106 536 106 551 128 L518 177 C499 172 486 154 494 132 Z")}
+              {region("Rear delts", "M625 128 C640 106 667 106 682 132 C690 154 677 172 658 177 Z")}
+              {region("Rhomboids", "M548 132 C570 121 606 121 628 132 L614 188 C593 178 583 178 562 188 Z")}
+              {region("Traps", "M556 134 L620 134 L603 246 L573 246 Z", "Middle/lower traps")}
+              {region("Lats", "M520 153 C553 189 562 236 556 309 C526 282 501 224 507 170 Z")}
+              {region("Lats", "M656 153 C623 189 614 236 620 309 C650 282 675 224 669 170 Z")}
+              {region("Rotator cuff", "M523 143 C540 132 556 139 561 159 C546 171 531 172 518 160 Z")}
+              {region("Rotator cuff", "M615 159 C620 139 636 132 653 143 L658 160 C645 172 630 171 615 159 Z")}
+              {region("Triceps brachii", "M489 174 C508 164 525 176 529 208 L514 286 C496 274 486 249 488 214 Z")}
+              {region("Triceps brachii", "M687 174 C668 164 651 176 647 208 L662 286 C680 274 690 249 688 214 Z")}
+              {region("Biceps brachii", "M525 176 C537 190 539 222 530 257 L516 284 C519 242 519 205 525 176 Z")}
+              {region("Biceps brachii", "M651 176 C639 190 637 222 646 257 L660 284 C657 242 657 205 651 176 Z")}
+              {region("Forearms", "M512 286 L494 374 C490 400 510 412 526 383 L541 306 Z")}
+              {region("Forearms", "M664 286 L682 374 C686 400 666 412 650 383 L635 306 Z")}
+              {region("Erector spinae", "M571 196 C581 216 583 282 576 337 L556 314 C562 269 562 224 571 196 Z")}
+              {region("Erector spinae", "M605 196 C595 216 593 282 600 337 L620 314 C614 269 614 224 605 196 Z")}
+              {region("Glutes", "M536 311 C561 294 584 307 585 343 L580 383 C548 378 526 352 536 311 Z")}
+              {region("Glutes", "M591 343 C592 307 615 294 640 311 C650 352 628 378 596 383 Z")}
+              {region("Hamstrings", "M517 386 C540 374 568 384 565 424 L553 512 C523 500 505 454 508 421 Z")}
+              {region("Hamstrings", "M611 424 C608 384 636 374 659 386 C668 421 653 500 623 512 Z")}
+              {region("Adductors", "M566 386 C581 411 584 447 578 501 C559 464 548 421 554 392 Z")}
+              {region("Adductors", "M610 386 C595 411 592 447 598 501 C617 464 628 421 622 392 Z")}
+              {region("Gastrocnemius", "M523 506 C540 489 566 499 568 537 L513 537 Z")}
+              {region("Gastrocnemius", "M608 537 C610 499 636 489 653 506 L663 537 Z")}
+              {region("Soleus", "M570 490 C581 508 582 526 576 540 L558 540 C562 520 563 505 570 490 Z")}
+              {region("Soleus", "M606 490 C595 508 594 526 600 540 L618 540 C614 520 613 505 606 490 Z")}
+            </g>
           </svg>
         </div>
         <div className="rounded-xl border border-line bg-black/18 p-4">
@@ -924,6 +974,46 @@ function BodyHeatMap({ muscles }: { muscles: ReturnType<typeof useAnalyticsData>
     </Card>
   );
 }
+
+function aggregateMuscleStats(muscles: ReturnType<typeof useAnalyticsData>["muscleHeatStats"], aliases: string[]) {
+  const rows = aliases
+    .map((alias) => muscles.find((row) => row.muscle === alias))
+    .filter((row): row is ReturnType<typeof useAnalyticsData>["muscleHeatStats"][number] => Boolean(row));
+  if (!rows.length) return null;
+  return {
+    muscle: aliases[0],
+    primaryVolume: rows.reduce((total, row) => total + row.primaryVolume, 0),
+    secondaryVolume: rows.reduce((total, row) => total + row.secondaryVolume, 0),
+    totalExposure: rows.reduce((total, row) => total + row.totalExposure, 0),
+    sets: rows.reduce((total, row) => total + row.sets, 0),
+    exercises: rows.reduce((total, row) => total + row.exercises, 0),
+    prs: rows.reduce((total, row) => total + row.prs, 0),
+    lastTrained: rows.map((row) => row.lastTrained).filter(Boolean).sort().at(-1) ?? null,
+    heat: Math.max(...rows.map((row) => row.heat))
+  };
+}
+
+const heatAliases: Record<string, string[]> = {
+  "Pectoralis major": ["Pectoralis major", "Upper pectoralis major"],
+  "Anterior deltoids": ["Anterior deltoids", "Deltoids"],
+  "Rear delts": ["Rear delts", "Deltoids"],
+  "Traps": ["Traps", "Upper traps"],
+  "Lats": ["Lats", "Latissimus dorsi"],
+  "Core/abs": ["Core/abs"],
+  "Glutes": ["Glutes"],
+  "Quads": ["Quads"],
+  "Hamstrings": ["Hamstrings"],
+  "Gastrocnemius": ["Gastrocnemius"],
+  "Soleus": ["Soleus"],
+  "Biceps brachii": ["Biceps brachii", "Brachialis", "Brachioradialis"],
+  "Triceps brachii": ["Triceps brachii"],
+  "Forearms": ["Forearms"],
+  "Serratus anterior": ["Serratus anterior"],
+  "Rotator cuff": ["Rotator cuff"],
+  "Rhomboids": ["Rhomboids"],
+  "Erector spinae": ["Erector spinae"],
+  "Adductors": ["Adductors"]
+};
 
 function PhotoAnalytics() {
   const analytics = useAnalyticsData();
