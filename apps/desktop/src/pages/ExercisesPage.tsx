@@ -37,7 +37,8 @@ export function ExercisesPage() {
     if (sort === "recently trained") rows.sort((a, b) => String(b.lastTrained ?? "").localeCompare(String(a.lastTrained ?? "")));
     return rows;
   }, [core.exerciseMetrics, query, muscle, equipment, pattern, sort]);
-  const selected = core.exerciseMetrics.find((exercise) => exercise.exerciseId === selectedId) ?? filtered[0] ?? core.exerciseMetrics[0];
+  const selectedInFilteredList = filtered.find((exercise) => exercise.exerciseId === selectedId);
+  const selected = selectedInFilteredList ?? filtered[0] ?? null;
   const detail = desktop.exerciseDetails.find((exercise) => exercise.exerciseId === selected?.exerciseId);
   const muscles = [...new Set(core.exerciseMetrics.map((exercise) => exercise.primaryMuscle))].sort();
   const equipmentOptions = [...new Set(core.exerciseMetrics.map((exercise) => exercise.equipment))].sort();
@@ -64,6 +65,13 @@ export function ExercisesPage() {
                 <div className="text-sm text-white/45">{exercise.primaryMuscle} - {exercise.sessions} sessions - {compactNumber(exercise.volume)} volume</div>
               </button>
             ))}
+            {!filtered.length && (
+              <EmptyState
+                icon={Search}
+                title="No exercises match"
+                body="Try a different search term or clear the filters."
+              />
+            )}
           </div>
         </Card>
 
@@ -115,7 +123,7 @@ function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useT
           <div>
             <div className="text-2xl font-semibold">{selected.name}</div>
             <div className="mt-1 text-sm text-white/45">{selected.primaryMuscle} - {selected.equipment} - {selected.movementPattern}</div>
-            <div className="mt-3 text-sm leading-6 text-white/55">{exercise?.secondaryMuscles.slice(0, 12).join(", ")}</div>
+            <div className="mt-3 text-sm leading-6 text-white/55">{safeSecondaryMuscles(exercise?.secondaryMuscles).slice(0, 12).join(", ") || "No secondary muscles listed."}</div>
           </div>
           <div className="rounded-full border border-line bg-white/[0.04] px-3 py-1 text-sm">{selected.plateau ? "Possible plateau" : selected.strengthTrend > 0 ? "Improving" : "Stable"}</div>
         </div>
@@ -190,6 +198,10 @@ function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useT
       </Card>
     </div>
   );
+}
+
+function safeSecondaryMuscles(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
 }
 
 function CreateExerciseDrawer({ onClose }: { onClose: () => void }) {

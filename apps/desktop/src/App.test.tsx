@@ -98,4 +98,67 @@ describe("IronLung desktop command center", () => {
     expect(screen.getAllByText(/Jan 1/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Upper").length).toBeGreaterThan(0);
   });
+
+  it("keeps exercise search stable for imported exercises with missing metadata", async () => {
+    useIronLungStore.getState().importData({
+      unitPreference: "lbs",
+      theme: "dark",
+      trainingGoal: "general_fitness",
+      currentTrainingBlockId: null,
+      trainingBlocks: [],
+      exercises: [{
+        id: "ex-legacy",
+        name: "Legacy Row",
+        primaryMuscle: "Back",
+        equipment: "Cable",
+        movementPattern: "Horizontal Pull",
+        isUnilateral: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z"
+      } as any],
+      templates: [],
+      templateExercises: [],
+      sessions: [{
+        id: "session-legacy",
+        workoutTemplateId: null,
+        name: "Back Day",
+        startedAt: "2026-01-02T12:00:00.000Z",
+        finishedAt: "2026-01-02T13:00:00.000Z",
+        createdAt: "2026-01-02T12:00:00.000Z",
+        updatedAt: "2026-01-02T13:00:00.000Z"
+      }],
+      sessionExercises: [{
+        id: "session-ex-legacy",
+        workoutSessionId: "session-legacy",
+        exerciseId: "ex-legacy",
+        orderIndex: 0
+      }],
+      setLogs: [{
+        id: "set-legacy",
+        workoutSessionExerciseId: "session-ex-legacy",
+        setNumber: 1,
+        weight: 100,
+        reps: 10,
+        rpe: null,
+        setType: "working",
+        isCompleted: true,
+        createdAt: "2026-01-02T12:05:00.000Z"
+      }],
+      personalRecords: [],
+      photos: [],
+      analyses: []
+    });
+
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: "Exercises" }));
+    await userEvent.type(screen.getByPlaceholderText("Search exercises"), "legacy");
+
+    expect(screen.getAllByText("Legacy Row").length).toBeGreaterThan(0);
+    expect(screen.getByText("No secondary muscles listed.")).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByPlaceholderText("Search exercises"));
+    await userEvent.type(screen.getByPlaceholderText("Search exercises"), "not real");
+
+    expect(screen.getByText("No exercises match")).toBeInTheDocument();
+  });
 });
