@@ -96,6 +96,6 @@ describe("IronLung desktop command center", () => {
     await userEvent.click(screen.getByRole("button", { name: "Training Journal" }));
 
     expect(screen.getAllByText(/Jan 1/).length).toBeGreaterThan(0);
-    expect(screen.getByText("Upper")).toBeInTheDocument();
+    expect(screen.getAllByText("Upper").length).toBeGreaterThan(0);
   });
 });

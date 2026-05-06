@@ -6,6 +6,7 @@ import {
   workoutSessionVolume
 } from "../calculations";
 import { distributedMuscleVolume } from "../muscle-contributions";
+import { isMeaningfulPr } from "../pr";
 import type {
   Exercise,
   PersonalRecord,
@@ -216,7 +217,7 @@ export function dailyVolume(dataset: AnalyticsDataset) {
     row.volume = round(row.volume + workoutSessionVolume(sets));
     row.sets += sets.flat().length;
     row.sessions += 1;
-    row.prs += dataset.personalRecords.filter((record) => record.workoutSessionId === session.id).length;
+    row.prs += dataset.personalRecords.filter((record) => record.workoutSessionId === session.id && isMeaningfulPr(record)).length;
     days.set(date, row);
   }
   return [...days.values()].sort((a, b) => a.date.localeCompare(b.date));
@@ -430,7 +431,7 @@ export function totals(dataset: AnalyticsDataset) {
     sets: dataset.setLogs.length,
     reps: sum(dataset.setLogs.map((set) => set.reps)),
     volume: sum(dataset.setLogs.map((set) => setVolume(set.weight, set.reps))),
-    prs: dataset.personalRecords.length,
+    prs: dataset.personalRecords.filter(isMeaningfulPr).length,
     avgRpe: rpes.length ? round(sum(rpes) / rpes.length) : null
   };
 }

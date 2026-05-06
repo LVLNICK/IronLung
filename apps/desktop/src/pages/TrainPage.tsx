@@ -25,7 +25,7 @@ export function TrainPage() {
       </div>
       {tab === "Start Workout" && <StartWorkout onActive={() => setTab("Active Workout")} />}
       {tab === "Active Workout" && (openSession ? <ActiveWorkout session={openSession} /> : <Card><EmptyState icon={Dumbbell} title="No active workout" body="Start an empty workout or a user-created template." action={<Button onClick={() => setTab("Start Workout")}>Start workout</Button>} /></Card>)}
-      {tab === "Training Journal" && <TrainingJournal />}
+      {tab === "Training Journal" && <TrainingJournal onEdit={() => setTab("Active Workout")} />}
       {tab === "Templates" && <Templates />}
     </ScreenShell>
   );
@@ -33,6 +33,7 @@ export function TrainPage() {
 
 function StartWorkout({ onActive }: { onActive: () => void }) {
   const state = useIronLungStore();
+  const openSession = selectOpenSession(state);
   const recentExercises = [...state.sessionExercises].reverse().map((row) => state.exercises.find((exercise) => exercise.id === row.exerciseId)).filter(Boolean).slice(0, 8);
 
   return (
@@ -40,9 +41,14 @@ function StartWorkout({ onActive }: { onActive: () => void }) {
       <Card>
         <SectionHeader title="Start Workout" icon={Flame} />
         <div className="grid grid-cols-2 gap-3">
-          <Button icon={Plus} onClick={() => { state.startWorkout(); onActive(); }}>Start empty workout</Button>
-          <Button variant="ghost" icon={Dumbbell} onClick={() => { state.startWorkout(state.templates[0]?.id); onActive(); }} disabled={!state.templates.length}>Start recent template</Button>
+          {openSession ? (
+            <Button icon={Flame} onClick={onActive}>Resume active workout</Button>
+          ) : (
+            <Button icon={Plus} onClick={() => { state.startWorkout(); onActive(); }}>Start empty workout</Button>
+          )}
+          <Button variant="ghost" icon={Dumbbell} onClick={() => { state.startWorkout(state.templates[0]?.id); onActive(); }} disabled={!state.templates.length || Boolean(openSession)}>Start recent template</Button>
         </div>
+        {openSession && <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/8 p-3 text-sm text-white/60">Finish or discard the active workout before starting another one.</div>}
         <div className="mt-5 grid gap-2">
           {state.templates.slice(-6).reverse().map((template) => (
             <button key={template.id} onClick={() => { state.startWorkout(template.id); onActive(); }} className="rounded-xl border border-line bg-white/[0.035] p-4 text-left hover:border-accent/50">
@@ -136,16 +142,21 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
   const [records, setRecords] = useState<PersonalRecord[]>([]);
   const repsRef = useRef<HTMLInputElement | null>(null);
   const weightRef = useRef<HTMLInputElement | null>(null);
+  const weightStep = state.unitPreference === "kg" ? 2.5 : 5;
+  const parsedWeight = Number(weight);
+  const parsedReps = Number(reps);
+  const parsedRpe = rpe ? Number(rpe) : null;
+  const canSubmit = Number.isFinite(parsedWeight) && parsedWeight >= 0 && Number.isFinite(parsedReps) && parsedReps > 0 && Number.isInteger(parsedReps) && (parsedRpe === null || (Number.isFinite(parsedRpe) && parsedRpe >= 0 && parsedRpe <= 10));
 
   function submit() {
-    if (!weight || !reps) return;
+    if (!canSubmit) return;
     const result = state.logSet({
       workoutSessionExerciseId: sessionExerciseId,
       exerciseId,
       workoutSessionId: session.id,
-      weight: Number(weight),
-      reps: Number(reps),
-      rpe: rpe ? Number(rpe) : null,
+      weight: parsedWeight,
+      reps: parsedReps,
+      rpe: parsedRpe,
       setType,
       notes
     });
@@ -193,14 +204,14 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
       </div>
       <div className="space-y-2">
         {sets.map((set) => (
-          <div key={set.id} className="grid grid-cols-[70px_1fr_1fr_1fr_1fr_1fr] rounded-lg bg-white/[0.035] p-2 text-sm">
-            <span>#{set.setNumber}</span><span>{set.weight}</span><span>{set.reps}</span><span>{set.rpe ?? "--"}</span><span>{set.setType}</span><span>e1RM {oneRmForSet(set)}</span>
+          <div key={set.id} className="grid grid-cols-[70px_1fr_1fr_1fr_1fr_1fr_auto] items-center rounded-lg bg-white/[0.035] p-2 text-sm">
+            <span>#{set.setNumber}</span><span>{set.weight} {state.unitPreference}</span><span>{set.reps} reps</span><span>{set.rpe ?? "--"}</span><span>{set.setType}</span><span>e1RM {oneRmForSet(set)}</span><IconButton label="Delete set" icon={Trash2} variant="danger" onClick={() => state.deleteSet(set.id)} />
           </div>
         ))}
       </div>
       <div className="mt-3 grid grid-cols-[80px_1fr_1fr_1fr_1.1fr_1fr_auto] items-center gap-2">
         <span className="text-sm text-white/45">Next</span>
-        <input ref={weightRef} className={fieldClass} inputMode="decimal" placeholder="225" value={weight} onChange={(event) => setWeight(event.target.value)} onKeyDown={(event) => event.key === "Enter" && repsRef.current?.focus()} />
+        <input ref={weightRef} className={fieldClass} inputMode="decimal" placeholder={`Weight ${state.unitPreference}`} value={weight} onChange={(event) => setWeight(event.target.value)} onKeyDown={(event) => event.key === "Enter" && repsRef.current?.focus()} />
         <input ref={repsRef} className={fieldClass} inputMode="numeric" placeholder="5" value={reps} onChange={(event) => setReps(event.target.value)} onKeyDown={(event) => event.key === "Enter" && submit()} />
         <input className={fieldClass} inputMode="decimal" placeholder="8" value={rpe} onChange={(event) => setRpe(event.target.value)} />
         <select className={fieldClass} value={setType} onChange={(event) => setSetType(event.target.value as SetType)}>
@@ -208,13 +219,14 @@ function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: W
         </select>
         <Input placeholder="Note" value={notes} onChange={setNotes} />
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={() => setWeight(String(Math.max(0, Number(weight || 0) - 5)))}>-5</Button>
-          <Button variant="ghost" onClick={() => setWeight(String(Number(weight || 0) + 5))}>+5</Button>
+          <Button variant="ghost" onClick={() => setWeight(String(Math.max(0, Number(weight || 0) - weightStep)))}>-{weightStep}</Button>
+          <Button variant="ghost" onClick={() => setWeight(String(Number(weight || 0) + weightStep))}>+{weightStep}</Button>
           <IconButton label="Same as last set" icon={Copy} onClick={useLast} />
           <Button variant="ghost" onClick={duplicateLast} disabled={!sets.length}>Duplicate</Button>
           <IconButton label="Log set" icon={CheckCircle2} onClick={submit} />
         </div>
       </div>
+      {!canSubmit && (weight || reps || rpe) && <div className="mt-2 text-xs text-amber-200/70">Enter a valid weight, whole-number reps, and optional RPE from 0-10.</div>}
       {!!records.length && <div className="mt-4 flex flex-wrap gap-2">{records.map((record) => <span key={record.id} className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-sm text-mint">PR - {prLabel(record.type)} {record.value}</span>)}</div>}
     </Card>
   );
@@ -248,10 +260,11 @@ function RestTimer({ seconds }: { seconds: number }) {
   );
 }
 
-function TrainingJournal() {
+function TrainingJournal({ onEdit }: { onEdit: () => void }) {
   const state = useIronLungStore();
   const [query, setQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [status, setStatus] = useState("");
   const sessions = [...state.sessions]
     .filter((session) => session.name.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
@@ -265,8 +278,28 @@ function TrainingJournal() {
         const rpes = sets.map((set) => set.rpe).filter((value): value is number => typeof value === "number");
         return [dateTime(session.startedAt), session.name, rows.length, sets.length, compactNumber(exerciseSessionVolume(sets)), rpes.length ? (rpes.reduce((a, b) => a + b, 0) / rpes.length).toFixed(1) : "--", state.personalRecords.filter((record) => record.workoutSessionId === session.id).length, "delete"];
       })} />
+      {status && <div className="mt-3 rounded-xl border border-line bg-black/20 p-3 text-sm text-white/55">{status}</div>}
       <div className="mt-3 grid gap-2">
-        {sessions.slice(0, 20).map((session) => <Button key={session.id} variant="danger" icon={Trash2} onClick={() => setDeleteId(session.id)}>Delete {session.name} - {shortDate(session.startedAt)}</Button>)}
+        {sessions.slice(0, 20).map((session) => (
+          <div key={session.id} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-white/[0.03] p-3">
+            <div>
+              <div className="font-medium">{session.name}</div>
+              <div className="text-sm text-white/42">{shortDate(session.startedAt)}</div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => {
+                try {
+                  state.reopenWorkout(session.id);
+                  setStatus("");
+                  onEdit();
+                } catch (error) {
+                  setStatus(error instanceof Error ? error.message : "Could not edit workout.");
+                }
+              }}>Edit</Button>
+              <Button variant="danger" icon={Trash2} onClick={() => setDeleteId(session.id)}>Delete</Button>
+            </div>
+          </div>
+        ))}
       </div>
       {deleteId && <ConfirmModal title="Delete workout?" body="This removes the workout, its sets, and related PR records from local storage." confirmLabel="Delete" onCancel={() => setDeleteId(null)} onConfirm={() => { state.deleteWorkout(deleteId); setDeleteId(null); }} />}
     </Card>

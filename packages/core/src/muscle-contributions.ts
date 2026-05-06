@@ -2,19 +2,19 @@ import type { Exercise, MuscleContribution } from "./types";
 
 const presets: Array<{ match: RegExp; contributions: MuscleContribution[] }> = [
   {
-    match: /bench|chest press/,
+    match: /incline.*bench|incline.*press/,
     contributions: [
-      { muscle: "Pectoralis major", percent: 0.55, role: "primary" },
-      { muscle: "Anterior deltoids", percent: 0.2, role: "secondary" },
+      { muscle: "Upper pectoralis major", percent: 0.5, role: "primary" },
+      { muscle: "Anterior deltoids", percent: 0.25, role: "secondary" },
       { muscle: "Triceps brachii", percent: 0.2, role: "secondary" },
       { muscle: "Serratus anterior", percent: 0.05, role: "stabilizer" }
     ]
   },
   {
-    match: /incline.*bench|incline.*press/,
+    match: /bench|chest press/,
     contributions: [
-      { muscle: "Upper pectoralis major", percent: 0.5, role: "primary" },
-      { muscle: "Anterior deltoids", percent: 0.25, role: "secondary" },
+      { muscle: "Pectoralis major", percent: 0.55, role: "primary" },
+      { muscle: "Anterior deltoids", percent: 0.2, role: "secondary" },
       { muscle: "Triceps brachii", percent: 0.2, role: "secondary" },
       { muscle: "Serratus anterior", percent: 0.05, role: "stabilizer" }
     ]
@@ -106,6 +106,22 @@ export function distributedMuscleVolume(exercise: Exercise, volume: number) {
     ...contribution,
     volume: round(volume * contribution.percent)
   }));
+}
+
+export function muscleContributionWarnings(exercise: Exercise): string[] {
+  const warnings: string[] = [];
+  const raw = exercise.muscleContributions ?? [];
+  const rawTotal = raw.reduce((sum, item) => sum + item.percent, 0);
+  if (raw.length && Math.abs(rawTotal - 1) > 0.02) {
+    warnings.push(`Custom muscle contributions total ${round(rawTotal * 100)}%, so IronLung normalizes them to 100%.`);
+  }
+  if (raw.some((item) => item.percent <= 0)) {
+    warnings.push("One or more custom muscle contributions are zero or negative and are ignored.");
+  }
+  if (!raw.length && !presets.some((item) => item.match.test(normalizeExerciseName(exercise.name)))) {
+    warnings.push("Using fallback muscle distribution because this exercise has no custom contribution model.");
+  }
+  return warnings;
 }
 
 function fallbackContributions(exercise: Exercise): MuscleContribution[] {

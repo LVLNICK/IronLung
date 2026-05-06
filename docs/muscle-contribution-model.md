@@ -31,6 +31,12 @@ If no preset or explicit exercise `muscleContributions` exists:
 
 This keeps old imported data compatible.
 
+## Validation Warnings
+
+Custom contribution totals are normalized to 100%. If a custom exercise totals far above or below 100%, IronLung warns the user in exercise detail instead of silently implying exact precision. Zero or negative contribution rows are ignored.
+
+Preset coverage currently includes common bench/chest press, incline press, rows, pulldowns/chinups, squats/leg press, deadlifts/RDLs, shoulder presses, lateral raises, curls, and triceps isolation patterns.
+
 ## Uses
 
 - muscle volume analytics

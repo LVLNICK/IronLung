@@ -67,7 +67,9 @@ interface IronLungStore extends IronLungStateData {
     setType: SetType;
     notes?: string;
   }): PersonalRecord[];
+  deleteSet(setId: string): void;
   finishWorkout(sessionId: string, notes?: string, bodyweight?: number | null): void;
+  reopenWorkout(sessionId: string): void;
   deleteWorkout(sessionId: string): void;
   addPhoto(input: Omit<ProgressPhoto, "id" | "createdAt">): ProgressPhoto;
   analyzePhoto(photoId: string, consentGiven: boolean): Promise<BodyAnalysis>;
@@ -181,6 +183,8 @@ export const useIronLungStore = create<IronLungStore>()(
         set((state) => ({ templateExercises: state.templateExercises.filter((item) => item.id !== id) }));
       },
       startWorkout: (templateId) => {
+        const openSession = selectOpenSession(get());
+        if (openSession) return openSession;
         const now = new Date().toISOString();
         const template = get().templates.find((item) => item.id === templateId);
         const session: WorkoutSession = {
@@ -255,11 +259,29 @@ export const useIronLungStore = create<IronLungStore>()(
           historicalSetsForExercise: historicalSets,
           historicalSessionVolumesForExercise: historicalVolumes
         });
+        const merged = mergePersonalRecords(state.personalRecords, records);
         set((current) => ({
           setLogs: [...current.setLogs, setLog],
-          personalRecords: [...current.personalRecords, ...records]
+          personalRecords: merged.records
         }));
-        return records;
+        return merged.accepted;
+      },
+      deleteSet: (setId) => {
+        const target = get().setLogs.find((setLog) => setLog.id === setId);
+        if (!target) return;
+        const nextSetLogs = get()
+          .setLogs
+          .filter((setLog) => setLog.id !== setId)
+          .map((setLog) => setLog.workoutSessionExerciseId === target.workoutSessionExerciseId
+            ? { ...setLog, setNumber: 0 }
+            : setLog);
+        let setNumber = 1;
+        const renumbered = nextSetLogs.map((setLog) => {
+          if (setLog.workoutSessionExerciseId !== target.workoutSessionExerciseId) return setLog;
+          return { ...setLog, setNumber: setNumber++ };
+        });
+        const nextState = { ...get(), setLogs: renumbered };
+        set({ setLogs: renumbered, personalRecords: recalculatePersonalRecords(nextState) });
       },
       finishWorkout: (sessionId, notes, bodyweight) => {
         const now = new Date().toISOString();
@@ -269,16 +291,33 @@ export const useIronLungStore = create<IronLungStore>()(
           )
         }));
       },
+      reopenWorkout: (sessionId) => {
+        const openSession = selectOpenSession(get());
+        if (openSession && openSession.id !== sessionId) {
+          throw new Error("Finish or discard the current active workout before editing another workout.");
+        }
+        set((state) => ({
+          sessions: state.sessions.map((session) =>
+            session.id === sessionId ? { ...session, finishedAt: null, updatedAt: new Date().toISOString() } : session
+          )
+        }));
+      },
       deleteWorkout: (sessionId) => {
         const sessionExerciseIds = get()
           .sessionExercises.filter((item) => item.workoutSessionId === sessionId)
           .map((item) => item.id);
-        set((state) => ({
-          sessions: state.sessions.filter((session) => session.id !== sessionId),
-          sessionExercises: state.sessionExercises.filter((item) => item.workoutSessionId !== sessionId),
-          setLogs: state.setLogs.filter((setLog) => !sessionExerciseIds.includes(setLog.workoutSessionExerciseId)),
-          personalRecords: state.personalRecords.filter((record) => record.workoutSessionId !== sessionId)
-        }));
+        const nextState = {
+          ...get(),
+          sessions: get().sessions.filter((session) => session.id !== sessionId),
+          sessionExercises: get().sessionExercises.filter((item) => item.workoutSessionId !== sessionId),
+          setLogs: get().setLogs.filter((setLog) => !sessionExerciseIds.includes(setLog.workoutSessionExerciseId))
+        };
+        set({
+          sessions: nextState.sessions,
+          sessionExercises: nextState.sessionExercises,
+          setLogs: nextState.setLogs,
+          personalRecords: recalculatePersonalRecords(nextState)
+        });
       },
       addPhoto: (input) => {
         const photo: ProgressPhoto = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
@@ -306,7 +345,7 @@ export const useIronLungStore = create<IronLungStore>()(
         const sessions = [...state.sessions];
         const sessionExercises = [...state.sessionExercises];
         const setLogs = [...state.setLogs];
-        const personalRecords = [...state.personalRecords];
+        const importedSessionIds = new Set<string>();
         const warnings = [...input.warnings];
         const errors: string[] = [];
         let workoutsImported = 0;
@@ -400,29 +439,10 @@ export const useIronLungStore = create<IronLungStore>()(
                 importedMetadataJson: importedSet.importedMetadataJson,
                 createdAt: workout.startedAt
               };
-              const exerciseSessionExerciseIds = sessionExercises
-                .filter((item) => item.exerciseId === exercise.id)
-                .map((item) => item.id);
-              const historicalSets = setLogs.filter((item) => exerciseSessionExerciseIds.includes(item.workoutSessionExerciseId));
-              const historicalVolumes = sessionExercises
-                .filter((item) => item.exerciseId === exercise.id)
-                .map((item) => exerciseSessionVolume(setLogs.filter((set) => set.workoutSessionExerciseId === item.id)));
-              const records = detectPersonalRecords({
-                exerciseId: exercise.id,
-                workoutSessionId: sessionId,
-                achievedAt: workout.startedAt,
-                unit: state.unitPreference,
-                newSet: setLog,
-                sessionSetsForExercise: [...sessionExerciseSets, setLog],
-                historicalSetsForExercise: historicalSets,
-                historicalSessionVolumesForExercise: historicalVolumes
-              });
               sessionExerciseSets.push(setLog);
               setLogs.push(setLog);
-              personalRecords.push(...records);
               existingHashes.add(importedSet.importHash);
               setsImported += 1;
-              prsDetected += records.length;
               sessionHadSets = true;
             });
 
@@ -431,11 +451,14 @@ export const useIronLungStore = create<IronLungStore>()(
 
           if (sessionHadSets) {
             sessions.push(session);
+            importedSessionIds.add(session.id);
             workoutsImported += 1;
           }
         }
 
-        set({ exercises, sessions, sessionExercises, setLogs, personalRecords });
+        const recalculated = recalculatePersonalRecords({ ...state, exercises, sessions, sessionExercises, setLogs });
+        prsDetected = recalculated.filter((record) => importedSessionIds.has(record.workoutSessionId)).length;
+        set({ exercises, sessions, sessionExercises, setLogs, personalRecords: recalculated });
         if (setsImported === 0) warnings.push("No new sets were imported. This may be a duplicate file.");
         return { workoutsImported, exercisesCreated, setsImported, prsDetected, skippedRows, warnings, errors };
       },
@@ -478,7 +501,10 @@ export const useIronLungStore = create<IronLungStore>()(
       })),
       deleteAllPhotoData: () => set({ photos: [], analyses: [] }),
       updateSettings: (input) => set((state) => ({ ...state, ...input })),
-      importData: (data) => set({ ...initialData, ...data }),
+      importData: (data) => {
+        const next = { ...initialData, ...data };
+        set({ ...next, personalRecords: recalculatePersonalRecords(next) });
+      },
       clearAllData: () => set(initialData)
     }),
     {
@@ -493,4 +519,81 @@ export function selectOpenSession(state: IronLungStateData): WorkoutSession | un
 
 export function oneRmForSet(setLog: SetLog): number {
   return estimatedOneRepMax(setLog.weight, setLog.reps);
+}
+
+function recalculatePersonalRecords(state: IronLungStateData): PersonalRecord[] {
+  const records: PersonalRecord[] = [];
+  const setsBySessionExercise = new Map<string, SetLog[]>();
+  for (const setLog of state.setLogs) {
+    setsBySessionExercise.set(setLog.workoutSessionExerciseId, [
+      ...(setsBySessionExercise.get(setLog.workoutSessionExerciseId) ?? []),
+      setLog
+    ]);
+  }
+
+  const rowsBySession = new Map<string, WorkoutSessionExercise[]>();
+  for (const row of state.sessionExercises) {
+    rowsBySession.set(row.workoutSessionId, [...(rowsBySession.get(row.workoutSessionId) ?? []), row]);
+  }
+
+  const historicalSetsByExercise = new Map<string, SetLog[]>();
+  const historicalVolumesByExercise = new Map<string, number[]>();
+  const sessions = [...state.sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+
+  for (const session of sessions) {
+    const rows = [...(rowsBySession.get(session.id) ?? [])].sort((a, b) => a.orderIndex - b.orderIndex);
+    for (const row of rows) {
+      const sessionSets: SetLog[] = [];
+      const sets = [...(setsBySessionExercise.get(row.id) ?? [])].sort((a, b) => a.setNumber - b.setNumber);
+      for (const setLog of sets) {
+        sessionSets.push(setLog);
+        const incoming = detectPersonalRecords({
+          exerciseId: row.exerciseId,
+          workoutSessionId: session.id,
+          achievedAt: setLog.createdAt || session.startedAt,
+          unit: state.unitPreference,
+          newSet: setLog,
+          sessionSetsForExercise: sessionSets,
+          historicalSetsForExercise: historicalSetsByExercise.get(row.exerciseId) ?? [],
+          historicalSessionVolumesForExercise: historicalVolumesByExercise.get(row.exerciseId) ?? []
+        });
+        records.splice(0, records.length, ...mergePersonalRecords(records, incoming).records);
+      }
+      if (sessionSets.length) {
+        historicalSetsByExercise.set(row.exerciseId, [
+          ...(historicalSetsByExercise.get(row.exerciseId) ?? []),
+          ...sessionSets
+        ]);
+        historicalVolumesByExercise.set(row.exerciseId, [
+          ...(historicalVolumesByExercise.get(row.exerciseId) ?? []),
+          exerciseSessionVolume(sessionSets)
+        ]);
+      }
+    }
+  }
+
+  return records.sort((a, b) => a.achievedAt.localeCompare(b.achievedAt));
+}
+
+function mergePersonalRecords(existing: PersonalRecord[], incoming: PersonalRecord[]) {
+  const records = [...existing];
+  const accepted: PersonalRecord[] = [];
+  for (const record of incoming) {
+    const key = recordKey(record);
+    const index = records.findIndex((item) => recordKey(item) === key);
+    if (index === -1) {
+      records.push(record);
+      accepted.push(record);
+      continue;
+    }
+    if (record.value >= records[index].value) {
+      records[index] = record;
+      accepted.push(record);
+    }
+  }
+  return { records, accepted };
+}
+
+function recordKey(record: PersonalRecord) {
+  return [record.exerciseId, record.workoutSessionId, record.type, record.unit].join("|");
 }

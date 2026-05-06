@@ -6,6 +6,7 @@ import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, IconButton, Input, Select, TextArea } from "../components/forms/controls";
 import { ScreenShell } from "../components/layout/ScreenShell";
 import { EmptyState } from "../components/empty-states/EmptyState";
+import { ConfirmModal } from "../components/modals/ConfirmModal";
 import { StatRows } from "../components/tables/AnalyticsTable";
 import { tooltipStyle } from "../components/charts/ChartPrimitives";
 import { shortDate, todayIso } from "../lib/format";
@@ -24,6 +25,8 @@ export function PhotosPage() {
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("");
   const [analyzingId, setAnalyzingId] = useState("");
+  const [deletePhotoId, setDeletePhotoId] = useState<string | null>(null);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -119,7 +122,7 @@ export function PhotosPage() {
             <p className="mt-2 max-w-4xl text-sm leading-6 text-white/62">{safetyText}</p>
             <p className="mt-1 max-w-4xl text-sm leading-6 text-white/45">Photos stay local by default. IronLung does not upload photos, compare you against other users, or rate attractiveness.</p>
           </div>
-          <Button variant="danger" icon={Trash2} onClick={() => state.deleteAllPhotoData()}>Delete all photo data</Button>
+          <Button variant="danger" icon={Trash2} onClick={() => setDeleteAllOpen(true)}>Delete all photo data</Button>
         </div>
       </Card>
 
@@ -177,7 +180,7 @@ export function PhotosPage() {
             <div className="grid grid-cols-3 gap-4">
               {[...state.photos].sort((a, b) => b.capturedAt.localeCompare(a.capturedAt)).map((photo) => {
                 const analysis = [...state.analyses].reverse().find((item) => item.progressPhotoId === photo.id);
-                return <PhotoCard key={photo.id} photo={photo} analysis={analysis} analyzing={analyzingId === photo.id} onAnalyze={analyze} onDelete={state.deletePhoto} unit={state.unitPreference} />;
+                return <PhotoCard key={photo.id} photo={photo} analysis={analysis} analyzing={analyzingId === photo.id} onAnalyze={analyze} onDelete={setDeletePhotoId} unit={state.unitPreference} />;
               })}
             </div>
           ) : (
@@ -225,6 +228,24 @@ export function PhotosPage() {
         <SectionHeader title="Export Notes" icon={FolderDown} />
         <p className="text-sm leading-6 text-white/52">Photo export is handled through Data & Settings. Metadata exports as JSON; image files remain local references unless you manually copy them into your backup folder.</p>
       </Card>
+      {deletePhotoId && (
+        <ConfirmModal
+          title="Delete progress photo?"
+          body="This removes the local photo record and its Progress Photo Index analysis from IronLung storage."
+          confirmLabel="Delete photo"
+          onCancel={() => setDeletePhotoId(null)}
+          onConfirm={() => { state.deletePhoto(deletePhotoId); setDeletePhotoId(null); }}
+        />
+      )}
+      {deleteAllOpen && (
+        <ConfirmModal
+          title="Delete all photo data?"
+          body="This removes every local progress photo record and analysis from IronLung storage. Workout data stays intact."
+          confirmLabel="Delete all photos"
+          onCancel={() => setDeleteAllOpen(false)}
+          onConfirm={() => { state.deleteAllPhotoData(); setDeleteAllOpen(false); }}
+        />
+      )}
     </ScreenShell>
   );
 }

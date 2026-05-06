@@ -15,4 +15,6 @@ The desktop MVP stores app state locally and keeps the persistence boundary behi
 
 The shared analytics engine lives in `packages/core/src/analytics` so future desktop, mobile, and sync clients can reuse the same formulas. Muscle contribution presets live in `packages/core/src/muscle-contributions.ts`. UI-only aggregation remains in `apps/desktop/src/lib/analytics.ts` and is adapted through `apps/desktop/src/features/analytics/useTrainingAnalytics.ts`.
 
+Boostcamp support has two boundaries: flexible CSV/JSON normalization in `packages/core/src/importers`, and an optional personal Tauri command that calls a local `boostcamp-mcp` helper and passes the resulting JSON through the same dry-run importer. Credentials stay in the helper folder, not in IronLung app state.
+
 Future sync should be optional. The local schema remains the source of truth, with a sync API resolving conflicts around immutable set logs, edited sessions, and photo references.

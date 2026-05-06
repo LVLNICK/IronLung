@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Activity, BarChart3, Dumbbell, Plus, Search, TrendingUp } from "lucide-react";
-import { prLabel } from "@ironlung/core";
+import { muscleContributionWarnings, prLabel, resolveMuscleContributions } from "@ironlung/core";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, Input, Select } from "../components/forms/controls";
@@ -105,6 +105,8 @@ function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useT
   const exercise = state.exercises.find((item) => item.id === selected.exerciseId);
   const prs = state.personalRecords.filter((record) => record.exerciseId === selected.exerciseId).sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
   const bestSet = detail.trend.sort((a, b) => b.bestOneRm - a.bestOneRm)[0];
+  const contributions = exercise ? resolveMuscleContributions(exercise) : [];
+  const contributionWarnings = exercise ? muscleContributionWarnings(exercise) : [];
 
   return (
     <div className="space-y-5">
@@ -164,11 +166,22 @@ function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useT
           ]} />
         </Card>
         <Card>
+          <SectionHeader title="Muscle Contribution Model" icon={Activity} />
+          <StatRows rows={contributions.slice(0, 8).map((item) => [item.muscle, `${Math.round(item.percent * 100)}% - ${item.role}`])} />
+          {!!contributionWarnings.length && <div className="mt-3 space-y-2">{contributionWarnings.map((warning) => <div key={warning} className="rounded-xl border border-amber-300/20 bg-amber-300/8 p-3 text-sm text-white/60">{warning}</div>)}</div>}
+        </Card>
+      </div>
+      <div className="grid grid-cols-[.8fr_1fr] gap-5">
+        <Card>
           <SectionHeader title="Recent PRs" icon={Dumbbell} />
           <div className="space-y-2">
             {prs.slice(0, 8).map((record) => <div key={record.id} className="flex justify-between rounded-xl border border-line bg-white/[0.03] p-3"><span>{prLabel(record.type)} - {shortDate(record.achievedAt)}</span><span className="text-mint">{record.value} {record.unit}</span></div>)}
             {!prs.length && <EmptyState icon={Dumbbell} title="No PRs" body="This exercise does not have stored PR events yet." />}
           </div>
+        </Card>
+        <Card>
+          <SectionHeader title="Notes History" icon={Activity} />
+          <div className="text-sm leading-6 text-white/52">{exercise?.notes || "No exercise notes yet."}</div>
         </Card>
       </div>
       <Card>

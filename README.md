@@ -50,6 +50,10 @@ npm run typecheck
 npm run build
 ```
 
+## Production Polish Notes
+
+The workout logger prevents accidental multiple active workouts, validates set input before writing local data, uses unit-aware `+/-` jumps, supports deleting individual sets, and recalculates PRs after imports/deletes. PR dashboards prioritize meaningful records while full history keeps baseline and small records available.
+
 ## Data
 
 The MVP is local-first and does not require an account. Workout data is stored in a local SQLite-compatible database image in browser storage during Vite development, with the same schema and repository boundaries intended for Tauri-native SQLite later. Progress photos are represented as local file references or data URLs in the MVP and are exportable/deletable from Photos or Data & Settings.

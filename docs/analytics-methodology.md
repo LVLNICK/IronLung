@@ -8,6 +8,7 @@ IronLung analytics are deterministic and rule-based. No paid API or LLM is conne
 - Exercise/session volume = sum of completed set volume for that exercise in a session.
 - Workout/session volume = sum of all completed set volume in the workout.
 - Daily and weekly volume group completed set volume by workout date.
+- Top-line PR totals use meaningful PRs only. Full PR history still stores baseline and small records for auditability.
 
 ## Strength
 
@@ -59,3 +60,5 @@ Training goals adjust recommendation wording and priority:
 ## Limitations
 
 Analytics quality depends on consistent logging, correct exercise muscle mapping, and complete imported history. Photo metrics are experimental and should not be interpreted as body-fat, medical, attractiveness, or user-ranking scores.
+
+All-time comparison has no previous matched period, so comparison deltas intentionally resolve to zero rather than inventing a baseline.
