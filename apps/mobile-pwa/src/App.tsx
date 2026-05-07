@@ -69,13 +69,15 @@ export function App() {
     );
   }
 
+  const openSync = () => setTab("sync");
+
   return (
     <MobileShell tab={tab} onTab={setTab}>
       <AnalyzerControls range={range} onRange={setRange} muscleFilter={muscleFilter} onMuscleFilter={setMuscleFilter} muscles={muscles} />
-      {tab === "dashboard" && <HomePage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
-      {tab === "strength" && <StrengthPage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
-      {tab === "volume" && <VolumePage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
-      {tab === "muscles" && <MusclesPage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
+      {tab === "dashboard" && <HomePage snapshot={snapshot} analyzer={analyzer} onOpenSync={openSync} />}
+      {tab === "strength" && <StrengthPage snapshot={snapshot} analyzer={analyzer} onOpenSync={openSync} />}
+      {tab === "volume" && <VolumePage snapshot={snapshot} analyzer={analyzer} onOpenSync={openSync} />}
+      {tab === "muscles" && <MusclesPage snapshot={snapshot} analyzer={analyzer} onOpenSync={openSync} />}
       {tab === "sync" && <SyncPage snapshot={snapshot} refresh={refresh} status={status} setStatus={setStatus} />}
     </MobileShell>
   );
