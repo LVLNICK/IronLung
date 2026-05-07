@@ -36,6 +36,7 @@ export interface MobileSettings {
   createdAt: string;
   updatedAt: string;
   lastExportedAt?: string | null;
+  lastImportedAt?: string | null;
 }
 
 export interface MobileOperationLogEntry {
@@ -95,13 +96,21 @@ export interface MobileSeedBundle {
     exercises: number;
     templates: number;
     trainingBlocks: number;
+    workouts?: number;
+    sets?: number;
     recentWorkouts?: number;
   };
 }
 
 export interface MobileImportSummary {
+  created: number;
+  updated: number;
   exercisesCreated: number;
   exercisesUpdated: number;
+  workoutsCreated: number;
+  workoutsUpdated: number;
+  setsCreated: number;
+  setsUpdated: number;
   templatesImported: number;
   blocksImported: number;
   skipped: number;

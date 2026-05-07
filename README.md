@@ -42,25 +42,33 @@ Open the Vite URL shown in the terminal. For the native desktop shell:
 npm run desktop
 ```
 
-## Mobile/PWA Companion
+## Mobile/PWA Analyzer
 
-IronLung also includes a phone-local installable PWA in `apps/mobile-pwa`. It is a companion logger for the gym, not a cloud sync app.
+IronLung also includes `IronLung Analyzer`, a phone-local installable PWA in `apps/mobile-pwa`. It is an offline phone-local training analytics companion for IronLung Desktop, not a workout logger yet and not a cloud sync app.
 
 ```powershell
 npm run mobile:dev
 npm run mobile:build
+npm run mobile:build:pages
 npm run mobile:preview
 ```
 
+Public hosted app shell:
+
+- GitHub Pages URL after deployment: `https://lvlnick.github.io/IronLung/`
+- The hosted site contains only the IronLung Analyzer app code. Your workout data is not uploaded.
+- Install/open the PWA once on your phone, then import a desktop seed bundle in the `Sync` tab. The imported analyzer cache stays in phone-local browser storage.
+
 Phone workflow:
 
-1. In Desktop `Data & Settings`, export a mobile seed bundle.
+1. In Desktop `Data & Settings`, export a mobile analytics seed bundle.
 2. Move the `.ironlung-mobile-seed.json` file to your phone and import it in the PWA `Sync` tab.
-3. Log workouts offline at the gym. Data stays in phone IndexedDB.
-4. Export `.ironlung-mobile.json` from the PWA.
-5. Import it in Desktop `Data & Settings -> Mobile/PWA Sync`, review the dry-run preview, then merge.
+3. View Home, Strength, Volume, and Muscle analytics offline from the phone-local cache.
+4. Optionally export an analyzer cache backup from the PWA.
 
-Privacy: no account, no cloud sync, no server, no analytics tracking, and no uploads. Export files are user-controlled and may contain sensitive training data.
+Privacy: no account, no cloud sync, no server, no analytics tracking, and no uploads. Imported seeds and backup files are user-controlled and may contain sensitive training data. Phone testing from a local network may need HTTPS for full service-worker install behavior.
+
+GitHub Pages deployment is handled by `.github/workflows/mobile-pwa-pages.yml`. In GitHub repository settings, Pages should use `GitHub Actions` as the source.
 
 ## Verification
 
@@ -83,7 +91,7 @@ The MVP is local-first and does not require an account. Workout data is stored i
 
 ```text
 apps/desktop        React/Tauri desktop app
-apps/mobile-pwa     Installable offline phone companion PWA
+apps/mobile-pwa     Installable offline phone analyzer PWA
 apps/desktop/src/app        App composition and command palette
 apps/desktop/src/layout     Desktop shell and sidebar
 apps/desktop/src/pages      Six primary product pages

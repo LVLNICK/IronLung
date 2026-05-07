@@ -13,6 +13,7 @@
     "desktop": "npm run tauri:dev -w @ironlung/desktop",
     "mobile:dev": "npm run dev -w @ironlung/mobile-pwa",
     "mobile:build": "npm run build -w @ironlung/mobile-pwa",
+    "mobile:build:pages": "npm run build:pages -w @ironlung/mobile-pwa",
     "mobile:preview": "npm run preview -w @ironlung/mobile-pwa",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

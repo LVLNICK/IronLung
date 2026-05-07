@@ -154,6 +154,16 @@ export async function clearStore<K extends keyof MobileDbStores>(storeName: K): 
   }
 }
 
+export async function clearAllMobileData(): Promise<void> {
+  await Promise.all(STORE_NAMES.map((storeName) => clearStore(storeName)));
+}
+
+export function getMobileStorageMode(): "indexeddb" | "local-fallback" | "memory-fallback" {
+  if (memoryFallback.size > 0) return "memory-fallback";
+  if (forceFallbackStorage) return "local-fallback";
+  return "indexeddb";
+}
+
 function fallbackKey(storeName: keyof MobileDbStores) {
   return `${FALLBACK_PREFIX}:${storeName}`;
 }

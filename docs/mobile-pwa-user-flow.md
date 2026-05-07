@@ -1,28 +1,26 @@
-# Mobile/PWA User Flow
+# IronLung Analyzer User Flow
 
-## Setup Before Gym
+## Setup
 
 1. Run the desktop app.
-2. Export a mobile seed bundle from `Data & Settings`.
-3. Import the seed bundle into the phone PWA.
-4. Install the PWA from the phone browser.
+2. Export a mobile analytics seed from `Data & Settings`.
+3. Import the seed into IronLung Analyzer on the phone.
+4. Install the PWA from the phone browser when available.
 
-## Logging At The Gym
+## Phone Use
 
-1. Open the PWA.
-2. Start an empty workout or a user-created template.
-3. Add exercises.
-4. Log weight, reps, optional RPE, set type, and notes.
-5. Use duplicate set, same-as-last, and unit-aware weight jumps for fast entry.
-6. Finish the workout.
+Open the PWA to view:
 
-The app shell and data layer are offline-capable, so logging does not need internet after the app has been installed/opened once.
+- training overview
+- top lifts
+- meaningful PRs
+- volume trends
+- muscle balance
+- neglected muscles
+- recovery/fatigue warnings when data supports them
 
-## After Gym
+The analyzer is read-only for the MVP. It does not expose workout logging, exercise creation, workout deletion, or template editing.
 
-1. Export the mobile workout bundle from the PWA Sync tab.
-2. Import it into Desktop `Data & Settings`.
-3. Review the dry-run preview.
-4. Merge mobile data.
+## Local Network Notes
 
-Desktop remains the main analytics app. The PWA is the phone-local capture app.
+Testing from `http://192.168...` may require HTTPS for full PWA install and service-worker behavior on some phones. Static hosting only serves app files; workout data remains in phone storage.

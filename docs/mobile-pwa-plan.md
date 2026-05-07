@@ -1,39 +1,34 @@
-# IronLung Mobile PWA Plan
+# IronLung Analyzer PWA Plan
+
+## Product Direction
+
+The mobile PWA is `IronLung Analyzer`: an offline phone-local training analytics companion for IronLung Desktop.
+
+It is analyzer-first, not a workout logger yet. Desktop remains the main place to create exercises, build templates, log workouts, import Boostcamp, and manage full data.
 
 ## Current Repo Audit
 
 - Desktop app lives in `apps/desktop` and uses React, Vite, Tauri, Tailwind, Zustand persistence, and shared `@ironlung/core`.
-- Shared types and fitness logic live in `packages/core`: `Exercise`, `WorkoutSession`, `WorkoutSessionExercise`, `SetLog`, `PersonalRecord`, `TrainingBlock`, calculations, PR detection, analytics, muscle contributions, importers, and schemas.
-- Desktop import/export currently lives in `apps/desktop/src/lib/importExport.ts` and exports the desktop state shape as local JSON.
-- Desktop local persistence lives in `apps/desktop/src/lib/store.ts` using Zustand `persist`.
-- Desktop workout logging lives in `apps/desktop/src/pages/TrainPage.tsx` and store methods in `store.ts`.
-- Desktop settings/import/export UI lives in `apps/desktop/src/pages/DataSettingsPage.tsx`.
+- Shared types and fitness logic live in `packages/core`: workouts, sets, PRs, training blocks, calculations, analytics, and muscle contribution logic.
+- Desktop Data & Settings exports a mobile analytics seed bundle through `apps/desktop/src/features/mobile-sync`.
+- Mobile local cache lives in `apps/mobile-pwa/src/data` and stores imported desktop records on the phone.
+- Mobile analyzer logic lives in `apps/mobile-pwa/src/features/analytics/mobileAnalytics.ts`.
 
-## Implementation Approach
+## Visible Mobile Navigation
 
-1. Add `apps/mobile-pwa` as a separate npm workspace app so desktop remains untouched.
-2. Use React, TypeScript, Vite, Tailwind, a normal web manifest, and a small service worker for offline shell caching.
-3. Use browser IndexedDB directly through `mobileDb.ts` and repository helpers. No backend, no account, no cloud.
-4. Reuse `@ironlung/core` types, set volume, estimated 1RM, and PR detection semantics where practical.
-5. Implement a mobile-first five-tab UI: Today, Log, Exercises, History, Sync.
-6. Use file-based sync:
-   - Desktop exports `.ironlung-mobile-seed.json`.
-   - Mobile imports seed without deleting phone logs.
-   - Mobile exports `.ironlung-mobile.json`.
-   - Desktop imports and merges the mobile bundle with duplicate/conflict checks.
-7. Keep sync metadata local and merge-safe: device ids, updated timestamps, soft delete fields, sync version, and import source.
+- Home
+- Strength
+- Volume
+- Muscles
+- Sync
 
-## Risk Controls
-
-- No cloud sync, no login, no analytics tracking, and no server.
-- Export files are user controlled and explicitly documented as sensitive.
-- Desktop merge is dry-run first and does not blindly overwrite desktop records.
-- Mobile app is intentionally simpler than desktop: fast logging and export/import are the priority.
+Workout logging screens are not exposed in the analyzer MVP.
 
 ## Acceptance Path
 
 - `npm run mobile:dev` starts the mobile PWA.
 - `npm run mobile:build` builds the installable/offline app.
-- Mobile can create exercises, start a workout, log sets, finish it, export a bundle, and import a desktop seed.
-- Desktop Data & Settings includes Mobile/PWA Sync import/export.
-- Existing desktop tests, typecheck, and build continue to pass.
+- Desktop exports `.ironlung-mobile-seed.json`.
+- Mobile imports that seed idempotently.
+- Mobile shows read-only analytics offline.
+- No account, cloud sync, server, or upload is added.

@@ -1,5 +1,4 @@
-import { forwardRef } from "react";
-import type { ComponentType, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { ComponentType, ReactNode, SelectHTMLAttributes } from "react";
 
 export function MobileCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <section className={`rounded-2xl border border-line bg-panel p-4 ${className}`}>{children}</section>;
@@ -14,16 +13,8 @@ export function MobileButton({ children, onClick, variant = "primary", disabled 
   return <button type={type} disabled={disabled} onClick={onClick} className={`min-h-12 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${style}`}>{children}</button>;
 }
 
-export const MobileInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function MobileInput(props, ref) {
-  return <input ref={ref} {...props} className={`min-h-12 rounded-xl border border-line bg-ink px-3 text-base text-white outline-none placeholder:text-white/35 focus:border-electric ${props.className ?? ""}`} />;
-});
-
 export function MobileSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={`min-h-12 rounded-xl border border-line bg-ink px-3 text-base text-white outline-none focus:border-electric ${props.className ?? ""}`} />;
-}
-
-export function MobileTextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`min-h-20 rounded-xl border border-line bg-ink px-3 py-2 text-base text-white outline-none placeholder:text-white/35 focus:border-electric ${props.className ?? ""}`} />;
 }
 
 export function EmptyState({ icon: Icon, title, body }: { icon: ComponentType<{ className?: string }>; title: string; body: string }) {

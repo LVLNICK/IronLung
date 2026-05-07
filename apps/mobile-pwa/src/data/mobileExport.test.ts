@@ -3,7 +3,7 @@ import { createMobileExportBundle, validateMobileExportBundle } from "./mobileEx
 import type { MobileOperationLogEntry, MobileRecords, MobileSettings } from "./mobileSyncTypes";
 
 describe("mobile export bundle", () => {
-  it("creates a validated local-only mobile workout bundle", () => {
+  it("creates a validated local-only analyzer cache bundle", () => {
     const bundle = createMobileExportBundle(records(), settings(), operationLog());
 
     expect(bundle.bundleType).toBe("ironlung-mobile-export");

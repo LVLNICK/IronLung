@@ -16,7 +16,7 @@ export function MobileShell({ tab, onTab, children }: { tab: MobileTab; onTab: (
       <header className="sticky top-0 z-20 border-b border-line bg-ink/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+14px)] backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xl font-black tracking-tight">IronLung Mobile</div>
+            <div className="text-xl font-black tracking-tight">IronLung Analyzer</div>
             <div className="text-xs font-semibold uppercase tracking-widest text-electricText">Offline analytics dashboard</div>
           </div>
           <div className="rounded-full border border-electric bg-electric/15 px-3 py-1 text-xs font-bold text-electricText">Local</div>
