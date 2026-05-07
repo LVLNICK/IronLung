@@ -1,7 +1,7 @@
 import { MobileCard } from "../components/MobilePrimitives";
 import { PageIntro, RankedBars, StatPill, type AnalyzerPageProps } from "./AnalyzerShared";
 
-export function MusclesPage({ snapshot, analyzer }: AnalyzerPageProps) {
+export function MusclesPage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps) {
   const balance = analyzer.summary.balance;
   return (
     <div className="space-y-4">
@@ -18,15 +18,15 @@ export function MusclesPage({ snapshot, analyzer }: AnalyzerPageProps) {
       </MobileCard>
       <MobileCard>
         <div className="mb-3 font-bold">Top muscles</div>
-        <RankedBars rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} />
+        <RankedBars rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
         <div className="mb-3 font-bold">Neglected muscles</div>
-        <RankedBars rows={analyzer.neglectedMuscles} unit={snapshot.settings.unitPreference} invert />
+        <RankedBars rows={analyzer.neglectedMuscles} unit={snapshot.settings.unitPreference} invert onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
         <div className="mb-3 font-bold">Muscle drilldown</div>
-        <RankedBars rows={analyzer.muscleRows} unit={snapshot.settings.unitPreference} />
+        <RankedBars rows={analyzer.muscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
     </div>
   );

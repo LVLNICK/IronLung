@@ -72,10 +72,10 @@ export function App() {
   return (
     <MobileShell tab={tab} onTab={setTab}>
       <AnalyzerControls range={range} onRange={setRange} muscleFilter={muscleFilter} onMuscleFilter={setMuscleFilter} muscles={muscles} />
-      {tab === "dashboard" && <HomePage snapshot={snapshot} analyzer={analyzer} />}
-      {tab === "strength" && <StrengthPage snapshot={snapshot} analyzer={analyzer} />}
-      {tab === "volume" && <VolumePage snapshot={snapshot} analyzer={analyzer} />}
-      {tab === "muscles" && <MusclesPage snapshot={snapshot} analyzer={analyzer} />}
+      {tab === "dashboard" && <HomePage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
+      {tab === "strength" && <StrengthPage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
+      {tab === "volume" && <VolumePage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
+      {tab === "muscles" && <MusclesPage snapshot={snapshot} analyzer={analyzer} onOpenSync={() => setTab("sync")} />}
       {tab === "sync" && <SyncPage snapshot={snapshot} refresh={refresh} status={status} setStatus={setStatus} />}
     </MobileShell>
   );

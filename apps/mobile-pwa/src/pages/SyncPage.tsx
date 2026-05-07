@@ -1,11 +1,11 @@
 import { useRef } from "react";
 import { FileDown, FileUp, ShieldCheck, Trash2 } from "lucide-react";
 import { MobileButton, MobileCard } from "../components/MobilePrimitives";
-import { clearAllMobileData, getMobileStorageMode } from "../data/mobileDb";
+import { getMobileStorageMode } from "../data/mobileDb";
 import { createMobileExportBundle } from "../data/mobileExport";
 import { importMobileSeedBundle, validateMobileSeedBundle } from "../data/mobileImport";
-import { saveSettings, type MobileSnapshot } from "../data/mobileRepository";
-import { PageIntro, StatPill, formatNumber } from "./AnalyzerShared";
+import { clearAnalyzerCache, saveSettings, type MobileSnapshot } from "../data/mobileRepository";
+import { PageIntro, StatPill, formatNumber, importedDataStatus } from "./AnalyzerShared";
 
 type SyncPageProps = {
   snapshot: MobileSnapshot;
@@ -52,12 +52,13 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
 
   async function clearCache() {
     if (!window.confirm("Clear local analyzer cache from this phone? Desktop data is not affected.")) return;
-    await clearAllMobileData();
+    await clearAnalyzerCache(snapshot.settings);
     await refresh();
     setStatus("Local analyzer cache cleared from this phone.");
   }
 
   const dateRange = cachedDateRange(snapshot);
+  const importStatus = importedDataStatus(snapshot);
 
   return (
     <div className="space-y-4">
@@ -66,7 +67,7 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
         <div className="grid gap-2">
           <MobileButton variant="ghost" onClick={() => inputRef.current?.click()}><FileUp className="mr-2 inline h-4 w-4" />Import desktop data</MobileButton>
           <MobileButton variant="ghost" onClick={exportCacheBackup}><FileDown className="mr-2 inline h-4 w-4" />Export analyzer cache backup</MobileButton>
-          <MobileButton variant="danger" onClick={clearCache}><Trash2 className="mr-2 inline h-4 w-4" />Clear local analyzer data</MobileButton>
+          <MobileButton variant="danger" onClick={clearCache}><Trash2 className="mr-2 inline h-4 w-4" />Clear analyzer cache</MobileButton>
           <input ref={inputRef} className="hidden" type="file" accept=".json,.ironlung-mobile-seed.json,application/json" onChange={(event) => importSeed(event.target.files?.[0])} />
         </div>
       </MobileCard>
@@ -82,6 +83,7 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
           <p>Last imported: {snapshot.settings.lastImportedAt ? new Date(snapshot.settings.lastImportedAt).toLocaleString() : "Never"}</p>
           <p>Date range cached: {dateRange}</p>
           <p>Storage mode: {getMobileStorageMode()}</p>
+          {importStatus.warning && <p className="text-yellow-200">{importStatus.warning}</p>}
         </div>
       </MobileCard>
       <MobileCard>

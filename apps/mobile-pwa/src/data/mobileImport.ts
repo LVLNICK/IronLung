@@ -6,11 +6,18 @@ export function validateMobileSeedBundle(value: unknown): MobileSeedBundle {
   if (!value || typeof value !== "object") throw new Error("Invalid mobile seed file.");
   const bundle = value as MobileSeedBundle;
   if (bundle.schemaVersion !== 1 || bundle.bundleType !== "ironlung-mobile-seed") throw new Error("This is not an IronLung mobile seed bundle.");
+  if (typeof bundle.exportedAt !== "string" || Number.isNaN(new Date(bundle.exportedAt).getTime())) throw new Error("Seed bundle exportedAt is invalid.");
+  if (bundle.unitPreference !== "lbs" && bundle.unitPreference !== "kg") throw new Error("Seed bundle unit preference is invalid.");
   if (!bundle.records || !Array.isArray(bundle.records.exercises)) throw new Error("Seed bundle records are missing.");
+  const optionalArrays = ["templates", "templateExercises", "trainingBlocks", "sessions", "sessionExercises", "setLogs", "personalRecords"] as const;
+  for (const key of optionalArrays) {
+    if (bundle.records[key] !== undefined && !Array.isArray(bundle.records[key])) throw new Error(`Seed bundle ${key} records are invalid.`);
+  }
   return bundle;
 }
 
 export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings: MobileSettings): Promise<MobileImportSummary> {
+  validateMobileSeedBundle(bundle);
   const summary: MobileImportSummary = {
     created: 0,
     updated: 0,

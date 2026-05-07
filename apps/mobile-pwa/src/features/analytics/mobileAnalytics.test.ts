@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMobileAnalyzer } from "./mobileAnalytics";
+import { availableMuscles, buildMobileAnalyzer } from "./mobileAnalytics";
 import type { MobileSnapshot } from "../../data/mobileRepository";
 
 describe("mobile analyzer model", () => {
@@ -10,6 +10,25 @@ describe("mobile analyzer model", () => {
     expect(model.muscleRows[0].label).toBe("Pectoralis major");
     expect(model.recentPrs.map((record) => record.importance)).not.toContain("baseline");
     expect(model.strengthRows[0].exerciseName).toBe("Bench Press");
+  });
+
+  it("builds muscle filters from resolved contributions and includes bench under chest, triceps, and front delts", () => {
+    const data = snapshot();
+
+    expect(availableMuscles(data)).toEqual(expect.arrayContaining(["Pectoralis major", "Triceps brachii", "Anterior deltoids"]));
+    expect(buildMobileAnalyzer(data, "30d", "Pectoralis major").strengthRows.map((row) => row.exerciseName)).toContain("Bench Press");
+    expect(buildMobileAnalyzer(data, "30d", "Triceps brachii").strengthRows.map((row) => row.exerciseName)).toContain("Bench Press");
+    expect(buildMobileAnalyzer(data, "30d", "Anterior deltoids").strengthRows.map((row) => row.exerciseName)).toContain("Bench Press");
+  });
+
+  it("keeps Home PRs major and medium while preserving small PRs for strength details", () => {
+    const model = buildMobileAnalyzer(snapshot(), "30d");
+
+    expect(model.recentPrs.map((record) => record.importance)).toEqual(expect.arrayContaining(["major", "medium"]));
+    expect(model.recentPrs.map((record) => record.importance)).not.toContain("small");
+    expect(model.recentPrs.map((record) => record.importance)).not.toContain("baseline");
+    expect(model.strengthPrs.map((record) => record.importance)).toContain("small");
+    expect(model.strengthPrs.map((record) => record.importance)).not.toContain("baseline");
   });
 });
 
@@ -42,7 +61,9 @@ function snapshot(): MobileSnapshot {
     trainingBlocks: [],
     personalRecords: [
       { id: "baseline", exerciseId: "bench", workoutSessionId: "session", setLogId: "set", type: "max_weight", value: 225, unit: "lbs", importance: "baseline", achievedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...sync },
-      { id: "major", exerciseId: "bench", workoutSessionId: "session", setLogId: "set", type: "estimated_1rm", value: 263, unit: "lbs", importance: "major", achievedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...sync }
+      { id: "major", exerciseId: "bench", workoutSessionId: "session", setLogId: "set", type: "estimated_1rm", value: 263, unit: "lbs", importance: "major", achievedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...sync },
+      { id: "medium", exerciseId: "bench", workoutSessionId: "session", setLogId: "set", type: "best_set", value: 1125, unit: "lbs", importance: "medium", achievedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...sync },
+      { id: "small", exerciseId: "bench", workoutSessionId: "session", setLogId: "set", type: "reps_at_weight", value: 6, unit: "reps", importance: "small", achievedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...sync }
     ],
     sessions: [
       { id: "session", name: "Upper", workoutTemplateId: null, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...sync },

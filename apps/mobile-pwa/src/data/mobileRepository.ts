@@ -1,4 +1,4 @@
-import { getAllFromStore, putInStore } from "./mobileDb";
+import { clearStore, getAllFromStore, putInStore } from "./mobileDb";
 import { nowIso, type MobileOperationLogEntry, type MobileRecords, type MobileSettings } from "./mobileSyncTypes";
 import { createId } from "../lib/uuid";
 
@@ -42,4 +42,26 @@ export async function createDefaultSettings(): Promise<MobileSettings> {
 
 export async function saveSettings(settings: MobileSettings): Promise<void> {
   await putInStore("settings", { ...settings, updatedAt: nowIso() });
+}
+
+export async function clearAnalyzerCache(settings: MobileSettings): Promise<MobileSettings> {
+  await Promise.all([
+    clearStore("exercises"),
+    clearStore("sessions"),
+    clearStore("sessionExercises"),
+    clearStore("setLogs"),
+    clearStore("personalRecords"),
+    clearStore("trainingBlocks"),
+    clearStore("templates"),
+    clearStore("templateExercises"),
+    clearStore("operationLog")
+  ]);
+  const nextSettings = {
+    ...settings,
+    lastImportedAt: null,
+    lastExportedAt: null,
+    updatedAt: nowIso()
+  };
+  await putInStore("settings", nextSettings);
+  return nextSettings;
 }

@@ -4,6 +4,20 @@ IronLung Analyzer uses file-based local import. There is no cloud service and no
 
 The app shell can be hosted as a static PWA at `https://lvlnick.github.io/IronLung/`. That public URL serves only app files. Training data is still imported by the user and stored in phone-local browser storage.
 
+## GitHub Pages Install
+
+The hosted app runs under the `/IronLung/` base path. The Vite Pages build rewrites asset URLs, registers the service worker at `/IronLung/sw.js`, and uses relative manifest icon paths so install/offline support works from GitHub Pages.
+
+Phone install flow:
+
+1. Open `https://lvlnick.github.io/IronLung/`.
+2. Install it from the browser menu.
+3. Open the installed app once while online.
+4. Import a desktop seed bundle from `Sync -> Import desktop data`.
+5. Use the cached analyzer offline. If the cache is old, Home and Sync show an outdated-cache warning based on `lastImportedAt`.
+
+If the app opens but has no analytics, the app shell is installed correctly and the phone simply has no imported desktop seed yet.
+
 ## Desktop to Phone
 
 1. Open Desktop `Data & Settings`.
@@ -29,6 +43,10 @@ Rules:
 ## Export
 
 The mobile app may export an analyzer cache backup. This is not sync and is not uploaded. It is a user-controlled local JSON backup.
+
+## Cache Management
+
+`Sync -> Clear analyzer cache` removes imported exercises, sessions, sets, PRs, templates, and blocks from the phone. It preserves the phone's analyzer settings/device identity and clears `lastImportedAt`.
 
 ## Future No-Cloud Options
 

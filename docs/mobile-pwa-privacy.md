@@ -10,6 +10,7 @@ IronLung Analyzer is local-first. Imported desktop data is stored in the phone b
 - No analytics tracking is added.
 - Import files are parsed locally in the browser.
 - Cache backup files are created only when the user taps export.
+- The public GitHub Pages URL serves only static app code. It does not contain your workout data.
 
 ## Sensitive Files
 
@@ -17,7 +18,7 @@ IronLung Analyzer is local-first. Imported desktop data is stored in the phone b
 
 ## Deletion
 
-The Sync page includes `Clear local analyzer data`, which clears the phone-local analyzer cache. Desktop data is not affected.
+The Sync page includes `Clear analyzer cache`, which clears imported records from the phone-local analyzer cache. Desktop data is not affected, and the phone's local analyzer device settings are preserved.
 
 ## Future Encryption
 

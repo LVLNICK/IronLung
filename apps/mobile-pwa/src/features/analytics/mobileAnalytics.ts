@@ -2,6 +2,7 @@ import {
   buildTrainingAnalytics,
   estimatedOneRepMax,
   setVolume,
+  resolveMuscleContributions,
   type AnalyticsDataset,
   type AnalyticsSummary,
   type DateRangePreset,
@@ -39,6 +40,7 @@ export interface MobileAnalyzerModel {
   mostTrainedMuscle: string;
   leastTrainedMuscle: string;
   recentPrs: PersonalRecord[];
+  strengthPrs: PersonalRecord[];
   prsByType: RankedValue[];
   prsByImportance: RankedValue[];
   allTimeBestPrs: PersonalRecord[];
@@ -70,8 +72,9 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
     }))
     .sort((a, b) => b.estimatedOneRm - a.estimatedOneRm);
 
-  const recentPrs = meaningfulPrs(dataset.personalRecords)
+  const strengthPrs = nonBaselinePrs(dataset.personalRecords)
     .sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
+  const recentPrs = strengthPrs.filter((record) => record.importance === "major" || record.importance === "medium");
   const muscleRows = summary.muscleVolume.map((metric) => ({
     label: metric.muscle,
     value: metric.volume,
@@ -94,8 +97,9 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
     mostTrainedMuscle: topMuscle ? `${topMuscle.label} (${formatNumber(topMuscle.value)})` : "No muscle volume yet",
     leastTrainedMuscle: leastMuscle ? `${leastMuscle.label} (${formatNumber(leastMuscle.value)})` : "No muscle volume yet",
     recentPrs,
-    prsByType: groupPrs(recentPrs, (record) => formatPr(record.type)),
-    prsByImportance: groupPrs(recentPrs, (record) => record.importance ?? "small"),
+    strengthPrs,
+    prsByType: groupPrs(strengthPrs, (record) => formatPr(record.type)),
+    prsByImportance: groupPrs(strengthPrs, (record) => record.importance ?? "small"),
     allTimeBestPrs: bestPrsByExerciseAndType(dataset.personalRecords),
     strengthRows,
     maxWeightRows: [...strengthRows].sort((a, b) => b.maxWeight - a.maxWeight),
@@ -111,13 +115,19 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
 }
 
 export function availableMuscles(snapshot: MobileSnapshot): string[] {
-  return [...new Set(snapshot.exercises.map((exercise) => exercise.primaryMuscle).filter(Boolean))].sort();
+  const muscles = new Set<string>();
+  for (const exercise of snapshot.exercises.filter((row) => !row.deletedAt)) {
+    for (const contribution of resolveMuscleContributions(exercise)) {
+      if (contribution.muscle) muscles.add(contribution.muscle);
+    }
+  }
+  return [...muscles].sort();
 }
 
 function toAnalyticsDataset(snapshot: MobileSnapshot, range: MobileRangePreset, muscleFilter: string): AnalyticsDataset {
   const currentBlockId = resolveCurrentBlockId(snapshot);
   const exercises = snapshot.exercises.filter((row) => !row.deletedAt);
-  const exerciseIds = new Set(exercises.filter((exercise) => muscleFilter === "all" || exercise.primaryMuscle === muscleFilter).map((exercise) => exercise.id));
+  const exerciseIds = new Set(exercises.filter((exercise) => muscleFilter === "all" || exerciseContributesToMuscle(exercise, muscleFilter)).map((exercise) => exercise.id));
   const sessions = snapshot.sessions.filter((row) => !row.deletedAt && row.finishedAt && (range !== "block" || !currentBlockId || row.trainingBlockId === currentBlockId));
   const sessionIds = new Set(sessions.map((session) => session.id));
   const sessionExercises = snapshot.sessionExercises.filter((row) => !row.deletedAt && sessionIds.has(row.workoutSessionId) && exerciseIds.has(row.exerciseId));
@@ -143,12 +153,12 @@ function bestSetLabel(snapshot: MobileSnapshot, exerciseId: string): string {
 }
 
 function bestRecentLiftLabel(snapshot: MobileSnapshot, records: PersonalRecord[]): string {
-  const best = meaningfulPrs(records).sort((a, b) => b.achievedAt.localeCompare(a.achievedAt))[0];
+  const best = nonBaselinePrs(records).sort((a, b) => b.achievedAt.localeCompare(a.achievedAt))[0];
   const exercise = snapshot.exercises.find((item) => item.id === best?.exerciseId);
   return best ? `${exercise?.name ?? "Exercise"} ${formatPr(best.type)} ${formatNumber(best.value)} ${best.unit}` : "No meaningful PR imported yet";
 }
 
-function meaningfulPrs(records: PersonalRecord[]): PersonalRecord[] {
+function nonBaselinePrs(records: PersonalRecord[]): PersonalRecord[] {
   const allowed = new Set<PRImportance>(["major", "medium", "small"]);
   return records.filter((record) => allowed.has((record.importance ?? "small") as PRImportance));
 }
@@ -161,12 +171,16 @@ function groupPrs(records: PersonalRecord[], label: (record: PersonalRecord) => 
 
 function bestPrsByExerciseAndType(records: PersonalRecord[]): PersonalRecord[] {
   const best = new Map<string, PersonalRecord>();
-  for (const record of meaningfulPrs(records)) {
+  for (const record of nonBaselinePrs(records)) {
     const key = `${record.exerciseId}|${record.type}`;
     const current = best.get(key);
     if (!current || record.value > current.value) best.set(key, record);
   }
   return [...best.values()].sort((a, b) => b.value - a.value).slice(0, 12);
+}
+
+function exerciseContributesToMuscle(exercise: MobileSnapshot["exercises"][number], muscle: string): boolean {
+  return resolveMuscleContributions(exercise).some((contribution) => contribution.muscle === muscle);
 }
 
 function resolveCurrentBlockId(snapshot: MobileSnapshot): string | null {

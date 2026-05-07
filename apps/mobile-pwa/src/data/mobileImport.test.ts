@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { clearAllMobileData, getAllFromStore, putInStore } from "./mobileDb";
-import { importMobileSeedBundle } from "./mobileImport";
+import { clearAnalyzerCache } from "./mobileRepository";
+import { importMobileSeedBundle, validateMobileSeedBundle } from "./mobileImport";
 import type { MobileSeedBundle, MobileSettings } from "./mobileSyncTypes";
 
 describe("desktop seed import", () => {
@@ -15,6 +16,56 @@ describe("desktop seed import", () => {
     expect(await getAllFromStore("exercises")).toHaveLength(1);
     expect(await getAllFromStore("sessions")).toHaveLength(1);
     expect(await getAllFromStore("setLogs")).toHaveLength(1);
+  });
+
+  it("updates incoming newer records and counts updates accurately", async () => {
+    await clearAllMobileData();
+    await importMobileSeedBundle(seedBundle(), settings());
+
+    const newer = seedBundle();
+    newer.records.exercises[0] = {
+      ...newer.records.exercises[0],
+      equipment: "Smith Machine",
+      updatedAt: "2026-05-07T00:00:00.000Z"
+    };
+    newer.records.sessions![0] = {
+      ...newer.records.sessions![0],
+      name: "Updated Upper",
+      updatedAt: "2026-05-07T00:00:00.000Z"
+    };
+    newer.records.setLogs![0] = {
+      ...newer.records.setLogs![0],
+      weight: 230,
+      updatedAt: "2026-05-07T00:00:00.000Z"
+    };
+
+    const result = await importMobileSeedBundle(newer, settings());
+
+    expect(result.created).toBe(0);
+    expect(result.updated).toBe(3);
+    expect(result.exercisesUpdated).toBe(1);
+    expect(result.workoutsUpdated).toBe(1);
+    expect(result.setsUpdated).toBe(1);
+    expect((await getAllFromStore("exercises"))[0].equipment).toBe("Smith Machine");
+    expect((await getAllFromStore("sessions"))[0].name).toBe("Updated Upper");
+    expect((await getAllFromStore("setLogs"))[0].weight).toBe(230);
+  });
+
+  it("skips incoming older or same records and keeps counters accurate", async () => {
+    await clearAllMobileData();
+    await importMobileSeedBundle(seedBundle(), settings());
+
+    const older = seedBundle();
+    older.records.exercises[0] = { ...older.records.exercises[0], equipment: "Cable", updatedAt: "2026-04-01T00:00:00.000Z" };
+    older.records.setLogs![0] = { ...older.records.setLogs![0], weight: 315, updatedAt: "2026-04-01T00:00:00.000Z" };
+
+    const result = await importMobileSeedBundle(older, settings());
+
+    expect(result.created).toBe(0);
+    expect(result.updated).toBe(0);
+    expect(result.skipped).toBe(4);
+    expect((await getAllFromStore("exercises"))[0].equipment).toBe("Barbell");
+    expect((await getAllFromStore("setLogs"))[0].weight).toBe(225);
   });
 
   it("skips duplicate exercises by normalized name", async () => {
@@ -49,12 +100,31 @@ describe("desktop seed import", () => {
     expect(await getAllFromStore("exercises")).toHaveLength(1);
   });
 
-  it("clears the local analyzer fallback cache", async () => {
+  it("rejects invalid seed files", () => {
+    expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "wrong" })).toThrow("IronLung mobile seed");
+    expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "ironlung-mobile-seed", exportedAt: "bad", unitPreference: "lbs", records: { exercises: [] } })).toThrow("exportedAt");
+    expect(() => validateMobileSeedBundle({ ...seedBundle(), records: { ...seedBundle().records, setLogs: {} } })).toThrow("setLogs");
+  });
+
+  it("updates lastImportedAt after import", async () => {
     await clearAllMobileData();
     await importMobileSeedBundle(seedBundle(), settings());
-    expect(await getAllFromStore("setLogs")).toHaveLength(1);
+    const storedSettings = await getAllFromStore("settings");
+
+    expect(storedSettings[0].lastImportedAt).toBe(seedBundle().exportedAt);
+  });
+
+  it("clears imported analyzer records while preserving device settings", async () => {
     await clearAllMobileData();
+    const deviceSettings = settings();
+    await importMobileSeedBundle(seedBundle(), deviceSettings);
+    expect(await getAllFromStore("setLogs")).toHaveLength(1);
+    await clearAnalyzerCache(deviceSettings);
+
     expect(await getAllFromStore("setLogs")).toHaveLength(0);
+    const storedSettings = await getAllFromStore("settings");
+    expect(storedSettings[0].deviceId).toBe(deviceSettings.deviceId);
+    expect(storedSettings[0].lastImportedAt).toBeNull();
   });
 });
 

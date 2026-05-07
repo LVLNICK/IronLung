@@ -2,7 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import { MobileCard } from "../components/MobilePrimitives";
 import { PageIntro, RankedBars, StatPill, formatSigned, type AnalyzerPageProps } from "./AnalyzerShared";
 
-export function VolumePage({ snapshot, analyzer }: AnalyzerPageProps) {
+export function VolumePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps) {
   return (
     <div className="space-y-4">
       <PageIntro kicker="Volume" title="Workload trend" body="Weekly volume, daily workload, current period comparison, top exercises, and workload warnings." />
@@ -12,15 +12,15 @@ export function VolumePage({ snapshot, analyzer }: AnalyzerPageProps) {
       </div>
       <MobileCard>
         <div className="mb-3 font-bold">Weekly volume</div>
-        <RankedBars rows={analyzer.weeklyRows.slice(0, 8)} unit={snapshot.settings.unitPreference} />
+        <RankedBars rows={analyzer.weeklyRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
         <div className="mb-3 font-bold">Daily volume</div>
-        <RankedBars rows={analyzer.dailyRows.slice(0, 14)} unit={snapshot.settings.unitPreference} />
+        <RankedBars rows={analyzer.dailyRows.slice(0, 14)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
         <div className="mb-3 font-bold">Top exercises by volume</div>
-        <RankedBars rows={analyzer.topExerciseVolumeRows.slice(0, 8)} unit={snapshot.settings.unitPreference} />
+        <RankedBars rows={analyzer.topExerciseVolumeRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
         <div className="mb-3 flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4 text-yellow-300" />Warnings</div>

@@ -58,6 +58,7 @@ Public hosted app shell:
 - GitHub Pages URL after deployment: `https://lvlnick.github.io/IronLung/`
 - The hosted site contains only the IronLung Analyzer app code. Your workout data is not uploaded.
 - Install/open the PWA once on your phone, then import a desktop seed bundle in the `Sync` tab. The imported analyzer cache stays in phone-local browser storage.
+- GitHub Pages serves the app from `/IronLung/`; the manifest, icons, and service worker are built with that base path so offline shell caching works from the hosted URL.
 
 Phone workflow:
 
@@ -65,6 +66,14 @@ Phone workflow:
 2. Move the `.ironlung-mobile-seed.json` file to your phone and import it in the PWA `Sync` tab.
 3. View Home, Strength, Volume, and Muscle analytics offline from the phone-local cache.
 4. Optionally export an analyzer cache backup from the PWA.
+
+Install from GitHub Pages:
+
+1. Open `https://lvlnick.github.io/IronLung/` on the phone.
+2. Use the browser install action: iOS Safari `Share -> Add to Home Screen`; Chrome/Android `Install app` or `Add to Home screen`.
+3. Open the installed app once while online so the app shell is cached.
+4. Import the desktop seed bundle from `Sync -> Import desktop data`.
+5. The app can then open offline; only the last imported analyzer cache is available until you import a newer seed.
 
 Privacy: no account, no cloud sync, no server, no analytics tracking, and no uploads. Imported seeds and backup files are user-controlled and may contain sensitive training data. Phone testing from a local network may need HTTPS for full service-worker install behavior.
 

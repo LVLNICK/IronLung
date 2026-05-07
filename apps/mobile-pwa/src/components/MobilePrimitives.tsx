@@ -4,25 +4,26 @@ export function MobileCard({ children, className = "" }: { children: ReactNode; 
   return <section className={`rounded-2xl border border-line bg-panel p-4 ${className}`}>{children}</section>;
 }
 
-export function MobileButton({ children, onClick, variant = "primary", disabled = false, type = "button" }: { children: ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"; disabled?: boolean; type?: "button" | "submit" }) {
+export function MobileButton({ children, onClick, variant = "primary", disabled = false, type = "button", className = "" }: { children: ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"; disabled?: boolean; type?: "button" | "submit"; className?: string }) {
   const style = variant === "primary"
     ? "bg-electric text-white shadow-glow"
     : variant === "danger"
       ? "border border-red-400/40 bg-red-500/10 text-red-200"
       : "border border-line bg-panelSoft text-white";
-  return <button type={type} disabled={disabled} onClick={onClick} className={`min-h-12 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${style}`}>{children}</button>;
+  return <button type={type} disabled={disabled} onClick={onClick} className={`min-h-12 rounded-xl px-4 text-sm font-bold disabled:opacity-40 ${style} ${className}`}>{children}</button>;
 }
 
 export function MobileSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={`min-h-12 rounded-xl border border-line bg-ink px-3 text-base text-white outline-none focus:border-electric ${props.className ?? ""}`} />;
 }
 
-export function EmptyState({ icon: Icon, title, body }: { icon: ComponentType<{ className?: string }>; title: string; body: string }) {
+export function EmptyState({ icon: Icon, title, body, actionLabel, onAction }: { icon: ComponentType<{ className?: string }>; title: string; body: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-line bg-panel p-8 text-center">
       <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-panelSoft"><Icon className="h-5 w-5 text-white/40" /></div>
       <div className="font-bold text-white">{title}</div>
       <p className="mt-1 text-sm leading-relaxed text-white/55">{body}</p>
+      {actionLabel && onAction && <MobileButton onClick={onAction} className="mt-4">{actionLabel}</MobileButton>}
     </div>
   );
 }

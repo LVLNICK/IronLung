@@ -6,6 +6,7 @@ import type { MobileAnalyzerModel, RankedValue } from "../features/analytics/mob
 export type AnalyzerPageProps = {
   snapshot: MobileSnapshot;
   analyzer: MobileAnalyzerModel;
+  onOpenSync: () => void;
 };
 
 export function PageIntro({ kicker, title, body }: { kicker: string; title: string; body: string }) {
@@ -27,8 +28,8 @@ export function InsightLine({ label, value }: { label: string; value: string }) 
   );
 }
 
-export function StrengthRows({ rows, unit, metric = "e1rm" }: { rows: MobileAnalyzerModel["strengthRows"]; unit: string; metric?: "e1rm" | "max" }) {
-  if (!rows.length) return <EmptyState icon={Trophy} title="No strength data" body="Import desktop data from the Sync page." />;
+export function StrengthRows({ rows, unit, metric = "e1rm", onOpenSync }: { rows: MobileAnalyzerModel["strengthRows"]; unit: string; metric?: "e1rm" | "max"; onOpenSync?: () => void }) {
+  if (!rows.length) return <EmptyState icon={Trophy} title="No strength data" body="Import a desktop seed bundle to analyze your lifts offline." actionLabel="Import Desktop Data" onAction={onOpenSync} />;
   return (
     <div className="space-y-3">
       {rows.map((row) => (
@@ -47,8 +48,8 @@ export function StrengthRows({ rows, unit, metric = "e1rm" }: { rows: MobileAnal
   );
 }
 
-export function RankedBars({ rows, unit, invert = false }: { rows: RankedValue[]; unit: string; invert?: boolean }) {
-  if (!rows.length) return <EmptyState icon={BarChart3} title="No data yet" body="Import desktop data from the Sync page." />;
+export function RankedBars({ rows, unit, invert = false, onOpenSync }: { rows: RankedValue[]; unit: string; invert?: boolean; onOpenSync?: () => void }) {
+  if (!rows.length) return <EmptyState icon={BarChart3} title="No data yet" body="Import a desktop seed bundle to view analyzer charts offline." actionLabel="Import Desktop Data" onAction={onOpenSync} />;
   const max = Math.max(...rows.map((row) => row.value), 1);
   return (
     <div className="space-y-3">
@@ -89,6 +90,18 @@ export function PrList({ snapshot, prs }: { snapshot: MobileSnapshot; prs: Mobil
 }
 
 export { StatPill };
+
+export function importedDataStatus(snapshot: MobileSnapshot): { label: string; warning: string | null; isEmpty: boolean } {
+  const importedAt = snapshot.settings.lastImportedAt;
+  const isEmpty = snapshot.sessions.filter((session) => !session.deletedAt).length === 0 && snapshot.setLogs.filter((set) => !set.deletedAt).length === 0;
+  if (!importedAt) return { label: "Never imported", warning: "No desktop seed has been imported on this phone yet.", isEmpty };
+  const importedDate = new Date(importedAt);
+  if (Number.isNaN(importedDate.getTime())) return { label: "Import date unknown", warning: "Analyzer cache import date is invalid.", isEmpty };
+  const ageDays = Math.floor((Date.now() - importedDate.getTime()) / 86_400_000);
+  const label = `Last imported ${importedDate.toLocaleDateString()}`;
+  const warning = ageDays > 14 ? `Analyzer cache may be outdated. Last desktop import was ${ageDays} days ago.` : null;
+  return { label, warning, isEmpty };
+}
 
 export function formatNumber(value: number): string {
   return Math.round(value).toLocaleString();
