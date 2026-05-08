@@ -48,48 +48,121 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
         ))}
       </div>
 
+      <div id="analytics-section-detail" className="scroll-mt-4" />
+
       <GlassCard className="p-4">
         <SectionTitle label={`${activeSection} summary`} />
         <p className="text-sm leading-relaxed text-slate-300">{sectionCopy(activeSection, range)}</p>
       </GlassCard>
 
-      <div className="grid grid-cols-2 gap-3">
-        <MetricChip icon={Dumbbell} label="Total Volume" value={`${shortVolume(activeAnalyzer.summary.totals.volume)} lb`} sub={formatDelta(activeAnalyzer.summary.comparison.volumeDeltaPercent)} />
-        <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(activeAnalyzer.summary.totals.sessions)} sub={formatDelta(activeAnalyzer.summary.comparison.sessionsDeltaPercent)} />
-        <MetricChip icon={Star} label="PRs" value={formatNumber(activeAnalyzer.recentPrs.length)} sub="non-baseline" />
-        <MetricChip icon={Trophy} label="Balance" value={`${Math.round(activeAnalyzer.summary.balance.overall || 0)}`} sub="muscle score" />
-      </div>
-
-      <GlassCard className="p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-black">Volume Trend</h2>
-            <p className="mt-1 text-sm text-slate-400">Blue bars show daily workload.</p>
-          </div>
-          <StatusPill tone="green">{formatDelta(activeAnalyzer.summary.comparison.volumeDeltaPercent)}</StatusPill>
-        </div>
-        <MiniTrendBars values={volumeValues} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
-      </GlassCard>
-
-      <div id="analytics-section-detail" className="scroll-mt-4" />
-
-      {activeSection === "Overview" && <OverviewSection analyzer={activeAnalyzer} topLifts={topLifts} muscles={muscles} onSection={switchSection} onInsight={setSelectedInsight} />}
-      {activeSection === "Strength" && <StrengthSection analyzer={activeAnalyzer} topLifts={topLifts} onInsight={setSelectedInsight} />}
-      {activeSection === "Volume" && <VolumeSection analyzer={activeAnalyzer} />}
-      {activeSection === "Balance" && <BalanceSection analyzer={activeAnalyzer} muscles={muscles} />}
-
-      <GlassCard className="p-5">
-        <h2 className="text-xl font-black">Insights & Recommendations</h2>
-        {insightRows(activeAnalyzer).map((insight) => (
-          <InsightRow key={insight.title} {...insight} onOpen={() => setSelectedInsight(insight.detail)} />
-        ))}
-        <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
-      </GlassCard>
+      {activeSection === "Overview" && (
+        <>
+          <SummaryMetrics analyzer={activeAnalyzer} />
+          <VolumeTrendCard analyzer={activeAnalyzer} values={volumeValues} />
+          <OverviewSection topLifts={topLifts} muscles={muscles} onSection={switchSection} onInsight={setSelectedInsight} />
+          <InsightsCard analyzer={activeAnalyzer} selectedInsight={selectedInsight} onInsight={setSelectedInsight} />
+        </>
+      )}
+      {activeSection === "Strength" && (
+        <>
+          <StrengthMetrics analyzer={activeAnalyzer} />
+          <StrengthSection analyzer={activeAnalyzer} topLifts={topLifts} onInsight={setSelectedInsight} />
+          <InsightsCard analyzer={activeAnalyzer} selectedInsight={selectedInsight} onInsight={setSelectedInsight} />
+        </>
+      )}
+      {activeSection === "Volume" && (
+        <>
+          <VolumeMetrics analyzer={activeAnalyzer} />
+          <VolumeTrendCard analyzer={activeAnalyzer} values={volumeValues} />
+          <VolumeSection analyzer={activeAnalyzer} />
+        </>
+      )}
+      {activeSection === "Balance" && (
+        <>
+          <BalanceMetrics analyzer={activeAnalyzer} muscles={muscles} />
+          <BalanceSection analyzer={activeAnalyzer} muscles={muscles} />
+        </>
+      )}
     </MobilePage>
   );
 }
 
-function OverviewSection({ topLifts, muscles, onSection, onInsight }: { analyzer: MobileAnalyzerModel; topLifts: MobileAnalyzerModel["strengthRows"]; muscles: ReturnType<typeof muscleSummary>; onSection: (section: AnalyticsSection) => void; onInsight: (value: string) => void }) {
+function SummaryMetrics({ analyzer }: { analyzer: MobileAnalyzerModel }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <MetricChip icon={Dumbbell} label="Total Volume" value={`${shortVolume(analyzer.summary.totals.volume)} lb`} sub={formatDelta(analyzer.summary.comparison.volumeDeltaPercent)} />
+      <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(analyzer.summary.totals.sessions)} sub={formatDelta(analyzer.summary.comparison.sessionsDeltaPercent)} />
+      <MetricChip icon={Star} label="PRs" value={formatNumber(analyzer.recentPrs.length)} sub="non-baseline" />
+      <MetricChip icon={Trophy} label="Balance" value={`${Math.round(analyzer.summary.balance.overall || 0)}`} sub="muscle score" />
+    </div>
+  );
+}
+
+function StrengthMetrics({ analyzer }: { analyzer: MobileAnalyzerModel }) {
+  const topLift = analyzer.strengthRows[0];
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <MetricChip icon={Dumbbell} label="Top e1RM" value={`${formatNumber(topLift?.estimatedOneRm ?? 0)} lb`} sub={topLift?.exerciseName ?? "No lift yet"} />
+      <MetricChip icon={Trophy} label="Best Set" value={topLift?.bestSet ?? "-"} sub="estimated strength" />
+      <MetricChip icon={Star} label="Meaningful PRs" value={formatNumber(analyzer.recentPrs.length)} sub="major / medium / small" />
+      <MetricChip icon={TrendingUp} label="Tracked Lifts" value={formatNumber(analyzer.strengthRows.length)} sub="with set history" />
+    </div>
+  );
+}
+
+function VolumeMetrics({ analyzer }: { analyzer: MobileAnalyzerModel }) {
+  const topExercise = analyzer.topExerciseVolumeRows[0];
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <MetricChip icon={BarChart3} label="Volume" value={`${shortVolume(analyzer.summary.totals.volume)} lb`} sub={formatDelta(analyzer.summary.comparison.volumeDeltaPercent)} />
+      <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(analyzer.summary.totals.sessions)} sub={formatDelta(analyzer.summary.comparison.sessionsDeltaPercent)} />
+      <MetricChip icon={Dumbbell} label="Top Exercise" value={topExercise ? shortVolume(topExercise.value) : "0"} sub={topExercise?.label ?? "No volume"} />
+      <MetricChip icon={TrendingUp} label="Volume Rows" value={formatNumber(analyzer.topExerciseVolumeRows.length)} sub="ranked exercises" />
+    </div>
+  );
+}
+
+function BalanceMetrics({ analyzer, muscles }: { analyzer: MobileAnalyzerModel; muscles: ReturnType<typeof muscleSummary> }) {
+  const lowCount = muscles.filter((muscle) => muscle.status === "Low").length;
+  const highCount = muscles.filter((muscle) => muscle.status === "High").length;
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <MetricChip icon={Trophy} label="Balance Score" value={`${Math.round(analyzer.summary.balance.overall || 0)}`} sub="distributed volume" />
+      <MetricChip icon={Dumbbell} label="Muscles" value={formatNumber(analyzer.muscleRows.length)} sub="detected groups" />
+      <MetricChip icon={Star} label="Needs Work" value={formatNumber(lowCount)} sub="low exposure" />
+      <MetricChip icon={TrendingUp} label="High Areas" value={formatNumber(highCount)} sub="highest exposure" />
+    </div>
+  );
+}
+
+function VolumeTrendCard({ analyzer, values }: { analyzer: MobileAnalyzerModel; values: number[] }) {
+  return (
+    <GlassCard className="p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black">Volume Trend</h2>
+          <p className="mt-1 text-sm text-slate-400">Blue bars show daily workload.</p>
+        </div>
+        <StatusPill tone="green">{formatDelta(analyzer.summary.comparison.volumeDeltaPercent)}</StatusPill>
+      </div>
+      <MiniTrendBars values={values} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
+    </GlassCard>
+  );
+}
+
+function InsightsCard({ analyzer, selectedInsight, onInsight }: { analyzer: MobileAnalyzerModel; selectedInsight: string; onInsight: (value: string) => void }) {
+  return (
+    <GlassCard className="p-5">
+      <h2 className="text-xl font-black">Insights & Recommendations</h2>
+      {insightRows(analyzer).map((insight) => (
+        <InsightRow key={insight.title} {...insight} onOpen={() => onInsight(insight.detail)} />
+      ))}
+      <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
+    </GlassCard>
+  );
+}
+
+function OverviewSection({ topLifts, muscles, onSection, onInsight }: { topLifts: MobileAnalyzerModel["strengthRows"]; muscles: ReturnType<typeof muscleSummary>; onSection: (section: AnalyticsSection) => void; onInsight: (value: string) => void }) {
   return (
     <div className="grid grid-cols-1 gap-3">
       <MuscleBalanceCard muscles={muscles} compact onViewAll={() => onSection("Balance")} />
