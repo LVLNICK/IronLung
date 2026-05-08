@@ -32,6 +32,16 @@ export function App() {
     });
   }, []);
 
+  useEffect(() => {
+    const syncTabFromHash = () => setTab(initialTab());
+    window.addEventListener("hashchange", syncTabFromHash);
+    window.addEventListener("popstate", syncTabFromHash);
+    return () => {
+      window.removeEventListener("hashchange", syncTabFromHash);
+      window.removeEventListener("popstate", syncTabFromHash);
+    };
+  }, []);
+
   const analyzer = useMemo(() => snapshot ? buildMobileAnalyzer(snapshot, "30d", "all") : null, [snapshot]);
 
   if (!snapshot || !analyzer) {
