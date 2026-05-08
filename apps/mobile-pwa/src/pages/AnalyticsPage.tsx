@@ -29,7 +29,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
   }
 
   const volumeValues = trendValues(activeAnalyzer.dailyRows);
-  const topLifts = activeAnalyzer.strengthRows.slice(0, 5);
+  const topLifts = activeAnalyzer.strengthRows.slice(0, activeSection === "Strength" ? 24 : 5);
   const muscles = muscleSummary(activeAnalyzer);
 
   return (
@@ -67,40 +67,10 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
         <MiniTrendBars values={volumeValues} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
       </GlassCard>
 
-      <div className="grid grid-cols-1 gap-3">
-        <GlassCard className="p-4">
-          <SectionTitle label="Muscle balance" action="View all" onAction={() => setActiveSection("Balance")} />
-          <div className="grid grid-cols-[minmax(7.5rem,9rem)_minmax(0,1fr)] items-center gap-3">
-            <BodyMini />
-            <div className="space-y-2">
-              {muscles.map((muscle) => (
-                <div key={muscle.label} className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-bold">{muscle.label}</span>
-                  <StatusPill tone={muscle.tone}>{muscle.status}</StatusPill>
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="mt-3 rounded-2xl bg-white/[0.045] p-3 text-sm leading-relaxed text-slate-400">Muscle volume is distributed from exercise contribution estimates. Diagram: OpenStax Anatomy & Physiology, CC BY 4.0.</p>
-        </GlassCard>
-
-        <GlassCard className="p-4">
-          <SectionTitle label="Top lifts" action="View all" onAction={() => setActiveSection("Strength")} />
-          <div className="space-y-3">
-            {topLifts.length ? topLifts.map((lift, index) => (
-              <button key={lift.exerciseId} onClick={() => setSelectedInsight(`${lift.exerciseName}: best set ${lift.bestSet}, estimated 1RM ${formatNumber(lift.estimatedOneRm)} lb.`)} className="grid min-h-[56px] w-full grid-cols-[1rem_2.55rem_minmax(0,1fr)_3rem] items-center gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
-                <span className="font-mono text-lg font-black">{index + 1}</span>
-                <IconTile icon={Dumbbell} />
-                <div className="min-w-0">
-                  <div className="truncate font-black">{lift.exerciseName}</div>
-                  <div className="truncate font-mono text-sm text-blue-400">{lift.bestSet}</div>
-                </div>
-                <StatusPill tone={lift.strengthTrend > 0 ? "green" : "slate"}>{formatTrend(lift.strengthTrend)}</StatusPill>
-              </button>
-            )) : <p className="text-sm text-slate-400">No lift history in this cache yet.</p>}
-          </div>
-        </GlassCard>
-      </div>
+      {activeSection === "Overview" && <OverviewSection analyzer={activeAnalyzer} topLifts={topLifts} muscles={muscles} onSection={setActiveSection} onInsight={setSelectedInsight} />}
+      {activeSection === "Strength" && <StrengthSection analyzer={activeAnalyzer} topLifts={topLifts} onInsight={setSelectedInsight} />}
+      {activeSection === "Volume" && <VolumeSection analyzer={activeAnalyzer} />}
+      {activeSection === "Balance" && <BalanceSection analyzer={activeAnalyzer} muscles={muscles} />}
 
       <GlassCard className="p-5">
         <h2 className="text-xl font-black">Insights & Recommendations</h2>
@@ -110,6 +80,127 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
         <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
       </GlassCard>
     </MobilePage>
+  );
+}
+
+function OverviewSection({ topLifts, muscles, onSection, onInsight }: { analyzer: MobileAnalyzerModel; topLifts: MobileAnalyzerModel["strengthRows"]; muscles: ReturnType<typeof muscleSummary>; onSection: (section: AnalyticsSection) => void; onInsight: (value: string) => void }) {
+  return (
+    <div className="grid grid-cols-1 gap-3">
+      <MuscleBalanceCard muscles={muscles} compact onViewAll={() => onSection("Balance")} />
+      <TopLiftsCard lifts={topLifts} title="Top lifts" action="View all" onViewAll={() => onSection("Strength")} onInsight={onInsight} />
+    </div>
+  );
+}
+
+function StrengthSection({ analyzer, topLifts, onInsight }: { analyzer: MobileAnalyzerModel; topLifts: MobileAnalyzerModel["strengthRows"]; onInsight: (value: string) => void }) {
+  return (
+    <div className="grid gap-3">
+      <TopLiftsCard lifts={topLifts} title="All top lifts" onInsight={onInsight} />
+      <GlassCard className="p-4">
+        <SectionTitle label="Recent PRs" />
+        <div className="space-y-2">
+          {analyzer.recentPrs.slice(0, 12).map((record) => (
+            <div key={record.id} className="flex min-h-[48px] items-center justify-between gap-3 rounded-2xl bg-white/[0.045] px-3 py-2">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-black">{record.type.replace(/_/g, " ")}</div>
+                <div className="text-xs text-slate-400">{new Date(record.achievedAt).toLocaleDateString()}</div>
+              </div>
+              <div className="font-mono text-sm font-black text-blue-300">{formatNumber(record.value)} {record.unit}</div>
+            </div>
+          ))}
+          {!analyzer.recentPrs.length && <p className="text-sm text-slate-400">No non-baseline PRs in this range.</p>}
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+function VolumeSection({ analyzer }: { analyzer: MobileAnalyzerModel }) {
+  return (
+    <div className="grid gap-3">
+      <GlassCard className="p-4">
+        <SectionTitle label="Weekly volume" />
+        <div className="space-y-2">
+          {analyzer.weeklyRows.slice(0, 10).map((row) => <ProgressRow key={row.label} label={row.label} value={row.value} meta={row.meta} max={Math.max(...analyzer.weeklyRows.map((item) => item.value), 1)} />)}
+        </div>
+      </GlassCard>
+      <GlassCard className="p-4">
+        <SectionTitle label="Exercise volume" />
+        <div className="space-y-2">
+          {analyzer.topExerciseVolumeRows.slice(0, 12).map((row) => <ProgressRow key={row.label} label={row.label} value={row.value} meta={row.meta} max={Math.max(...analyzer.topExerciseVolumeRows.map((item) => item.value), 1)} />)}
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+function BalanceSection({ analyzer, muscles }: { analyzer: MobileAnalyzerModel; muscles: ReturnType<typeof muscleSummary> }) {
+  return (
+    <div className="grid gap-3">
+      <MuscleBalanceCard muscles={muscles} />
+      <GlassCard className="p-4">
+        <SectionTitle label="All muscles" />
+        <div className="space-y-2">
+          {analyzer.muscleRows.slice(0, 20).map((row) => <ProgressRow key={row.label} label={row.label} value={row.value} meta={row.meta} max={Math.max(...analyzer.muscleRows.map((item) => item.value), 1)} />)}
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+function MuscleBalanceCard({ muscles, compact = false, onViewAll }: { muscles: ReturnType<typeof muscleSummary>; compact?: boolean; onViewAll?: () => void }) {
+  return (
+    <GlassCard className="p-4">
+      <SectionTitle label="Muscle balance" action={onViewAll ? "View all" : undefined} onAction={onViewAll} />
+      <div className={`grid items-center gap-3 ${compact ? "grid-cols-[minmax(7.5rem,9rem)_minmax(0,1fr)]" : "grid-cols-1"}`}>
+        <BodyMini />
+        <div className="space-y-2">
+          {muscles.map((muscle) => (
+            <div key={muscle.label} className="flex items-center justify-between gap-2">
+              <span className="truncate text-sm font-bold">{muscle.label}</span>
+              <StatusPill tone={muscle.tone}>{muscle.status}</StatusPill>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-3 rounded-2xl bg-white/[0.045] p-3 text-sm leading-relaxed text-slate-400">Muscle volume is distributed from exercise contribution estimates. Diagram: OpenStax Anatomy & Physiology, CC BY 4.0.</p>
+    </GlassCard>
+  );
+}
+
+function TopLiftsCard({ lifts, title, action, onViewAll, onInsight }: { lifts: MobileAnalyzerModel["strengthRows"]; title: string; action?: string; onViewAll?: () => void; onInsight: (value: string) => void }) {
+  return (
+    <GlassCard className="p-4">
+      <SectionTitle label={title} action={action} onAction={onViewAll} />
+      <div className="space-y-3">
+        {lifts.length ? lifts.map((lift, index) => (
+          <button key={lift.exerciseId} onClick={() => onInsight(`${lift.exerciseName}: best set ${lift.bestSet}, estimated 1RM ${formatNumber(lift.estimatedOneRm)} lb.`)} className="grid min-h-[56px] w-full grid-cols-[1rem_2.55rem_minmax(0,1fr)_3rem] items-center gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
+            <span className="font-mono text-lg font-black">{index + 1}</span>
+            <IconTile icon={Dumbbell} />
+            <div className="min-w-0">
+              <div className="truncate font-black">{lift.exerciseName}</div>
+              <div className="truncate font-mono text-sm text-blue-400">{lift.bestSet}</div>
+            </div>
+            <StatusPill tone={lift.strengthTrend > 0 ? "green" : "slate"}>{formatTrend(lift.strengthTrend)}</StatusPill>
+          </button>
+        )) : <p className="text-sm text-slate-400">No lift history in this cache yet.</p>}
+      </div>
+    </GlassCard>
+  );
+}
+
+function ProgressRow({ label, value, meta, max }: { label: string; value: number; meta?: string; max: number }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.045] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 truncate text-sm font-black">{label}</span>
+        <span className="font-mono text-sm text-blue-300">{formatNumber(value)}</span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.max(3, Math.min(100, (value / max) * 100))}%` }} />
+      </div>
+      {meta && <div className="mt-1 text-xs text-slate-500">{meta}</div>}
+    </div>
   );
 }
 
