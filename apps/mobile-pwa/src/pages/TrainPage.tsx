@@ -3,7 +3,7 @@ import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dum
 import { addSetToActiveMobileWorkout, finishActiveMobileWorkout, setMobileSetCompleted, type MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
-import { EmptyMobileState, GlassCard, IconTile, ListRow, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
+import { EmptyMobileState, GlassCard, IconTile, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
 type LoggedSet = {
@@ -37,6 +37,8 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   const [lastAddedPr, setLastAddedPr] = useState(false);
   const [saving, setSaving] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [exercisePickerOpen, setExercisePickerOpen] = useState(false);
+  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalSnapshot(snapshot);
@@ -44,6 +46,8 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
 
   const exercises = useMemo(() => buildWorkoutExercises(localSnapshot, analyzer), [localSnapshot, analyzer]);
   const activeExercise = exercises.find((exercise) => exercise.id === activeExerciseId) ?? exercises[0];
+  const visibleWorkout = useMemo(() => visibleMobileWorkoutSession(localSnapshot), [localSnapshot]);
+  const hasActiveWorkout = Boolean(visibleWorkout && !visibleWorkout.finishedAt);
 
   useEffect(() => {
     if (!activeExerciseId && exercises[0]) setActiveExerciseId(exercises[0].id);
@@ -154,10 +158,16 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
     setActiveExerciseId(exercise.id);
     setLastAddedPr(false);
     setFinished(false);
+    setExercisePickerOpen(false);
     setNotice(`${exercise.name} selected.`);
   };
 
   const finishWorkout = async () => {
+    if (!hasActiveWorkout) {
+      setFinished(true);
+      setNotice("This workout is already finished. Add a set to start a new phone-local workout.");
+      return;
+    }
     setSaving(true);
     try {
       const next = await withSaveTimeout(finishActiveMobileWorkout(localSnapshot.settings));
@@ -183,7 +193,7 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <StatusPill tone={finished ? "green" : "slate"}>{saving ? "Saving..." : notice}</StatusPill>
+        <StatusPill tone={finished || !hasActiveWorkout && totalSets > 0 ? "green" : "slate"}>{saving ? "Saving..." : notice}</StatusPill>
         {lastAddedPr && <StatusPill tone="green">New PR</StatusPill>}
       </div>
 
@@ -208,8 +218,34 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
               <div className="mt-1 text-sm text-slate-400">{activeExercise.muscles}</div>
             </div>
           </div>
-          <StatusPill>{activeExercise.sets.filter((set) => set.completed).length} / {activeExercise.targetSets}</StatusPill>
+          <button
+            aria-expanded={exercisePickerOpen}
+            aria-label="Open exercise dropdown"
+            onClick={() => setExercisePickerOpen((open) => !open)}
+            className="flex min-h-[44px] shrink-0 items-center gap-2 rounded-full bg-blue-500/15 px-3 text-xs font-black text-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"
+          >
+            {activeExercise.sets.filter((set) => set.completed).length} / {activeExercise.targetSets}
+            <ChevronDown className={`h-4 w-4 transition ${exercisePickerOpen ? "rotate-180" : ""}`} />
+          </button>
         </div>
+
+        {exercisePickerOpen && (
+          <div className="mt-4 space-y-2 rounded-2xl border border-white/10 bg-black/20 p-2">
+            {exercises.map((exercise) => (
+              <button
+                key={exercise.id}
+                onClick={() => selectExercise(exercise)}
+                className={`flex min-h-[48px] w-full items-center justify-between gap-3 rounded-xl px-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 ${exercise.id === activeExercise.id ? "bg-blue-500/18 text-blue-200" : "bg-white/[0.035] text-slate-200"}`}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-black">{exercise.name}</span>
+                  <span className="block truncate text-xs text-slate-400">{exercise.muscles}</span>
+                </span>
+                <StatusPill tone={exercise.sets.filter((set) => set.completed).length >= exercise.targetSets ? "green" : "slate"}>{exercise.sets.filter((set) => set.completed).length} / {exercise.targetSets}</StatusPill>
+              </button>
+            ))}
+          </div>
+        )}
 
         <button onClick={() => setNotice(`${activeExercise.name}: previous best ${activeExercise.previousBest}; last time ${activeExercise.lastTime}.`)} className="mt-4 grid min-h-[72px] w-full grid-cols-2 rounded-2xl border border-white/10 bg-black/15 p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
           <div>
@@ -258,21 +294,20 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
           const completed = exercise.sets.filter((set) => set.completed).length;
           const done = completed >= exercise.targetSets;
           return (
-            <ListRow
+            <ExerciseDropdownCard
               key={exercise.id}
-              icon={Dumbbell}
-              title={exercise.name}
-              subtitle={exercise.muscles}
-              tone={done ? "green" : "slate"}
-              meta={<div className="flex items-center gap-2"><StatusPill tone={done ? "green" : "slate"}>{completed} / {exercise.targetSets} sets</StatusPill><ChevronDown className="h-5 w-5 text-slate-300" /></div>}
-              onClick={() => selectExercise(exercise)}
+              exercise={exercise}
+              done={done}
+              expanded={expandedExerciseId === exercise.id}
+              onToggle={() => setExpandedExerciseId((current) => current === exercise.id ? null : exercise.id)}
+              onSelect={() => selectExercise(exercise)}
             />
           );
         })}
       </div>
 
       <MobilePrimaryButton disabled={saving} onClick={() => void finishWorkout()} className="sticky bottom-28 z-10 flex h-14 w-full items-center justify-center gap-3 text-lg">
-        <Check className="h-5 w-5 rounded-full border border-white" />Finish Workout
+        <Check className="h-5 w-5 rounded-full border border-white" />{hasActiveWorkout ? "Finish Workout" : "Workout Finished"}
       </MobilePrimaryButton>
     </MobilePage>
   );
@@ -282,19 +317,17 @@ function buildWorkoutExercises(snapshot: MobileSnapshot, analyzer: MobileAnalyze
   const exercisesById = new Map(snapshot.exercises.filter((exercise) => !exercise.deletedAt).map((exercise) => [exercise.id, exercise]));
   const rankedIds = [...analyzer.strengthRows.map((row) => row.exerciseId), ...snapshot.exercises.map((exercise) => exercise.id)];
   const uniqueIds = [...new Set(rankedIds)].filter((id) => exercisesById.has(id)).slice(0, 6);
-  const activeSession = snapshot.sessions
-    .filter((session) => !session.deletedAt && !session.finishedAt && session.importSource === "mobile-pwa")
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
-  const activeRows = snapshot.sessionExercises.filter((row) => !row.deletedAt && row.workoutSessionId === activeSession?.id);
+  const displaySession = visibleMobileWorkoutSession(snapshot);
+  const displayRows = snapshot.sessionExercises.filter((row) => !row.deletedAt && row.workoutSessionId === displaySession?.id);
   const prsBySetId = new Set(snapshot.personalRecords.filter((record) => !record.deletedAt && record.importSource === "mobile-workout").map((record) => record.setLogId).filter(Boolean));
 
   return uniqueIds.map((exerciseId) => {
     const exercise = exercisesById.get(exerciseId);
     if (!exercise) return null;
-    const activeRow = activeRows.find((row) => row.exerciseId === exercise.id);
-    const sets = activeRow
+    const displayRow = displayRows.find((row) => row.exerciseId === exercise.id);
+    const sets = displayRow
       ? snapshot.setLogs
-        .filter((set) => !set.deletedAt && set.workoutSessionExerciseId === activeRow.id)
+        .filter((set) => !set.deletedAt && set.workoutSessionExerciseId === displayRow.id)
         .sort((a, b) => a.setNumber - b.setNumber)
         .map((set): LoggedSet => ({
           id: set.id,
@@ -307,7 +340,7 @@ function buildWorkoutExercises(snapshot: MobileSnapshot, analyzer: MobileAnalyze
           pr: prsBySetId.has(set.id)
         }))
       : [];
-    const history = historyForExercise(snapshot, exercise.id, activeSession?.id);
+    const history = historyForExercise(snapshot, exercise.id, displaySession?.id);
     return {
       id: exercise.id,
       name: exercise.name,
@@ -318,6 +351,13 @@ function buildWorkoutExercises(snapshot: MobileSnapshot, analyzer: MobileAnalyze
       sets
     };
   }).filter(Boolean) as WorkoutExercise[];
+}
+
+function visibleMobileWorkoutSession(snapshot: MobileSnapshot) {
+  const mobileSessions = snapshot.sessions
+    .filter((session) => !session.deletedAt && session.importSource === "mobile-pwa")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  return mobileSessions.find((session) => !session.finishedAt) ?? mobileSessions[0] ?? null;
 }
 
 function historyForExercise(snapshot: MobileSnapshot, exerciseId: string, activeSessionId?: string): { previousBest: string; lastTime: string } {
@@ -376,6 +416,50 @@ function withSaveTimeout<T>(operation: Promise<T>, timeoutMs = 4500): Promise<T>
 
 function TopMetric({ icon, value, label }: { icon: typeof Dumbbell; value: string; label: string }) {
   return <MetricChip icon={icon} value={value} label={label} />;
+}
+
+function ExerciseDropdownCard({ exercise, done, expanded, onToggle, onSelect }: { exercise: WorkoutExercise; done: boolean; expanded: boolean; onToggle: () => void; onSelect: () => void }) {
+  const completed = exercise.sets.filter((set) => set.completed).length;
+  return (
+    <GlassCard className="overflow-hidden p-0">
+      <button onClick={onToggle} aria-expanded={expanded} className="flex min-h-[64px] w-full items-center gap-3 p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
+        <IconTile icon={Dumbbell} tone={done ? "green" : "slate"} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-black text-white">{exercise.name}</div>
+          <div className="mt-1 truncate text-sm text-slate-400">{exercise.muscles}</div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusPill tone={done ? "green" : "slate"}>{completed} / {exercise.targetSets} sets</StatusPill>
+          <ChevronDown className={`h-5 w-5 text-slate-300 transition ${expanded ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+      {expanded && (
+        <div className="border-t border-white/10 bg-black/15 p-3">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-xl bg-white/[0.045] p-3">
+              <div className="text-xs font-bold text-slate-500">Previous best</div>
+              <div className="mt-1 font-mono font-black text-white">{exercise.previousBest}</div>
+            </div>
+            <div className="rounded-xl bg-white/[0.045] p-3">
+              <div className="text-xs font-bold text-slate-500">Last time</div>
+              <div className="mt-1 truncate font-mono font-black text-white">{exercise.lastTime}</div>
+            </div>
+          </div>
+          {exercise.sets.length > 0 && (
+            <div className="mt-3 space-y-1">
+              {exercise.sets.slice(-3).map((set) => (
+                <div key={set.id} className="flex items-center justify-between rounded-xl bg-white/[0.035] px-3 py-2 font-mono text-sm text-slate-200">
+                  <span>Set {set.set}</span>
+                  <span>{set.weight} lb x {set.reps}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <MobilePrimaryButton onClick={onSelect} className="mt-3 w-full">Log this exercise</MobilePrimaryButton>
+        </div>
+      )}
+    </GlassCard>
+  );
 }
 
 function SetTable({ sets, onToggle }: { sets: LoggedSet[]; onToggle: (set: LoggedSet) => void }) {
