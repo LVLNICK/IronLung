@@ -11,7 +11,7 @@ export function HomePage({ analyzer }: { snapshot: MobileSnapshot; analyzer: Mob
     <div className="space-y-4">
       <BrandHeader />
       <section>
-        <h1 className="text-[1.72rem] font-black leading-tight tracking-tight min-[400px]:text-[1.95rem]">Good morning, Alex.</h1>
+        <h1 className="text-[1.72rem] font-black leading-tight tracking-tight min-[400px]:text-[1.95rem]">Good morning.</h1>
         <p className="text-base text-slate-400 min-[400px]:text-lg">You're on track. Let's get better today.</p>
       </section>
 
