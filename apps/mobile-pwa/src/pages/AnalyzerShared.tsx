@@ -11,7 +11,8 @@ export type AnalyzerPageProps = {
 
 export function PageIntro({ kicker, title, body }: { kicker: string; title: string; body: string }) {
   return (
-    <MobileCard>
+    <MobileCard className="relative overflow-hidden">
+      <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-electric/10 blur-2xl" />
       <div className="text-sm font-bold uppercase tracking-wider text-electricText">{kicker}</div>
       <h1 className="mt-1 text-3xl font-black">{title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-white/60">{body}</p>
@@ -28,12 +29,65 @@ export function InsightLine({ label, value }: { label: string; value: string }) 
   );
 }
 
+export function WidgetTitle({ children, meta }: { children: string; meta?: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="text-xs font-black uppercase tracking-wider text-white">{children}</div>
+      {meta && <div className="rounded-md border border-electric/40 bg-electric/10 px-2 py-0.5 font-mono text-[0.65rem] font-black text-electricText">{meta}</div>}
+    </div>
+  );
+}
+
+export function MiniBarChart({ rows, tone = "blue" }: { rows: RankedValue[]; tone?: "blue" | "yellow" | "red" }) {
+  const values = rows.length ? rows.slice(0, 12).map((row) => row.value) : [3, 5, 4, 7, 6, 9, 5, 8, 10, 4, 7, 11];
+  const max = Math.max(...values, 1);
+  const fill = tone === "yellow" ? "bg-yellow-300" : tone === "red" ? "bg-red-400" : "bg-electric";
+  return (
+    <div className="mt-4 grid h-20 grid-cols-12 items-end gap-1.5">
+      {values.map((value, index) => (
+        <div key={`${value}-${index}`} className={`min-h-2 rounded-t-full ${fill}`} style={{ height: `${Math.max(10, (value / max) * 100)}%` }} />
+      ))}
+    </div>
+  );
+}
+
+export function CompactProgressRows({ rows, unit, onOpenSync, limit = 5 }: { rows: RankedValue[]; unit: string; onOpenSync?: () => void; limit?: number }) {
+  if (!rows.length) return <EmptyState icon={BarChart3} title="No data yet" body="Import a desktop seed bundle to view analyzer widgets offline." actionLabel="Import Desktop Data" onAction={onOpenSync} />;
+  const visibleRows = rows.slice(0, limit);
+  const max = Math.max(...visibleRows.map((row) => row.value), 1);
+  return (
+    <div className="space-y-3">
+      {visibleRows.map((row, index) => {
+        const width = Math.max(4, (row.value / max) * 100);
+        const status = width < 45 ? "Under" : width > 96 && index > 0 ? "Over" : "Optimal";
+        const fill = status === "Under" ? "bg-yellow-300" : status === "Over" ? "bg-red-400" : "bg-electric";
+        const badge = status === "Under" ? "bg-yellow-300/10 text-yellow-300" : status === "Over" ? "bg-red-400/10 text-red-300" : "bg-electric/15 text-electricText";
+        return (
+          <div key={row.label} className="grid grid-cols-[84px_1fr_58px] items-center gap-2 text-xs">
+            <div>
+              <div className="truncate font-black text-white">{row.label}</div>
+              {row.meta && <div className="truncate text-[0.65rem] text-white/40">{row.meta}</div>}
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div className={`h-full rounded-full ${fill}`} style={{ width: `${width}%` }} />
+            </div>
+            <div className="text-right">
+              <div className="font-mono text-white/70">{formatNumber(row.value)} {unit}</div>
+              <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[0.6rem] font-black ${badge}`}>{status}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function StrengthRows({ rows, unit, metric = "e1rm", onOpenSync }: { rows: MobileAnalyzerModel["strengthRows"]; unit: string; metric?: "e1rm" | "max"; onOpenSync?: () => void }) {
   if (!rows.length) return <EmptyState icon={Trophy} title="No strength data" body="Import a desktop seed bundle to analyze your lifts offline." actionLabel="Import Desktop Data" onAction={onOpenSync} />;
   return (
     <div className="space-y-3">
       {rows.map((row) => (
-        <div key={row.exerciseId} className="rounded-xl border border-line bg-panelSoft p-3">
+        <div key={row.exerciseId} className="rounded-xl border border-line bg-panelSoft p-3 shadow-[inset_2px_0_0_rgba(59,130,246,0.65)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="font-bold">{row.exerciseName}</div>
@@ -78,7 +132,8 @@ export function PrList({ snapshot, prs }: { snapshot: MobileSnapshot; prs: Mobil
       {prs.map((record) => {
         const exercise = snapshot.exercises.find((item) => item.id === record.exerciseId);
         return (
-          <div key={record.id} className="rounded-xl border border-electric bg-electric/10 p-3">
+          <div key={record.id} className="relative overflow-hidden rounded-xl border border-electric bg-electric/10 p-3">
+            <div className="absolute -right-6 -top-6 h-14 w-14 rounded-full bg-electric/10 blur-xl" />
             <div className="text-xs font-bold uppercase tracking-wider text-white/50">{exercise?.name ?? "Exercise"} - {record.importance ?? "small"}</div>
             <div className="mt-1 font-mono text-lg font-black">{formatPr(record.type)} - {formatNumber(record.value)} {record.unit}</div>
             <div className="text-xs text-white/45">{new Date(record.achievedAt).toLocaleDateString()}</div>

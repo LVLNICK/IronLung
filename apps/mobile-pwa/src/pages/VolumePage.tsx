@@ -1,6 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { MobileCard } from "../components/MobilePrimitives";
-import { PageIntro, RankedBars, StatPill, formatSigned, type AnalyzerPageProps } from "./AnalyzerShared";
+import { CompactProgressRows, MiniBarChart, PageIntro, RankedBars, StatPill, WidgetTitle, formatSigned, type AnalyzerPageProps } from "./AnalyzerShared";
 
 export function VolumePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps) {
   return (
@@ -11,19 +11,21 @@ export function VolumePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps
         <StatPill label="Sets delta" value={`${formatSigned(analyzer.summary.comparison.setsDeltaPercent)}%`} />
       </div>
       <MobileCard>
-        <div className="mb-3 font-bold">Weekly volume</div>
-        <RankedBars rows={analyzer.weeklyRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <WidgetTitle meta={snapshot.settings.unitPreference}>Weekly volume</WidgetTitle>
+        <MiniBarChart rows={analyzer.weeklyRows} />
+        <CompactProgressRows rows={analyzer.weeklyRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
-        <div className="mb-3 font-bold">Daily volume</div>
+        <WidgetTitle meta={snapshot.settings.unitPreference}>Daily volume</WidgetTitle>
         <RankedBars rows={analyzer.dailyRows.slice(0, 14)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
-        <div className="mb-3 font-bold">Top exercises by volume</div>
-        <RankedBars rows={analyzer.topExerciseVolumeRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <WidgetTitle meta={snapshot.settings.unitPreference}>Top exercises by volume</WidgetTitle>
+        <CompactProgressRows rows={analyzer.topExerciseVolumeRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
-        <div className="mb-3 flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4 text-yellow-300" />Warnings</div>
+        <WidgetTitle>Warnings</WidgetTitle>
+        <div className="mb-3 flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4 text-yellow-300" />Recovery / fatigue</div>
         <p className="text-sm leading-relaxed text-white/60">{analyzer.fatigueWarning}</p>
       </MobileCard>
     </div>

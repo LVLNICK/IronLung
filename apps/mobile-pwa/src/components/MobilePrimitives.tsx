@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode, SelectHTMLAttributes } from "react";
 
 export function MobileCard({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-line bg-panel p-4 ${className}`}>{children}</section>;
+  return <section className={`rounded-2xl border border-line bg-panel p-4 shadow-[0_18px_48px_rgba(0,0,0,0.24)] ${className}`}>{children}</section>;
 }
 
 export function MobileButton({ children, onClick, variant = "primary", disabled = false, type = "button", className = "" }: { children: ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"; disabled?: boolean; type?: "button" | "submit"; className?: string }) {
@@ -19,7 +19,7 @@ export function MobileSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
 
 export function EmptyState({ icon: Icon, title, body, actionLabel, onAction }: { icon: ComponentType<{ className?: string }>; title: string; body: string; actionLabel?: string; onAction?: () => void }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line bg-panel p-8 text-center">
+    <div className="rounded-2xl border border-dashed border-line bg-panel p-8 text-center shadow-[0_18px_48px_rgba(0,0,0,0.24)]">
       <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-panelSoft"><Icon className="h-5 w-5 text-white/40" /></div>
       <div className="font-bold text-white">{title}</div>
       <p className="mt-1 text-sm leading-relaxed text-white/55">{body}</p>
@@ -30,9 +30,9 @@ export function EmptyState({ icon: Icon, title, body, actionLabel, onAction }: {
 
 export function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line bg-panelSoft p-3">
-      <div className="text-xs uppercase tracking-wider text-white/45">{label}</div>
-      <div className="mt-1 font-mono text-xl font-bold text-white">{value}</div>
+    <div className="rounded-xl border border-line bg-panelSoft p-3 shadow-[inset_2px_0_0_rgba(59,130,246,0.75)]">
+      <div className="text-[0.65rem] font-black uppercase tracking-wider text-white/45">{label}</div>
+      <div className="mt-1 font-mono text-xl font-black tracking-tight text-white">{value}</div>
     </div>
   );
 }
