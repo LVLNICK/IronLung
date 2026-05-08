@@ -6,8 +6,9 @@ import { CircularScore, GlassCard, IconTile, MiniTrendBars, MobileGhostButton, M
 import { formatNumber } from "./AnalyzerShared";
 
 export function HomePage({ snapshot, analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
-  const volume = analyzer.summary.totals.volume;
-  const readableVolume = formatNumber(volume || 18400);
+  const homeTrend = homeTrendSeries(analyzer, snapshot);
+  const volume = analyzer.summary.totals.volume || homeTrend.values.reduce((sum, value) => sum + value, 0);
+  const readableVolume = formatNumber(volume);
   const readiness = readinessScore(analyzer);
   const bestPr = analyzer.recentPrs[0];
   const bestPrExerciseName = bestPr
@@ -60,9 +61,9 @@ export function HomePage({ snapshot, analyzer, onOpenSync, onNavigate }: { snaps
           <div>
             <SectionTitle label="Weekly load trend" />
             <div className="font-mono text-[2.05rem] font-black leading-none">{readableVolume} lb</div>
-            <p className="mt-2 text-sm text-slate-400">{formatDelta(analyzer.summary.comparison.volumeDeltaPercent)} vs previous period</p>
+            <p className="mt-2 text-sm text-slate-400">{homeTrend.source}</p>
           </div>
-          <MiniTrendBars values={trendValues(analyzer.dailyRows)} labels={["M", "T", "W", "T", "F", "S", "S"]} />
+          <MiniTrendBars values={homeTrend.values} labels={homeTrend.labels} />
         </div>
       </GlassCard>
 
@@ -150,14 +151,44 @@ function splitInsight(value: string) {
   return { title: title?.trim(), detail: detail.join(":").trim() };
 }
 
-function trendValues(rows: MobileAnalyzerModel["dailyRows"]) {
-  const values = rows.slice(0, 7).map((row) => row.value);
-  if (values.length >= 7) return values.reverse();
-  return [30, 42, 36, 54, 62, 48, 76];
+function homeTrendSeries(analyzer: MobileAnalyzerModel, snapshot: MobileSnapshot) {
+  const dailyRows = newestRowsChronological(analyzer.dailyRows);
+  if (dailyRows.some((row) => row.value > 0)) {
+    return padTrendRows(dailyRows, "Daily volume from imported workout sets.");
+  }
+  const weeklyRows = newestRowsChronological(analyzer.weeklyRows);
+  if (weeklyRows.some((row) => row.value > 0)) {
+    return padTrendRows(weeklyRows, "Weekly volume from imported workouts.");
+  }
+  const rawRows = rawSetVolumeRows(snapshot);
+  if (rawRows.some((row) => row.value > 0)) {
+    return padTrendRows(rawRows, "Raw set volume from local cache.");
+  }
+  return {
+    values: [0, 0, 0, 0, 0, 0, 0],
+    labels: ["", "", "", "", "", "", ""],
+    source: "No workout volume found yet."
+  };
 }
 
-function formatDelta(value: number) {
-  if (!Number.isFinite(value)) return "+0%";
-  const rounded = Math.round(value);
-  return `${rounded >= 0 ? "+" : ""}${rounded}%`;
+function newestRowsChronological(rows: MobileAnalyzerModel["dailyRows"]) {
+  return rows.filter((row) => Number.isFinite(row.value)).slice(0, 7).reverse();
+}
+
+function padTrendRows(rows: MobileAnalyzerModel["dailyRows"], source: string) {
+  const missing = Math.max(0, 7 - rows.length);
+  return {
+    values: [...Array(missing).fill(0), ...rows.map((row) => row.value)],
+    labels: [...Array(missing).fill(""), ...rows.map((row) => row.label.replace(/^Week\s+/i, ""))],
+    source
+  };
+}
+
+function rawSetVolumeRows(snapshot: MobileSnapshot): MobileAnalyzerModel["dailyRows"] {
+  const days = new Map<string, number>();
+  for (const set of snapshot.setLogs.filter((row) => !row.deletedAt && row.isCompleted)) {
+    const label = new Date(set.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    days.set(label, (days.get(label) ?? 0) + set.weight * set.reps);
+  }
+  return [...days.entries()].map(([label, value]) => ({ label, value })).slice(-7);
 }
