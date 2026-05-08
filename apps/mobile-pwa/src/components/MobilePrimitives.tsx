@@ -127,10 +127,11 @@ export function StatusPill({ children, tone = "blue" }: { children: ReactNode; t
 }
 
 export function MiniTrendBars({ values, labels, activeIndex = values.length - 1, className = "" }: { values: number[]; labels?: string[]; activeIndex?: number; className?: string }) {
-  const max = Math.max(...values, 1);
+  const sanitizedValues = values.map((value) => Number.isFinite(value) && value > 0 ? value : 0);
+  const max = Math.max(...sanitizedValues, 1);
   return (
     <div className={`flex h-24 items-end justify-between gap-2 ${className}`}>
-      {values.map((value, index) => (
+      {sanitizedValues.map((value, index) => (
         <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
           <div className={`w-full max-w-8 rounded-lg ${index === activeIndex ? "bg-blue-500 shadow-[0_0_18px_rgba(59,130,246,0.35)]" : "bg-slate-600/65"}`} style={{ height: `${Math.max(16, (value / max) * 86)}%` }} />
           {labels?.[index] && <div className={`text-xs ${index === activeIndex ? "font-black text-blue-400" : "text-slate-500"}`}>{labels[index]}</div>}

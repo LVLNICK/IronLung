@@ -7,6 +7,12 @@ import { formatNumber } from "./AnalyzerShared";
 
 type AnalyticsSection = "Overview" | "Strength" | "Volume" | "Balance";
 type RangeLabel = "7D" | "30D" | "90D" | "All";
+type TrendSeries = {
+  values: number[];
+  labels: string[];
+  hasVolume: boolean;
+  source: string;
+};
 
 const sections: AnalyticsSection[] = ["Overview", "Strength", "Volume", "Balance"];
 const ranges: RangeLabel[] = ["7D", "30D", "90D", "All"];
@@ -32,7 +38,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
     setActiveSection(section);
     window.requestAnimationFrame(() => document.getElementById("analytics-section-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
-  const volumeValues = trendValues(activeAnalyzer.dailyRows);
+  const volumeSeries = volumeTrendSeries(activeAnalyzer);
   const topLifts = activeAnalyzer.strengthRows.slice(0, activeSection === "Strength" ? 24 : 5);
   const muscles = muscleSummary(activeAnalyzer);
 
@@ -58,7 +64,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
       {activeSection === "Overview" && (
         <>
           <SummaryMetrics analyzer={activeAnalyzer} />
-          <VolumeTrendCard analyzer={activeAnalyzer} values={volumeValues} />
+          <VolumeTrendCard analyzer={activeAnalyzer} series={volumeSeries} />
           <OverviewSection topLifts={topLifts} muscles={muscles} onSection={switchSection} onInsight={setSelectedInsight} />
           <InsightsCard analyzer={activeAnalyzer} selectedInsight={selectedInsight} onInsight={setSelectedInsight} />
         </>
@@ -73,7 +79,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
       {activeSection === "Volume" && (
         <>
           <VolumeMetrics analyzer={activeAnalyzer} />
-          <VolumeTrendCard analyzer={activeAnalyzer} values={volumeValues} />
+          <VolumeTrendCard analyzer={activeAnalyzer} series={volumeSeries} />
           <VolumeSection analyzer={activeAnalyzer} />
         </>
       )}
@@ -135,17 +141,32 @@ function BalanceMetrics({ analyzer, muscles }: { analyzer: MobileAnalyzerModel; 
   );
 }
 
-function VolumeTrendCard({ analyzer, values }: { analyzer: MobileAnalyzerModel; values: number[] }) {
+function VolumeTrendCard({ analyzer, series }: { analyzer: MobileAnalyzerModel; series: TrendSeries }) {
   return (
     <GlassCard className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black">Volume Trend</h2>
-          <p className="mt-1 text-sm text-slate-400">Blue bars show daily workload.</p>
+          <p className="mt-1 text-sm text-slate-400">{series.source}</p>
         </div>
         <StatusPill tone="green">{formatDelta(analyzer.summary.comparison.volumeDeltaPercent)}</StatusPill>
       </div>
-      <MiniTrendBars values={values} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
+      {series.hasVolume ? (
+        <>
+          <MiniTrendBars values={series.values} labels={series.labels} className="h-40" />
+          <div className="mt-3 grid grid-cols-7 gap-1 text-center font-mono text-[0.62rem] text-slate-500">
+            {series.values.map((value, index) => <span key={`${series.labels[index]}-${index}`}>{shortVolume(value)}</span>)}
+          </div>
+        </>
+      ) : (
+        <div className="grid min-h-40 place-items-center rounded-2xl border border-dashed border-white/15 bg-white/[0.035] p-5 text-center">
+          <div>
+            <BarChart3 className="mx-auto h-8 w-8 text-slate-500" />
+            <div className="mt-3 text-sm font-black text-white">No volume in this range</div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-400">Switch to a longer range or import a desktop seed with workout history.</p>
+          </div>
+        </div>
+      )}
     </GlassCard>
   );
 }
@@ -329,9 +350,44 @@ function BodyMini() {
   );
 }
 
-function trendValues(rows: MobileAnalyzerModel["dailyRows"]) {
-  const values = rows.slice(0, 7).map((row) => row.value).reverse();
-  return values.length ? [...Array(Math.max(0, 7 - values.length)).fill(0), ...values] : [18, 24, 32, 28, 42, 38, 55];
+function volumeTrendSeries(analyzer: MobileAnalyzerModel): TrendSeries {
+  const dailyRows = newestRowsChronological(analyzer.dailyRows);
+  if (dailyRows.some((row) => row.value > 0)) {
+    return padTrendRows(dailyRows, "Daily volume from imported workout sets.");
+  }
+
+  const weeklyRows = newestRowsChronological(analyzer.weeklyRows);
+  if (weeklyRows.some((row) => row.value > 0)) {
+    return padTrendRows(weeklyRows, "Weekly volume shown because this range has no daily volume bars.");
+  }
+
+  return {
+    values: [0, 0, 0, 0, 0, 0, 0],
+    labels: ["", "", "", "", "", "", ""],
+    hasVolume: false,
+    source: "No imported set volume was found for this range."
+  };
+}
+
+function newestRowsChronological(rows: MobileAnalyzerModel["dailyRows"]): MobileAnalyzerModel["dailyRows"] {
+  return rows
+    .filter((row) => Number.isFinite(row.value))
+    .slice(0, 7)
+    .reverse();
+}
+
+function padTrendRows(rows: MobileAnalyzerModel["dailyRows"], source: string): TrendSeries {
+  const missing = Math.max(0, 7 - rows.length);
+  return {
+    values: [...Array(missing).fill(0), ...rows.map((row) => row.value)],
+    labels: [...Array(missing).fill(""), ...rows.map((row) => compactTrendLabel(row.label))],
+    hasVolume: true,
+    source
+  };
+}
+
+function compactTrendLabel(label: string): string {
+  return label.replace(/^Week\s+/i, "").replace(/\s+/g, " ");
 }
 
 function muscleSummary(analyzer: MobileAnalyzerModel) {
