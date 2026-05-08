@@ -28,6 +28,10 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
     );
   }
 
+  const switchSection = (section: AnalyticsSection) => {
+    setActiveSection(section);
+    window.requestAnimationFrame(() => document.getElementById("analytics-section-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   const volumeValues = trendValues(activeAnalyzer.dailyRows);
   const topLifts = activeAnalyzer.strengthRows.slice(0, activeSection === "Strength" ? 24 : 5);
   const muscles = muscleSummary(activeAnalyzer);
@@ -38,7 +42,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
 
       <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
         {sections.map((tab) => (
-          <button key={tab} onClick={() => setActiveSection(tab)} className={`min-h-[44px] rounded-xl text-[0.73rem] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 min-[390px]:text-sm ${activeSection === tab ? "bg-blue-500 text-white shadow-[0_0_22px_rgba(59,130,246,0.28)]" : "text-slate-300"}`}>
+          <button key={tab} onClick={() => switchSection(tab)} className={`min-h-[44px] rounded-xl text-[0.73rem] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 min-[390px]:text-sm ${activeSection === tab ? "bg-blue-500 text-white shadow-[0_0_22px_rgba(59,130,246,0.28)]" : "text-slate-300"}`}>
             {tab}
           </button>
         ))}
@@ -67,7 +71,9 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
         <MiniTrendBars values={volumeValues} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
       </GlassCard>
 
-      {activeSection === "Overview" && <OverviewSection analyzer={activeAnalyzer} topLifts={topLifts} muscles={muscles} onSection={setActiveSection} onInsight={setSelectedInsight} />}
+      <div id="analytics-section-detail" className="scroll-mt-4" />
+
+      {activeSection === "Overview" && <OverviewSection analyzer={activeAnalyzer} topLifts={topLifts} muscles={muscles} onSection={switchSection} onInsight={setSelectedInsight} />}
       {activeSection === "Strength" && <StrengthSection analyzer={activeAnalyzer} topLifts={topLifts} onInsight={setSelectedInsight} />}
       {activeSection === "Volume" && <VolumeSection analyzer={activeAnalyzer} />}
       {activeSection === "Balance" && <BalanceSection analyzer={activeAnalyzer} muscles={muscles} />}
