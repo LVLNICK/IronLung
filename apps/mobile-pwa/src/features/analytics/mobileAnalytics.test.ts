@@ -48,6 +48,22 @@ describe("mobile analyzer model", () => {
     expect(model.strengthPrs.map((record) => record.importance)).toContain("small");
     expect(model.strengthPrs.map((record) => record.importance)).not.toContain("baseline");
   });
+
+  it("includes active unfinished mobile workouts in volume and recent PR analytics", () => {
+    const data = snapshot();
+    const mobileTime = new Date(Date.now() + 1000).toISOString();
+    data.sessions.push({ id: "mobile-session", name: "Mobile", workoutTemplateId: null, startedAt: mobileTime, finishedAt: null, createdAt: mobileTime, updatedAt: mobileTime, originDeviceId: "phone", lastModifiedDeviceId: "phone", syncVersion: 1, importSource: "mobile-pwa", mobileBatchId: null, deletedAt: null });
+    data.sessionExercises.push({ id: "mobile-row", workoutSessionId: "mobile-session", exerciseId: "bench", orderIndex: 0, createdAt: mobileTime, updatedAt: mobileTime, originDeviceId: "phone", lastModifiedDeviceId: "phone", syncVersion: 1, importSource: "mobile-workout", mobileBatchId: null, deletedAt: null });
+    data.setLogs.push({ id: "mobile-set", workoutSessionExerciseId: "mobile-row", setNumber: 1, weight: 275, reps: 5, rpe: 9, setType: "working", isCompleted: true, createdAt: mobileTime, updatedAt: mobileTime, originDeviceId: "phone", lastModifiedDeviceId: "phone", syncVersion: 1, importSource: "mobile-workout", mobileBatchId: null, deletedAt: null });
+    data.personalRecords.push({ id: "mobile-pr", exerciseId: "bench", workoutSessionId: "mobile-session", setLogId: "mobile-set", type: "estimated_1rm", value: 321, unit: "lbs", importance: "major", achievedAt: mobileTime, updatedAt: mobileTime, originDeviceId: "phone", lastModifiedDeviceId: "phone", syncVersion: 1, importSource: "mobile-workout", mobileBatchId: null, deletedAt: null });
+
+    const model = buildMobileAnalyzer(data, "7d");
+
+    expect(model.summary.totals.sessions).toBe(2);
+    expect(model.summary.totals.volume).toBeGreaterThan(225 * 5);
+    expect(model.dailyRows[0].value).toBeGreaterThan(0);
+    expect(model.recentPrs[0].id).toBe("mobile-pr");
+  });
 });
 
 function snapshot(): MobileSnapshot {

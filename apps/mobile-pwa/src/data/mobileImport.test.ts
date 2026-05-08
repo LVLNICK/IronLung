@@ -100,6 +100,55 @@ describe("desktop seed import", () => {
     expect(await getAllFromStore("exercises")).toHaveLength(1);
   });
 
+  it("remaps imported workout rows and PRs to an existing duplicate-name exercise", async () => {
+    await clearAllMobileData();
+    await putInStore("exercises", {
+      id: "existing-bench",
+      name: "Bench Press",
+      primaryMuscle: "Chest",
+      secondaryMuscles: [],
+      equipment: "Barbell",
+      movementPattern: "Press",
+      isUnilateral: false,
+      createdAt: "2026-05-01T00:00:00.000Z",
+      updatedAt: "2026-05-01T00:00:00.000Z",
+      deletedAt: null,
+      originDeviceId: "desktop",
+      lastModifiedDeviceId: "phone",
+      syncVersion: 1,
+      mobileBatchId: null
+    });
+    const incoming = seedBundle();
+    incoming.records.exercises[0] = { ...incoming.records.exercises[0], id: "boostcamp-bench", name: "bench press" };
+    incoming.records.sessionExercises![0] = { ...incoming.records.sessionExercises![0], exerciseId: "boostcamp-bench" };
+    incoming.records.personalRecords = [
+      {
+        id: "boostcamp-pr",
+        exerciseId: "boostcamp-bench",
+        workoutSessionId: "session",
+        setLogId: "set",
+        type: "estimated_1rm",
+        value: 263,
+        unit: "lbs",
+        importance: "major",
+        achievedAt: "2026-05-06T10:05:00.000Z",
+        updatedAt: "2026-05-06T10:05:00.000Z",
+        deletedAt: null,
+        originDeviceId: "boostcamp",
+        lastModifiedDeviceId: "boostcamp",
+        syncVersion: 1,
+        importSource: "boostcamp-training-history",
+        mobileBatchId: null
+      }
+    ];
+
+    await importMobileSeedBundle(incoming, settings());
+
+    expect(await getAllFromStore("exercises")).toHaveLength(1);
+    expect((await getAllFromStore("sessionExercises"))[0].exerciseId).toBe("existing-bench");
+    expect((await getAllFromStore("personalRecords"))[0].exerciseId).toBe("existing-bench");
+  });
+
   it("rejects invalid seed files", () => {
     expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "wrong" })).toThrow("IronLung mobile seed");
     expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "ironlung-mobile-seed", exportedAt: "bad", unitPreference: "lbs", records: { exercises: [] } })).toThrow("exportedAt");

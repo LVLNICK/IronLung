@@ -58,6 +58,7 @@ export function validateMobileSeedBundle(value: unknown): MobileSeedBundle {
 
 export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings: MobileSettings): Promise<MobileImportSummary> {
   validateMobileSeedBundle(bundle);
+  const exerciseIdRemap = await buildDuplicateExerciseIdRemap(bundle.records.exercises);
   const summary: MobileImportSummary = {
     created: 0,
     updated: 0,
@@ -77,11 +78,14 @@ export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings:
     onCreate: () => { summary.exercisesCreated += 1; },
     onUpdate: () => { summary.exercisesUpdated += 1; }
   });
+  const templateExercises = (bundle.records.templateExercises ?? []).map((row) => ({ ...row, exerciseId: remapExerciseId(row.exerciseId, exerciseIdRemap) }));
+  const sessionExercises = (bundle.records.sessionExercises ?? []).map((row) => ({ ...row, exerciseId: remapExerciseId(row.exerciseId, exerciseIdRemap) }));
+  const personalRecords = (bundle.records.personalRecords ?? []).map((row) => ({ ...row, exerciseId: remapExerciseId(row.exerciseId, exerciseIdRemap) }));
   await mergeRows("templates", bundle.records.templates ?? [], settings.deviceId, summary, {
     onCreate: () => { summary.templatesImported += 1; },
     onUpdate: () => { summary.templatesImported += 1; }
   });
-  await mergeRows("templateExercises", bundle.records.templateExercises ?? [], settings.deviceId, summary);
+  await mergeRows("templateExercises", templateExercises, settings.deviceId, summary);
   await mergeRows("trainingBlocks", bundle.records.trainingBlocks ?? [], settings.deviceId, summary, {
     onCreate: () => { summary.blocksImported += 1; },
     onUpdate: () => { summary.blocksImported += 1; }
@@ -90,12 +94,12 @@ export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings:
     onCreate: () => { summary.workoutsCreated += 1; },
     onUpdate: () => { summary.workoutsUpdated += 1; }
   });
-  await mergeRows("sessionExercises", bundle.records.sessionExercises ?? [], settings.deviceId, summary);
+  await mergeRows("sessionExercises", sessionExercises, settings.deviceId, summary);
   await mergeRows("setLogs", bundle.records.setLogs ?? [], settings.deviceId, summary, {
     onCreate: () => { summary.setsCreated += 1; },
     onUpdate: () => { summary.setsUpdated += 1; }
   });
-  await mergeRows("personalRecords", bundle.records.personalRecords ?? [], settings.deviceId, summary);
+  await mergeRows("personalRecords", personalRecords, settings.deviceId, summary);
 
   await putInStore("settings", {
     ...settings,
@@ -104,6 +108,23 @@ export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings:
     lastImportedAt: bundle.exportedAt
   });
   return summary;
+}
+
+async function buildDuplicateExerciseIdRemap(incomingExercises: MobileExercise[]): Promise<Map<string, string>> {
+  const existingExercises = await getAllFromStore("exercises");
+  const existingById = new Map(existingExercises.filter((row) => !row.deletedAt).map((row) => [row.id, row]));
+  const existingIdByName = new Map(existingExercises.filter((row) => !row.deletedAt).map((row) => [normalizeName(row.name), row.id]));
+  const remap = new Map<string, string>();
+  for (const incoming of incomingExercises) {
+    if (!incoming.id || existingById.has(incoming.id)) continue;
+    const existingId = existingIdByName.get(normalizeName(incoming.name));
+    if (existingId) remap.set(incoming.id, existingId);
+  }
+  return remap;
+}
+
+function remapExerciseId(exerciseId: string, remap: Map<string, string>): string {
+  return remap.get(exerciseId) ?? exerciseId;
 }
 
 async function mergeRows<K extends keyof MobileDbStores>(

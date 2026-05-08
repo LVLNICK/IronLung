@@ -128,7 +128,7 @@ function toAnalyticsDataset(snapshot: MobileSnapshot, range: MobileRangePreset, 
   const currentBlockId = resolveCurrentBlockId(snapshot);
   const exercises = snapshot.exercises.filter((row) => !row.deletedAt);
   const exerciseIds = new Set(exercises.filter((exercise) => muscleFilter === "all" || exerciseContributesToMuscle(exercise, muscleFilter)).map((exercise) => exercise.id));
-  const sessions = snapshot.sessions.filter((row) => !row.deletedAt && row.finishedAt && (range !== "block" || !currentBlockId || row.trainingBlockId === currentBlockId));
+  const sessions = snapshot.sessions.filter((row) => !row.deletedAt && isAnalyticsSession(row) && (range !== "block" || !currentBlockId || row.trainingBlockId === currentBlockId));
   const sessionIds = new Set(sessions.map((session) => session.id));
   const sessionExercises = snapshot.sessionExercises.filter((row) => !row.deletedAt && sessionIds.has(row.workoutSessionId) && exerciseIds.has(row.exerciseId));
   const rowIds = new Set(sessionExercises.map((row) => row.id));
@@ -181,6 +181,10 @@ function bestPrsByExerciseAndType(records: PersonalRecord[]): PersonalRecord[] {
 
 function exerciseContributesToMuscle(exercise: MobileSnapshot["exercises"][number], muscle: string): boolean {
   return resolveMuscleContributions(exercise).some((contribution) => contribution.muscle === muscle);
+}
+
+function isAnalyticsSession(session: MobileSnapshot["sessions"][number]): boolean {
+  return Boolean(session.finishedAt) || session.importSource === "mobile-pwa";
 }
 
 function resolveCurrentBlockId(snapshot: MobileSnapshot): string | null {

@@ -5,12 +5,16 @@ import type { MobileTab } from "../types";
 import { CircularScore, GlassCard, IconTile, MiniTrendBars, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
-export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
+export function HomePage({ snapshot, analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
   const volume = analyzer.summary.totals.volume;
   const readableVolume = formatNumber(volume || 18400);
   const readiness = readinessScore(analyzer);
   const bestPr = analyzer.recentPrs[0];
-  const bestPrExercise = bestPr ? analyzer.strengthRows.find((row) => row.exerciseId === bestPr.exerciseId) : null;
+  const bestPrExerciseName = bestPr
+    ? analyzer.strengthRows.find((row) => row.exerciseId === bestPr.exerciseId)?.exerciseName
+      ?? snapshot.exercises.find((exercise) => exercise.id === bestPr.exerciseId)?.name
+      ?? "Exercise"
+    : null;
   const topInsight = splitInsight(analyzer.topInsight);
   const focus = splitInsight(analyzer.weakPoint);
   const hasFatigue = analyzer.summary.fatigueFlags.length > 0;
@@ -68,7 +72,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
           <div className="flex items-center gap-3">
             <IconTile icon={Dumbbell} />
             <div className="min-w-0">
-              <div className="truncate text-base font-black">{bestPrExercise?.exerciseName ?? "No PR yet"}</div>
+              <div className="truncate text-base font-black">{bestPrExerciseName ?? "No PR yet"}</div>
               <div className="mt-1 font-mono text-xl font-black text-blue-400">{bestPr ? `${formatNumber(bestPr.value)} ${bestPr.unit}` : "Import data"}</div>
             </div>
           </div>
