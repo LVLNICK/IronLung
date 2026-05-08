@@ -3,7 +3,7 @@ import { Database, FileDown, FileUp, ShieldCheck, Trash2 } from "lucide-react";
 import { GlassCard, ListRow, MetricChip, MobileButton, MobileCard, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { getMobileStorageMode } from "../data/mobileDb";
 import { createMobileExportBundle } from "../data/mobileExport";
-import { importMobileSeedBundle, validateMobileSeedBundle } from "../data/mobileImport";
+import { importMobileSeedBundle, parseMobileImportFile } from "../data/mobileImport";
 import { clearAnalyzerCache, saveSettings, type MobileSnapshot } from "../data/mobileRepository";
 import { formatNumber, importedDataStatus } from "./AnalyzerShared";
 
@@ -47,12 +47,15 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
   async function importSeed(file?: File) {
     if (!file) return;
     try {
-      const bundle = validateMobileSeedBundle(JSON.parse(await file.text()));
+      setStatus(`Importing ${file.name}...`);
+      const bundle = parseMobileImportFile(await file.text(), snapshot.settings);
       const summary = await importMobileSeedBundle(bundle, snapshot.settings);
       await refresh();
-      setStatus(`Imported desktop data: ${summary.created} created, ${summary.updated} updated, ${summary.skipped} skipped.`);
+      setStatus(`Imported ${file.name}: ${summary.created} created, ${summary.updated} updated, ${summary.skipped} skipped.`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not import desktop data.");
+    } finally {
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -89,7 +92,7 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
           <MobileButton variant="ghost" onClick={() => inputRef.current?.click()} className="flex items-center justify-center gap-2"><FileUp className="h-4 w-4" />Import desktop data</MobileButton>
           <MobileButton variant="ghost" onClick={exportCacheBackup} className="flex items-center justify-center gap-2"><FileDown className="h-4 w-4" />Export cache backup</MobileButton>
           <MobileButton variant="danger" onClick={clearCache} className="flex items-center justify-center gap-2"><Trash2 className="h-4 w-4" />Clear analyzer cache</MobileButton>
-          <input ref={inputRef} className="hidden" type="file" accept=".json,.ironlung-mobile-seed.json,application/json" onChange={(event) => importSeed(event.target.files?.[0])} />
+          <input ref={inputRef} className="hidden" type="file" accept=".json,.ironlung-mobile-seed.json,application/json" onChange={(event) => void importSeed(event.target.files?.[0])} />
         </div>
       </MobileCard>
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { clearAllMobileData, getAllFromStore, putInStore } from "./mobileDb";
 import { clearAnalyzerCache } from "./mobileRepository";
-import { importMobileSeedBundle, validateMobileSeedBundle } from "./mobileImport";
+import { importMobileSeedBundle, parseMobileImportFile, validateMobileSeedBundle } from "./mobileImport";
 import type { MobileSeedBundle, MobileSettings } from "./mobileSyncTypes";
 
 describe("desktop seed import", () => {
@@ -112,6 +112,92 @@ describe("desktop seed import", () => {
     const storedSettings = await getAllFromStore("settings");
 
     expect(storedSettings[0].lastImportedAt).toBe(seedBundle().exportedAt);
+  });
+
+  it("accepts a full IronLung desktop JSON export", async () => {
+    await clearAllMobileData();
+    const parsed = parseMobileImportFile(JSON.stringify({
+      version: 1,
+      exportedAt: "2026-05-08T12:00:00.000Z",
+      data: {
+        unitPreference: "lbs",
+        exercises: seedBundle().records.exercises,
+        templates: [],
+        templateExercises: [],
+        trainingBlocks: [],
+        sessions: seedBundle().records.sessions,
+        sessionExercises: seedBundle().records.sessionExercises,
+        setLogs: seedBundle().records.setLogs,
+        personalRecords: seedBundle().records.personalRecords,
+        photos: [],
+        analyses: []
+      }
+    }), settings());
+
+    expect(parsed.bundleType).toBe("ironlung-mobile-seed");
+    expect(parsed.records.sessions).toHaveLength(1);
+    const result = await importMobileSeedBundle(parsed, settings());
+    expect(result.workoutsCreated).toBe(1);
+    expect(await getAllFromStore("setLogs")).toHaveLength(1);
+  });
+
+  it("accepts raw Boostcamp training-history JSON exports", async () => {
+    await clearAllMobileData();
+    const parsed = parseMobileImportFile(JSON.stringify({
+      code: 200,
+      requestId: "test",
+      data: {
+        "2026-05-08": [
+          {
+            id: "workout-1",
+            title: "Upper",
+            finished_at: "2026-05-08T15:00:00.000Z",
+            records: [
+              {
+                id: "record-1",
+                name: "Bench Press",
+                sets: [
+                  { archived_weight: 135, archived_reps: 10, rpe: 7 },
+                  { archived_weight: 185, archived_reps: 8, rpe: 8 }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }), settings());
+
+    expect(parsed.bundleType).toBe("ironlung-mobile-seed");
+    expect(parsed.records.exercises[0].name).toBe("Bench Press");
+    expect(parsed.records.sessions).toHaveLength(1);
+    expect(parsed.records.setLogs).toHaveLength(2);
+    const result = await importMobileSeedBundle(parsed, settings());
+    expect(result.workoutsCreated).toBe(1);
+    expect(result.setsCreated).toBe(2);
+    expect(await getAllFromStore("personalRecords")).not.toHaveLength(0);
+  });
+
+  it("imports the same raw Boostcamp file twice without duplicating generated records", async () => {
+    await clearAllMobileData();
+    const raw = JSON.stringify({
+      data: {
+        "2026-05-08": [
+          {
+            id: "workout-1",
+            title: "Upper",
+            finished_at: "2026-05-08T15:00:00.000Z",
+            records: [{ name: "Bench Press", sets: [{ archived_weight: 135, archived_reps: 10 }] }]
+          }
+        ]
+      }
+    });
+
+    await importMobileSeedBundle(parseMobileImportFile(raw, settings()), settings());
+    const second = await importMobileSeedBundle(parseMobileImportFile(raw, settings()), settings());
+
+    expect(second.created).toBe(0);
+    expect(await getAllFromStore("sessions")).toHaveLength(1);
+    expect(await getAllFromStore("setLogs")).toHaveLength(1);
   });
 
   it("clears imported analyzer records while preserving device settings", async () => {
