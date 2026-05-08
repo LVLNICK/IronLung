@@ -1,85 +1,103 @@
-import { ChevronRight, Dumbbell, Shield, Target, TrendingUp, Zap } from "lucide-react";
+import { Bell, ChevronRight, Dumbbell, ShieldCheck, Target, TrendingUp, Zap } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
+import { CircularScore, GlassCard, IconTile, MiniTrendBars, MobileGhostButton, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
 export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
-  const volume = formatNumber(analyzer.summary.totals.volume || 18400);
+  const volume = analyzer.summary.totals.volume;
+  const readableVolume = formatNumber(volume || 18400);
+  const readiness = readinessScore(analyzer);
   const bestPr = analyzer.recentPrs[0];
   const bestLift = analyzer.strengthRows[0];
+  const topInsight = splitInsight(analyzer.topInsight);
+  const focus = splitInsight(analyzer.weakPoint);
+  const hasFatigue = analyzer.summary.fatigueFlags.length > 0;
+
   return (
     <div className="space-y-4">
       <BrandHeader />
-      <section>
-        <h1 className="text-[1.72rem] font-black leading-tight tracking-tight min-[400px]:text-[1.95rem]">Good morning.</h1>
-        <p className="text-base text-slate-400 min-[400px]:text-lg">You're on track. Let's get better today.</p>
+
+      <section className="pt-1">
+        <h1 className="text-[1.9rem] font-black leading-tight tracking-tight">Good morning.</h1>
+        <p className="mt-1 text-base leading-relaxed text-slate-400">You're on track. Let's get better today.</p>
       </section>
 
       <GlassCard className="p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 min-[400px]:grid-cols-[minmax(0,1fr)_8.75rem]">
-          <div>
-            <div className="text-xs font-black uppercase tracking-wider text-blue-400">Today's readiness</div>
-            <h2 className="mt-3 text-[1.28rem] font-black leading-tight min-[400px]:text-[1.48rem]">Upper Strength Ready</h2>
-            <p className="mt-3 text-[0.9rem] leading-relaxed text-slate-300 min-[400px]:text-[0.98rem]">Chest/back ratio is low and recovery is good. Last hard press session was 5 days ago.</p>
+        <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] items-center gap-3 min-[400px]:grid-cols-[minmax(0,1fr)_7.75rem]">
+          <div className="min-w-0">
+            <SectionTitle label="Today's readiness" />
+            <h2 className="text-[1.45rem] font-black leading-tight">Upper Strength Ready</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-300">{topInsight.detail || "Recovery looks steady. Keep the first heavy sets crisp and stop if reps slow down hard."}</p>
           </div>
-          <ReadinessDial value={82} />
+          <CircularScore value={readiness} label="ready" size="normal" />
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button onClick={() => onNavigate("train")} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blue-500 text-base font-black text-white shadow-[0_0_32px_rgba(59,130,246,0.42)] min-[400px]:min-h-14 min-[400px]:text-lg">Train Today <ChevronRight className="h-5 w-5" /></button>
-          <button onClick={onOpenSync} className="min-h-12 rounded-2xl border border-white/25 bg-white/[0.03] text-base font-bold text-white min-[400px]:min-h-14 min-[400px]:text-lg">Edit Plan</button>
+        <div className="mt-5 grid grid-cols-[1.25fr_1fr] gap-3">
+          <MobilePrimaryButton onClick={() => onNavigate("train")} className="flex items-center justify-center gap-2 text-base">Train Today <ChevronRight className="h-5 w-5" /></MobilePrimaryButton>
+          <MobileGhostButton onClick={onOpenSync} className="text-base">Sync/Data</MobileGhostButton>
         </div>
       </GlassCard>
 
       <button onClick={() => onNavigate("analytics")} className="block w-full text-left">
-      <GlassCard className="grid grid-cols-[3.5rem_1fr_1.25rem] items-center gap-3 p-4 transition hover:border-blue-500/45 min-[400px]:grid-cols-[4.6rem_1fr_1.5rem] min-[400px]:gap-4 min-[400px]:p-5">
-        <IconTile icon={Target} size="large" />
-        <div>
-          <div className="text-xs font-black uppercase tracking-wider text-blue-400">What to focus on</div>
-          <div className="mt-2 text-lg font-black leading-tight min-[400px]:text-xl">Add rear delt + row work</div>
-          <p className="mt-1 text-sm text-slate-400">Back exposure is 38% lower than chest.</p>
-        </div>
-        <ChevronRight className="h-7 w-7 text-white" />
-      </GlassCard>
+        <GlassCard className="grid grid-cols-[3.5rem_minmax(0,1fr)_1.25rem] items-center gap-3 p-4 transition hover:border-blue-500/45">
+          <IconTile icon={Target} size="large" />
+          <div className="min-w-0">
+            <SectionTitle label="What to focus on" />
+            <div className="text-lg font-black leading-tight">{focus.title || "Add rear delt + row work"}</div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-400">{focus.detail || "Back exposure is lower than pressing volume in this cache."}</p>
+          </div>
+          <ChevronRight className="h-6 w-6 text-white" />
+        </GlassCard>
       </button>
 
-      <GlassCard className="grid grid-cols-1 gap-4 p-4 min-[410px]:grid-cols-[1fr_11rem] min-[410px]:items-end min-[410px]:p-5">
-        <div>
-          <div className="text-xs font-black uppercase tracking-wider text-blue-400">Weekly load trend</div>
-          <div className="mt-3 text-[1.9rem] font-black leading-none min-[400px]:text-[2.15rem]">{volume} lb</div>
-          <p className="mt-3 text-base text-slate-400 min-[400px]:text-lg">+12% vs last week</p>
+      <GlassCard className="p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_9rem] items-end gap-4">
+          <div>
+            <SectionTitle label="Weekly load trend" />
+            <div className="font-mono text-[2.05rem] font-black leading-none">{readableVolume} lb</div>
+            <p className="mt-2 text-sm text-slate-400">{formatDelta(analyzer.summary.comparison.volumeDeltaPercent)} vs previous period</p>
+          </div>
+          <MiniTrendBars values={trendValues(analyzer.dailyRows)} labels={["M", "T", "W", "T", "F", "S", "S"]} />
         </div>
-        <WeekBars />
       </GlassCard>
 
       <div className="grid grid-cols-2 gap-3">
         <GlassCard className="p-4">
-          <div className="text-xs font-black uppercase tracking-wider text-blue-400">Recent PR</div>
-          <div className="mt-4 flex items-center gap-3">
+          <SectionTitle label="Recent PR" />
+          <div className="flex items-center gap-3">
             <IconTile icon={Dumbbell} />
-            <div>
-              <div className="text-base font-black leading-tight min-[400px]:text-xl">{bestLift?.exerciseName ?? "Bench Press"}</div>
-              <div className="mt-1 text-xl font-black text-blue-400 min-[400px]:text-2xl">{bestPr ? formatNumber(bestPr.value) : "225"} lb x 5</div>
+            <div className="min-w-0">
+              <div className="truncate text-base font-black">{bestLift?.exerciseName ?? "No PR yet"}</div>
+              <div className="mt-1 font-mono text-xl font-black text-blue-400">{bestPr ? `${formatNumber(bestPr.value)} ${bestPr.unit}` : "Import data"}</div>
             </div>
           </div>
-          <button onClick={() => onNavigate("analytics")} className="mt-5 flex w-full items-center justify-between border-t border-white/10 pt-4 text-left text-slate-400"><span>+10 lb from last best</span><ChevronRight /></button>
+          <button onClick={() => onNavigate("analytics")} className="mt-4 flex w-full items-center justify-between border-t border-white/10 pt-3 text-left text-sm text-slate-400">
+            <span>{bestPr ? "View PR details" : "Open analytics"}</span><ChevronRight className="h-5 w-5" />
+          </button>
         </GlassCard>
+
         <GlassCard className="p-4">
-          <div className="text-xs font-black uppercase tracking-wider text-blue-400">Recovery check</div>
-          <StatusRow label="Fatigue" value="High" tone="yellow" />
-          <StatusRow label="Sleep" value="Good" tone="green" sub="7h 42m" />
-          <StatusRow label="Soreness" value="Low" tone="green" />
-          <button onClick={() => onNavigate("analytics")} className="mt-3 flex w-full items-center justify-between border-t border-white/10 pt-3 text-left text-blue-400">View details <ChevronRight /></button>
+          <SectionTitle label="Recovery check" />
+          <RecoveryRow label="Fatigue" value={hasFatigue ? "Flag" : "Stable"} tone={hasFatigue ? "yellow" : "green"} />
+          <RecoveryRow label="Sleep" value="Good" tone="green" sub="local note" />
+          <RecoveryRow label="Soreness" value={hasFatigue ? "Watch" : "Low"} tone={hasFatigue ? "yellow" : "green"} />
+          <button onClick={() => onNavigate("analytics")} className="mt-3 flex w-full items-center justify-between border-t border-white/10 pt-3 text-left text-sm text-blue-400">View details <ChevronRight className="h-5 w-5" /></button>
         </GlassCard>
       </div>
 
-      <GlassCard className="grid grid-cols-[3.5rem_1fr_4.8rem] items-center gap-3 p-4 min-[400px]:grid-cols-[4.6rem_1fr_6rem] min-[400px]:gap-4 min-[400px]:p-5">
+      <GlassCard className="grid grid-cols-[3.5rem_minmax(0,1fr)_5.5rem] items-center gap-3 p-4">
         <IconTile icon={Zap} size="large" />
-        <div>
-          <div className="text-lg font-black leading-tight min-[400px]:text-xl">Momentum is building.</div>
-          <p className="mt-1 text-slate-400">Keep pushing this week.</p>
+        <div className="min-w-0">
+          <div className="text-lg font-black leading-tight">Momentum is building.</div>
+          <p className="mt-1 text-sm text-slate-400">{analyzer.currentBlockName === "No current block" ? "No current block selected." : analyzer.currentBlockName}</p>
         </div>
-        <MiniDial value="6" label="day streak" />
+        <div className="grid h-20 w-20 place-items-center rounded-full border-[8px] border-blue-500/90 border-b-slate-700">
+          <div className="text-center">
+            <div className="font-mono text-2xl font-black">{formatNumber(Math.max(1, analyzer.summary.totals.sessions || 0))}</div>
+            <div className="text-[0.65rem] text-slate-400">sessions</div>
+          </div>
+        </div>
       </GlassCard>
     </div>
   );
@@ -89,92 +107,53 @@ export function BrandHeader() {
   return (
     <div className="mb-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="h-12 w-12 rounded-2xl bg-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.45)]" style={{ clipPath: "polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%)" }} />
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.45)]" style={{ clipPath: "polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%)" }}>
+          <ShieldCheck className="h-6 w-6 text-white" />
+        </div>
         <div>
-          <div className="text-[1.45rem] font-black leading-none min-[400px]:text-[1.65rem]">IronLung</div>
+          <div className="text-[1.45rem] font-black leading-none">IronLung</div>
           <div className="mt-1 text-xs font-black uppercase tracking-widest text-slate-400">Local-first fitness</div>
         </div>
       </div>
-      <div className="relative">
-        <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-blue-500" />
-        <Shield className="h-8 w-8 text-white" />
+      <div className="relative grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04]">
+        <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-blue-500" />
+        <Bell className="h-6 w-6 text-white" />
       </div>
     </div>
   );
 }
 
-export function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={`rounded-[1.45rem] border border-white/12 bg-[linear-gradient(135deg,rgba(26,35,51,0.88),rgba(12,17,27,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_22px_50px_rgba(0,0,0,0.32)] ${className}`}>{children}</section>;
-}
-
-export function IconTile({ icon: Icon, size = "normal" }: { icon: typeof Dumbbell; size?: "normal" | "large" }) {
-  return <div className={`${size === "large" ? "h-14 w-14 min-[400px]:h-16 min-[400px]:w-16" : "h-10 w-10 min-[400px]:h-11 min-[400px]:w-11"} grid place-items-center rounded-2xl border border-blue-500/35 bg-blue-500/10 text-blue-400 shadow-[inset_0_0_24px_rgba(59,130,246,0.14)]`}><Icon className={size === "large" ? "h-8 w-8 min-[400px]:h-9 min-[400px]:w-9" : "h-5 w-5 min-[400px]:h-6 min-[400px]:w-6"} /></div>;
-}
-
-function ReadinessDial({ value }: { value: number }) {
-  const arcPath = "M 24 104 C 30 32, 130 32, 136 104";
+function RecoveryRow({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone: "green" | "yellow" }) {
   return (
-    <div className="relative h-28 w-28 shrink-0 min-[400px]:h-36 min-[400px]:w-36">
-      <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 160 140" aria-hidden="true">
-        <defs>
-          <linearGradient id="readiness-blue" x1="24" y1="104" x2="136" y2="18" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#2f7dff" />
-            <stop offset="1" stopColor="#4f91ff" />
-          </linearGradient>
-          <filter id="readiness-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <path d={arcPath} pathLength="100" fill="none" stroke="rgba(55,65,81,0.72)" strokeWidth="13" strokeLinecap="round" />
-        <path d={arcPath} pathLength="100" fill="none" stroke="url(#readiness-blue)" strokeWidth="13" strokeLinecap="round" strokeDasharray={`${Math.min(100, Math.max(0, value))} 100`} filter="url(#readiness-glow)" />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-12 text-center">
-        <div className="text-[2.35rem] font-black leading-[0.86] tracking-tight min-[400px]:text-[2.85rem]">{value}</div>
-        <div className="mt-1 text-[1.05rem] leading-none text-slate-400 min-[400px]:mt-2 min-[400px]:text-[1.28rem]">/100</div>
-        <div className="mt-1 text-[0.85rem] leading-none text-slate-400 min-[400px]:mt-2 min-[400px]:text-[1rem]">readiness</div>
+    <div className="mt-3 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="text-sm font-bold">{label}</div>
+        <div className="text-xs text-slate-500">{sub ?? "from cache"}</div>
       </div>
+      <StatusPill tone={tone}>{value}</StatusPill>
     </div>
   );
 }
 
-function WeekBars() {
-  const bars = [34, 46, 42, 56, 64, 66, 88];
-  return (
-    <div className="flex h-24 items-end justify-between gap-2 min-[400px]:h-28 min-[400px]:gap-4">
-      {bars.map((height, index) => (
-        <div key={index} className="flex flex-col items-center gap-2">
-          <div className={`w-6 rounded-lg min-[400px]:w-8 ${index === bars.length - 1 ? "bg-blue-500" : "bg-slate-600/70"}`} style={{ height }} />
-          <div className={`text-sm min-[400px]:text-lg ${index === bars.length - 1 ? "font-black text-blue-400" : "text-slate-400"}`}>{"MTWTFSS"[index]}</div>
-        </div>
-      ))}
-    </div>
-  );
+function readinessScore(analyzer: MobileAnalyzerModel) {
+  const balance = analyzer.summary.balance.overall || 78;
+  const fatiguePenalty = Math.min(18, analyzer.summary.fatigueFlags.length * 8);
+  return Math.max(45, Math.min(96, Math.round(balance - fatiguePenalty)));
 }
 
-function StatusRow({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone: "green" | "yellow" }) {
-  const color = tone === "green" ? "text-emerald-400 bg-emerald-500/15" : "text-yellow-300 bg-yellow-500/10";
-  return (
-    <div className="mt-4 flex items-center justify-between gap-3">
-      <div>
-        <div className="text-lg font-bold">{label}</div>
-        <div className="text-sm text-slate-400">{sub ?? "Low"}</div>
-      </div>
-      <span className={`rounded-full px-4 py-1.5 font-bold ${color}`}>{value}</span>
-    </div>
-  );
+function splitInsight(value: string) {
+  const [title, ...detail] = value.split(":");
+  return { title: title?.trim(), detail: detail.join(":").trim() };
 }
 
-function MiniDial({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="grid h-24 w-24 place-items-center rounded-full border-[10px] border-blue-500/90 border-b-slate-700 border-r-blue-500/80">
-      <div className="text-center">
-        <div className="text-2xl font-black min-[400px]:text-3xl">{value}</div>
-        <div className="text-xs text-slate-300">{label}</div>
-      </div>
-    </div>
-  );
+function trendValues(rows: MobileAnalyzerModel["dailyRows"]) {
+  const values = rows.slice(0, 7).map((row) => row.value);
+  if (values.length >= 7) return values.reverse();
+  return [30, 42, 36, 54, 62, 48, 76];
+}
+
+function formatDelta(value: number) {
+  if (!Number.isFinite(value)) return "+0%";
+  const rounded = Math.round(value);
+  return `${rounded >= 0 ? "+" : ""}${rounded}%`;
 }

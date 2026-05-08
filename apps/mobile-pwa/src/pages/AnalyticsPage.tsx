@@ -1,132 +1,201 @@
 import { useState } from "react";
-import { CalendarCheck, ChevronDown, ChevronRight, Dumbbell, Star, TrendingUp, Trophy } from "lucide-react";
+import { BarChart3, CalendarCheck, ChevronRight, Dumbbell, Star, TrendingUp, Trophy } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
+import { EmptyMobileState, GlassCard, IconTile, MetricChip, MiniTrendBars, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
-import { GlassCard, IconTile } from "./HomePage";
 
 type AnalyticsSection = "Overview" | "Strength" | "Volume" | "Balance";
+type RangeLabel = "7D" | "30D" | "90D" | "All";
 
 const sections: AnalyticsSection[] = ["Overview", "Strength", "Volume", "Balance"];
-const ranges = ["Last 7 Days", "Last 30 Days", "Last 90 Days", "All Time"];
+const ranges: RangeLabel[] = ["7D", "30D", "90D", "All"];
 
-export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel }) {
+export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel }) {
   const [activeSection, setActiveSection] = useState<AnalyticsSection>("Overview");
-  const [rangeIndex, setRangeIndex] = useState(1);
-  const [selectedInsight, setSelectedInsight] = useState("Tap an insight to see why it matters.");
-  const rangeLabel = ranges[rangeIndex];
+  const [range, setRange] = useState<RangeLabel>("30D");
+  const [selectedInsight, setSelectedInsight] = useState("Tap an insight to see the reasoning.");
+  const hasData = snapshot.setLogs.some((set) => !set.deletedAt);
+
+  if (!hasData) {
+    return (
+      <div className="space-y-4">
+        <PageHeader range={range} setRange={setRange} />
+        <EmptyMobileState icon={BarChart3} title="Import desktop data" body="Analytics unlock after you import an IronLung desktop seed. Your cache stays local on this phone." />
+      </div>
+    );
+  }
+
+  const volumeValues = trendValues(analyzer.dailyRows);
+  const topLifts = analyzer.strengthRows.slice(0, 5);
+  const muscles = muscleSummary(analyzer);
 
   return (
     <div className="space-y-4">
-      <header className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[2rem] font-black leading-none min-[400px]:text-[2.35rem]">Analytics</h1>
-          <p className="mt-2 text-base text-slate-400 min-[400px]:text-lg">Understand your training. Improve every week.</p>
-        </div>
-        <button onClick={() => setRangeIndex((rangeIndex + 1) % ranges.length)} className="mb-1 flex shrink-0 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.05] px-3 py-3 text-sm font-bold min-[400px]:px-5 min-[400px]:py-4 min-[400px]:text-base">
-          {rangeLabel} <ChevronDown className="h-4 w-4 min-[400px]:h-5 min-[400px]:w-5" />
-        </button>
-      </header>
+      <PageHeader range={range} setRange={setRange} />
 
-      <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.05] p-1">
+      <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
         {sections.map((tab) => (
-          <button key={tab} onClick={() => setActiveSection(tab)} className={`h-11 rounded-xl text-[0.78rem] font-bold transition min-[400px]:h-12 min-[400px]:text-base ${activeSection === tab ? "bg-blue-500 text-white" : "text-slate-300 hover:bg-white/[0.05]"}`}>
+          <button key={tab} onClick={() => setActiveSection(tab)} className={`h-11 rounded-xl text-[0.73rem] font-black transition min-[390px]:text-sm ${activeSection === tab ? "bg-blue-500 text-white shadow-[0_0_22px_rgba(59,130,246,0.28)]" : "text-slate-300"}`}>
             {tab}
           </button>
         ))}
       </div>
 
       <GlassCard className="p-4">
-        <div className="text-xs font-black uppercase tracking-wider text-blue-400">{activeSection} view</div>
-        <p className="mt-2 text-sm leading-relaxed text-slate-300">{sectionCopy(activeSection)} The range button cycles the visible period label; import a fresh desktop seed from Settings when your phone cache is outdated.</p>
-      </GlassCard>
-
-      <GlassCard className="grid grid-cols-2 gap-3 p-4 text-center min-[410px]:grid-cols-4 min-[410px]:divide-x min-[410px]:divide-white/10 min-[410px]:gap-0">
-        <Metric icon={Dumbbell} label="Total Volume" value={`${shortVolume(analyzer.summary.totals.volume || 42800)} lb`} delta="+12% vs prev 30d" />
-        <Metric icon={CalendarCheck} label="Sessions" value={formatNumber(analyzer.summary.totals.sessions || 12)} delta="+2 vs prev 30d" green />
-        <Metric icon={Star} label="PRs" value={formatNumber(analyzer.recentPrs.length || 6)} delta="+3 vs prev 30d" green />
-        <Metric icon={Trophy} label="Balance Score" value={`${analyzer.summary.balance.overall || 78}`} delta="Good" />
-      </GlassCard>
-
-      <GlassCard className="p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black min-[400px]:text-xl">Volume Trend</h2>
-          <button onClick={() => setActiveSection("Volume")} className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 font-black text-emerald-400">+12%</button>
-        </div>
-        <div className="mt-4 flex gap-7 text-sm text-slate-400"><Legend color="bg-blue-500" label="Volume (lb)" /><Legend color="bg-emerald-400" label="4-week avg" /></div>
-        <Chart />
+        <SectionTitle label={`${activeSection} summary`} />
+        <p className="text-sm leading-relaxed text-slate-300">{sectionCopy(activeSection, range)}</p>
       </GlassCard>
 
       <div className="grid grid-cols-2 gap-3">
+        <MetricChip icon={Dumbbell} label="Total Volume" value={`${shortVolume(analyzer.summary.totals.volume)} lb`} sub={formatDelta(analyzer.summary.comparison.volumeDeltaPercent)} />
+        <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(analyzer.summary.totals.sessions)} sub={`${formatDelta(analyzer.summary.comparison.sessionsDeltaPercent)} vs prev`} />
+        <MetricChip icon={Star} label="PRs" value={formatNumber(analyzer.recentPrs.length)} sub="meaningful only" />
+        <MetricChip icon={Trophy} label="Balance" value={`${Math.round(analyzer.summary.balance.overall || 0)}`} sub="muscle score" />
+      </div>
+
+      <GlassCard className="p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-black">Volume Trend</h2>
+            <p className="mt-1 text-sm text-slate-400">Blue bars show daily workload.</p>
+          </div>
+          <StatusPill tone="green">{formatDelta(analyzer.summary.comparison.volumeDeltaPercent)}</StatusPill>
+        </div>
+        <MiniTrendBars values={volumeValues} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
+      </GlassCard>
+
+      <div className="grid grid-cols-1 gap-3 min-[405px]:grid-cols-2">
         <GlassCard className="p-4">
-          <div className="flex justify-between gap-2"><h2 className="text-lg font-black min-[400px]:text-xl">Muscle Balance</h2><button onClick={() => setActiveSection("Balance")} className="shrink-0 text-blue-400">View all</button></div>
-          <div className="mt-4 grid grid-cols-1 gap-2 min-[390px]:grid-cols-[0.8fr_1.2fr]">
+          <SectionTitle label="Muscle balance" action="View all" onAction={() => setActiveSection("Balance")} />
+          <div className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-3">
             <BodyMini />
-            <div className="space-y-3 text-base">
-              {["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"].map((m, i) => <div key={m} className="flex items-center justify-between"><span className="flex items-center gap-2"><span className={`h-3 w-3 rounded-full ${i === 2 || i === 4 ? "bg-yellow-400" : i === 1 ? "bg-blue-500" : "bg-emerald-400"}`} />{m}</span><span className={i === 2 || i === 4 ? "text-yellow-300" : "text-emerald-400"}>{i === 2 || i === 4 ? "Low" : "Good"}</span></div>)}
+            <div className="space-y-2">
+              {muscles.map((muscle) => (
+                <div key={muscle.label} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-bold">{muscle.label}</span>
+                  <StatusPill tone={muscle.tone}>{muscle.status}</StatusPill>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="mt-3 rounded-xl bg-white/[0.04] p-3 text-slate-400">Shoulders and legs need more attention.</div>
+          <p className="mt-3 rounded-2xl bg-white/[0.045] p-3 text-sm leading-relaxed text-slate-400">Muscle volume is distributed from exercise contribution estimates.</p>
         </GlassCard>
+
         <GlassCard className="p-4">
-          <div className="flex justify-between gap-2"><h2 className="text-lg font-black min-[400px]:text-xl">Top Lifts</h2><button onClick={() => setActiveSection("Strength")} className="shrink-0 text-blue-400">View all</button></div>
-          <div className="mt-3 space-y-3">
-            {["Bench Press", "Deadlift", "Squat", "Overhead Press", "Pull-Up"].map((lift, i) => (
-              <button key={lift} onClick={() => setSelectedInsight(`${lift} is ranked #${i + 1} by current estimated strength in this preview.`)} className="grid w-full grid-cols-[1rem_2.4rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-left min-[400px]:grid-cols-[1.2rem_2.8rem_1fr_3rem] min-[400px]:gap-3">
-                <span className="text-lg font-black min-[400px]:text-xl">{i + 1}</span><IconTile icon={Dumbbell} /><div className="min-w-0"><div className="truncate font-bold">{lift}</div><div className="truncate text-blue-400">{["225 lb x 5", "405 lb x 3", "315 lb x 5", "135 lb x 6", "+35 lb x 5"][i]}</div></div><span className="rounded-full bg-emerald-500/15 px-1.5 py-1 text-xs font-bold text-emerald-400 min-[400px]:px-2 min-[400px]:text-sm">+{[8, 6, 5, 4, 14][i]}%</span>
+          <SectionTitle label="Top lifts" action="View all" onAction={() => setActiveSection("Strength")} />
+          <div className="space-y-3">
+            {topLifts.length ? topLifts.map((lift, index) => (
+              <button key={lift.exerciseId} onClick={() => setSelectedInsight(`${lift.exerciseName}: best set ${lift.bestSet}, estimated 1RM ${formatNumber(lift.estimatedOneRm)} lb.`)} className="grid w-full grid-cols-[1rem_2.55rem_minmax(0,1fr)_3rem] items-center gap-2 text-left">
+                <span className="font-mono text-lg font-black">{index + 1}</span>
+                <IconTile icon={Dumbbell} />
+                <div className="min-w-0">
+                  <div className="truncate font-black">{lift.exerciseName}</div>
+                  <div className="truncate font-mono text-sm text-blue-400">{lift.bestSet}</div>
+                </div>
+                <StatusPill tone={lift.strengthTrend > 0 ? "green" : "slate"}>{formatTrend(lift.strengthTrend)}</StatusPill>
               </button>
-            ))}
+            )) : <p className="text-sm text-slate-400">No lift history in this cache yet.</p>}
           </div>
         </GlassCard>
       </div>
 
       <GlassCard className="p-5">
-        <h2 className="text-lg font-black min-[400px]:text-xl">Insights & Recommendations</h2>
-        <Insight icon={TrendingUp} title="Volume is trending up" body="Great work - your consistency is paying off." onOpen={() => setSelectedInsight("Volume is up versus the previous period, so keep load increases controlled.")} />
-        <Insight icon={Star} title="Legs are lagging" body="Add 1-2 lower body sessions this week." warn onOpen={() => setSelectedInsight("Leg work is below your other trained muscles in this cached desktop data.")} />
-        <Insight icon={Trophy} title="Pulling ahead" body="Your back is improving faster than your push." onOpen={() => setSelectedInsight("Pulling movements are trending ahead of pressing movements in recent sessions.")} />
-        <div className="mt-3 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
+        <h2 className="text-xl font-black">Insights & Recommendations</h2>
+        {insightRows(analyzer).map((insight) => (
+          <InsightRow key={insight.title} {...insight} onOpen={() => setSelectedInsight(insight.detail)} />
+        ))}
+        <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
       </GlassCard>
     </div>
   );
 }
 
-function sectionCopy(section: AnalyticsSection) {
-  if (section === "Strength") return "Showing best lifts, top estimated 1RM, and strength-focused PRs.";
-  if (section === "Volume") return "Showing workload trend, weekly volume, and period-over-period load changes.";
-  if (section === "Balance") return "Showing muscle balance, weak points, and contribution-based workload distribution.";
-  return "Showing the combined training summary.";
+function PageHeader({ range, setRange }: { range: RangeLabel; setRange: (range: RangeLabel) => void }) {
+  return (
+    <header className="space-y-4">
+      <div>
+        <h1 className="text-[2.25rem] font-black leading-none">Analytics</h1>
+        <p className="mt-2 text-base leading-relaxed text-slate-400">Understand your training. Improve every week.</p>
+      </div>
+      <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
+        {ranges.map((item) => (
+          <button key={item} onClick={() => setRange(item)} className={`h-10 rounded-xl text-sm font-black transition ${range === item ? "bg-blue-500 text-white" : "text-slate-300"}`}>{item}</button>
+        ))}
+      </div>
+    </header>
+  );
 }
 
-function Metric({ icon: Icon, label, value, delta, green }: { icon: typeof Dumbbell; label: string; value: string; delta: string; green?: boolean }) {
-  return <div className="px-1 min-[400px]:px-2"><Icon className={`mx-auto h-7 w-7 min-[400px]:h-9 min-[400px]:w-9 ${green ? "text-emerald-400" : "text-blue-500"}`} /><div className="mt-2 text-xs text-slate-400 min-[400px]:mt-3 min-[400px]:text-sm">{label}</div><div className="mt-1 text-xl font-black min-[400px]:text-2xl">{value}</div><div className={`text-xs min-[400px]:text-sm ${green ? "text-emerald-400" : "text-blue-400"}`}>{delta}</div></div>;
+function InsightRow({ icon: Icon, title, detail, tone = "blue", onOpen }: { icon: typeof Dumbbell; title: string; detail: string; tone?: "blue" | "yellow" | "green"; onOpen: () => void }) {
+  return (
+    <button onClick={onOpen} className="mt-4 grid w-full grid-cols-[3rem_minmax(0,1fr)_1.25rem] items-center gap-3 border-b border-white/10 pb-4 text-left last:border-0">
+      <IconTile icon={Icon} tone={tone} />
+      <div className="min-w-0">
+        <div className="text-base font-black leading-tight">{title}</div>
+        <div className="mt-1 text-sm leading-relaxed text-slate-400">{detail}</div>
+      </div>
+      <ChevronRight className="h-5 w-5 text-slate-300" />
+    </button>
+  );
+}
+
+function BodyMini() {
+  return (
+    <div className="relative mx-auto h-44 w-20">
+      <div className="absolute left-7 top-0 h-7 w-7 rounded-full bg-slate-600" />
+      <div className="absolute left-4 top-8 h-20 w-12 rounded-[2rem] bg-blue-700" />
+      <div className="absolute left-0 top-11 h-14 w-5 rotate-[22deg] rounded-full bg-emerald-500/70" />
+      <div className="absolute right-0 top-11 h-14 w-5 -rotate-[22deg] rounded-full bg-emerald-500/70" />
+      <div className="absolute left-4 top-[6.25rem] h-16 w-5 rotate-12 rounded-full bg-yellow-500/80" />
+      <div className="absolute right-4 top-[6.25rem] h-16 w-5 -rotate-12 rounded-full bg-yellow-500/80" />
+    </div>
+  );
+}
+
+function trendValues(rows: MobileAnalyzerModel["dailyRows"]) {
+  const values = rows.slice(0, 7).map((row) => row.value).reverse();
+  return values.length ? [...Array(Math.max(0, 7 - values.length)).fill(0), ...values] : [18, 24, 32, 28, 42, 38, 55];
+}
+
+function muscleSummary(analyzer: MobileAnalyzerModel) {
+  const base = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"];
+  const max = Math.max(...analyzer.muscleRows.map((row) => row.value), 1);
+  return base.map((label) => {
+    const found = analyzer.muscleRows.find((row) => row.label.toLowerCase().includes(label.toLowerCase()));
+    const ratio = found ? found.value / max : 0;
+    const status = ratio < 0.35 ? "Low" : ratio > 0.9 ? "High" : "Good";
+    return { label, status, tone: status === "Low" ? "yellow" as const : status === "High" ? "blue" as const : "green" as const };
+  });
+}
+
+function insightRows(analyzer: MobileAnalyzerModel) {
+  return [
+    { icon: TrendingUp, title: "Top signal", detail: analyzer.topInsight, tone: "blue" as const },
+    { icon: Star, title: "Weak point", detail: analyzer.weakPoint, tone: "yellow" as const },
+    { icon: Trophy, title: "Best recent lift", detail: analyzer.bestRecentLift, tone: "green" as const }
+  ];
+}
+
+function sectionCopy(section: AnalyticsSection, range: RangeLabel) {
+  if (section === "Strength") return `Strength view for ${range}: best sets, estimated 1RM, and meaningful PR direction.`;
+  if (section === "Volume") return `Volume view for ${range}: workload trend, daily bars, and period-over-period movement.`;
+  if (section === "Balance") return `Balance view for ${range}: distributed muscle volume and weak point signals.`;
+  return `Overview for ${range}: the most important training signals in one screen.`;
 }
 
 function shortVolume(value: number) {
   return value >= 1000 ? `${(Math.round(value / 100) / 10).toFixed(1)}K` : formatNumber(value);
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
-  return <span className="flex items-center gap-2"><span className={`h-3 w-3 rounded ${color}`} />{label}</span>;
+function formatDelta(value: number) {
+  if (!Number.isFinite(value)) return "+0% vs prev";
+  const rounded = Math.round(value);
+  return `${rounded >= 0 ? "+" : ""}${rounded}% vs prev`;
 }
 
-function Chart() {
-  const bars = [32, 38, 56, 54, 64, 72, 64, 82, 88, 100];
-  return (
-    <div className="relative mt-5 h-52 border-b border-white/10 pl-8">
-      {[0, 1, 2].map((i) => <div key={i} className="absolute left-0 right-0 border-t border-white/10" style={{ top: `${i * 33}%` }} />)}
-      <div className="absolute inset-x-8 bottom-0 flex h-full items-end justify-between gap-3">
-        {bars.map((bar, index) => <div key={index} className="w-7 rounded-t bg-blue-500" style={{ height: `${bar}%`, opacity: index % 2 ? 0.76 : 1 }} />)}
-      </div>
-      <svg className="absolute inset-x-8 top-9 h-28 w-[calc(100%-4rem)] overflow-visible" viewBox="0 0 280 110" preserveAspectRatio="none"><polyline points="0,90 34,76 70,74 105,62 142,46 176,42 212,20 250,12 280,4" fill="none" stroke="#22c55e" strokeWidth="4" strokeLinecap="round" /></svg>
-    </div>
-  );
-}
-
-function BodyMini() {
-  return <div className="relative mx-auto h-48 w-24"><div className="absolute left-8 top-0 h-8 w-8 rounded-full bg-slate-600" /><div className="absolute left-5 top-8 h-24 w-14 rounded-[2rem] bg-blue-700" /><div className="absolute left-0 top-11 h-16 w-5 rotate-[22deg] rounded-full bg-emerald-500/70" /><div className="absolute right-0 top-11 h-16 w-5 -rotate-[22deg] rounded-full bg-emerald-500/70" /><div className="absolute left-5 top-28 h-20 w-6 rotate-12 rounded-full bg-yellow-500/80" /><div className="absolute right-5 top-28 h-20 w-6 -rotate-12 rounded-full bg-yellow-500/80" /></div>;
-}
-
-function Insight({ icon: Icon, title, body, warn, onOpen }: { icon: typeof Dumbbell; title: string; body: string; warn?: boolean; onOpen: () => void }) {
-  return <button onClick={onOpen} className="mt-4 grid w-full grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-center gap-3 border-b border-white/10 pb-4 text-left last:border-0 min-[400px]:grid-cols-[3.5rem_1fr_1.5rem] min-[400px]:gap-4"><IconTile icon={Icon} /><div className="min-w-0"><div className="text-base font-bold leading-tight min-[400px]:text-lg">{title}</div><div className="text-sm text-slate-400 min-[400px]:text-base">{body}</div></div><ChevronRight className={warn ? "text-yellow-300" : "text-white"} /></button>;
+function formatTrend(value: number) {
+  if (!Number.isFinite(value) || Math.round(value) === 0) return "flat";
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? "+" : ""}${rounded}%`;
 }
