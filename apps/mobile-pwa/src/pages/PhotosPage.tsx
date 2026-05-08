@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Camera, CheckCircle, ChevronRight, Info, Lock, Plus, ShieldCheck, TrendingUp } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
-import { EmptyMobileState, GlassCard, IconTile, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
+import { EmptyMobileState, GlassCard, IconTile, MobileHeader, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { BrandHeader } from "./HomePage";
 
 type PhotoPanel = "none" | "how" | "guidance" | "timeline" | "selected";
@@ -11,18 +11,17 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [panel, setPanel] = useState<PhotoPanel>("none");
   const [selectedPhoto, setSelectedPhoto] = useState("");
-  const hasPhotoPreview = Boolean(selectedPhoto);
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState("");
+  const hasPhotoPreview = Boolean(selectedPhotoUrl);
+
+  useEffect(() => () => {
+    if (selectedPhotoUrl) URL.revokeObjectURL(selectedPhotoUrl);
+  }, [selectedPhotoUrl]);
 
   return (
-    <div className="space-y-4">
+    <MobilePage>
       <BrandHeader />
-      <header className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[2rem] font-black leading-tight">Photos</h1>
-          <p className="mt-1 text-base leading-relaxed text-slate-400">Private progress tracking. Photos stay on your device.</p>
-        </div>
-        <button onClick={() => setPanel(panel === "how" ? "none" : "how")} className="shrink-0 rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-300">How it works</button>
-      </header>
+      <MobileHeader title="Photos" subtitle="Private progress tracking. Photos stay on your device." action={<button onClick={() => setPanel(panel === "how" ? "none" : "how")} className="min-h-[44px] shrink-0 rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-300">How it works</button>} />
 
       {panel === "how" && (
         <InfoPanel title="Local-only photo analysis" body="IronLung does not upload progress photos. Mobile currently previews selected files locally; desktop remains the permanent photo analysis source." />
@@ -45,7 +44,9 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (!file) return;
+            if (selectedPhotoUrl) URL.revokeObjectURL(selectedPhotoUrl);
             setSelectedPhoto(file.name);
+            setSelectedPhotoUrl(URL.createObjectURL(file));
             setPanel("selected");
           }}
         />
@@ -56,7 +57,7 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
       )}
 
       {!hasPhotoPreview ? (
-        <EmptyMobileState icon={Camera} title="No mobile photo cache yet" body="Import desktop photo metadata later, or choose Add Photo to preview the local-only flow. No cloud upload is used." />
+        <EmptyMobileState icon={Camera} title="No mobile photo cache yet" body="Start with front, side, and back photos. Keep the same lighting, distance, pose, and time of day. No cloud upload is used." />
       ) : (
         <>
           <GlassCard className="p-4">
@@ -65,8 +66,8 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
               <Info className="h-5 w-5 text-slate-400" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <PhotoCompare title="Before" ppi="PPI --" />
-              <PhotoCompare title="Selected" ppi="Preview" active />
+              <PhotoCompare title="Before" ppi="No baseline" />
+              <PhotoCompare title="Selected" ppi="Preview" active imageUrl={selectedPhotoUrl} />
             </div>
             <button onClick={() => setPanel("guidance")} className="mt-4 grid w-full grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-3 text-left">
               <TrendingUp className="h-7 w-7 text-blue-400" />
@@ -120,7 +121,7 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
         <span>By adding photos, you agree to local analysis only.</span>
         <button onClick={() => setPanel("how")} className="shrink-0 text-blue-400">Learn more</button>
       </div>
-    </div>
+    </MobilePage>
   );
 }
 
@@ -128,18 +129,19 @@ function InfoPanel({ title, body }: { title: string; body: string }) {
   return <GlassCard className="border-blue-500/30 bg-blue-500/10 p-4"><div className="text-sm font-black uppercase tracking-wider text-blue-400">{title}</div><p className="mt-2 text-sm leading-relaxed text-slate-300">{body}</p></GlassCard>;
 }
 
-function PhotoCompare({ title, ppi, active }: { title: string; ppi: string; active?: boolean }) {
+function PhotoCompare({ title, ppi, active, imageUrl }: { title: string; ppi: string; active?: boolean; imageUrl?: string }) {
   return (
     <div className={`rounded-2xl border p-2 ${active ? "border-blue-500/65 bg-blue-500/10" : "border-white/10 bg-black/10"}`}>
       <div className="mb-2 flex items-center justify-between gap-2 text-[0.68rem] font-black uppercase tracking-wide">
         <span>{title}</span><StatusPill tone={active ? "blue" : "slate"}>{ppi}</StatusPill>
       </div>
-      <PhotoFigure />
+      <PhotoFigure imageUrl={imageUrl} />
     </div>
   );
 }
 
-function PhotoFigure() {
+function PhotoFigure({ imageUrl }: { imageUrl?: string }) {
+  if (imageUrl) return <img src={imageUrl} alt="Selected local progress preview" className="h-40 w-full rounded-xl border border-white/5 object-cover" />;
   return (
     <div className="relative h-40 overflow-hidden rounded-xl border border-white/5 bg-[linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] bg-[length:22px_22px]">
       <div className="absolute left-1/2 top-5 h-7 w-7 -translate-x-1/2 rounded-full bg-slate-500" />

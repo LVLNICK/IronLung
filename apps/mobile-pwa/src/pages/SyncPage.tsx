@@ -1,11 +1,11 @@
 import { useRef } from "react";
-import { FileDown, FileUp, ShieldCheck, Trash2 } from "lucide-react";
-import { MobileButton, MobileCard } from "../components/MobilePrimitives";
+import { Database, FileDown, FileUp, ShieldCheck, Trash2 } from "lucide-react";
+import { GlassCard, ListRow, MetricChip, MobileButton, MobileCard, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { getMobileStorageMode } from "../data/mobileDb";
 import { createMobileExportBundle } from "../data/mobileExport";
 import { importMobileSeedBundle, validateMobileSeedBundle } from "../data/mobileImport";
 import { clearAnalyzerCache, saveSettings, type MobileSnapshot } from "../data/mobileRepository";
-import { PageIntro, StatPill, formatNumber, importedDataStatus } from "./AnalyzerShared";
+import { formatNumber, importedDataStatus } from "./AnalyzerShared";
 
 type SyncPageProps = {
   snapshot: MobileSnapshot;
@@ -16,6 +16,12 @@ type SyncPageProps = {
 
 export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dateRange = cachedDateRange(snapshot);
+  const importStatus = importedDataStatus(snapshot);
+  const workouts = snapshot.sessions.filter((item) => !item.deletedAt).length;
+  const sets = snapshot.setLogs.filter((item) => !item.deletedAt).length;
+  const exercises = snapshot.exercises.filter((item) => !item.deletedAt).length;
+  const prs = snapshot.personalRecords.filter((item) => !item.deletedAt).length;
 
   async function exportCacheBackup() {
     const bundle = createMobileExportBundle(pickRecords(snapshot), snapshot.settings, snapshot.operationLog);
@@ -57,44 +63,56 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
     setStatus("Local analyzer cache cleared from this phone.");
   }
 
-  const dateRange = cachedDateRange(snapshot);
-  const importStatus = importedDataStatus(snapshot);
-
   return (
     <div className="space-y-4">
-      <PageIntro kicker="Import Desktop Data" title="No-cloud phone cache" body="Your imported seed is stored locally on this phone. IronLung does not upload it anywhere." />
+      <GlassCard className="p-4">
+        <SectionTitle label="Mobile data status" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xl font-black">{workouts || sets || exercises ? "Local cache ready" : "No desktop data imported"}</div>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">Desktop remains the source of truth. Mobile currently imports analytics data and exports a local cache backup; workout writeback is not enabled yet.</p>
+          </div>
+          <StatusPill tone={workouts || sets || exercises ? "green" : "yellow"}>{workouts || sets || exercises ? "Ready" : "Empty"}</StatusPill>
+        </div>
+      </GlassCard>
+
+      <div className="grid grid-cols-2 gap-2">
+        <MetricChip icon={Database} label="Workouts" value={formatNumber(workouts)} />
+        <MetricChip icon={Database} label="Sets" value={formatNumber(sets)} />
+        <MetricChip icon={Database} label="Exercises" value={formatNumber(exercises)} />
+        <MetricChip icon={Database} label="Photos" value="0" sub="metadata not cached" />
+      </div>
+
       <MobileCard>
-        <div className="grid gap-2">
-          <MobileButton variant="ghost" onClick={() => inputRef.current?.click()}><FileUp className="mr-2 inline h-4 w-4" />Import desktop data</MobileButton>
-          <MobileButton variant="ghost" onClick={exportCacheBackup}><FileDown className="mr-2 inline h-4 w-4" />Export analyzer cache backup</MobileButton>
-          <MobileButton variant="danger" onClick={clearCache}><Trash2 className="mr-2 inline h-4 w-4" />Clear analyzer cache</MobileButton>
+        <SectionTitle label="Import / export" />
+        <div className="grid gap-3">
+          <MobileButton variant="ghost" onClick={() => inputRef.current?.click()} className="flex items-center justify-center gap-2"><FileUp className="h-4 w-4" />Import desktop data</MobileButton>
+          <MobileButton variant="ghost" onClick={exportCacheBackup} className="flex items-center justify-center gap-2"><FileDown className="h-4 w-4" />Export cache backup</MobileButton>
+          <MobileButton variant="danger" onClick={clearCache} className="flex items-center justify-center gap-2"><Trash2 className="h-4 w-4" />Clear analyzer cache</MobileButton>
           <input ref={inputRef} className="hidden" type="file" accept=".json,.ironlung-mobile-seed.json,application/json" onChange={(event) => importSeed(event.target.files?.[0])} />
         </div>
       </MobileCard>
-      <div className="grid grid-cols-2 gap-2">
-        <StatPill label="Workouts cached" value={formatNumber(snapshot.sessions.filter((item) => !item.deletedAt).length)} />
-        <StatPill label="Sets cached" value={formatNumber(snapshot.setLogs.filter((item) => !item.deletedAt).length)} />
-        <StatPill label="Exercises cached" value={formatNumber(snapshot.exercises.filter((item) => !item.deletedAt).length)} />
-        <StatPill label="PRs cached" value={formatNumber(snapshot.personalRecords.filter((item) => !item.deletedAt).length)} />
-      </div>
-      <MobileCard>
-        <div className="font-bold">Cache details</div>
-        <div className="mt-3 space-y-2 text-sm text-white/60">
-          <p>Last imported: {snapshot.settings.lastImportedAt ? new Date(snapshot.settings.lastImportedAt).toLocaleString() : "Never"}</p>
-          <p>Date range cached: {dateRange}</p>
-          <p>Storage mode: {getMobileStorageMode()}</p>
-          {importStatus.warning && <p className="text-yellow-200">{importStatus.warning}</p>}
+
+      <GlassCard className="p-4">
+        <SectionTitle label="Cache details" />
+        <div className="space-y-3">
+          <ListRow title="Last import" subtitle={snapshot.settings.lastImportedAt ? new Date(snapshot.settings.lastImportedAt).toLocaleString() : "Never imported"} />
+          <ListRow title="Date range" subtitle={dateRange} />
+          <ListRow title="Storage mode" subtitle={getMobileStorageMode()} />
+          {importStatus.warning && <p className="rounded-2xl border border-yellow-300/20 bg-yellow-400/10 p-3 text-sm leading-relaxed text-yellow-100">{importStatus.warning}</p>}
         </div>
-      </MobileCard>
-      <MobileCard>
-        <div className="flex items-center gap-2 font-bold"><ShieldCheck className="h-4 w-4 text-electricText" />Privacy</div>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">No account, no cloud sync, no server, and no uploads. File transfer is user-controlled.</p>
-        <p className="mt-2 text-xs leading-relaxed text-white/45">Phone testing from a local network may need HTTPS for full install/service-worker behavior. The analyzer cache still stays on the phone.</p>
-      </MobileCard>
-      <MobileCard>
-        <div className="font-bold">Status</div>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">{status}</p>
-      </MobileCard>
+      </GlassCard>
+
+      <GlassCard className="p-4">
+        <div className="flex items-center gap-2 font-black"><ShieldCheck className="h-5 w-5 text-blue-400" />Privacy defaults</div>
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">No account, no cloud sync, no server, no analytics tracking, and no uploads. Import/export files are controlled by you.</p>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500">Phone testing from a local network may need HTTPS for full install/service-worker behavior. The analyzer cache still stays on the phone.</p>
+      </GlassCard>
+
+      <GlassCard className="p-4">
+        <SectionTitle label="Status" />
+        <p className="text-sm leading-relaxed text-slate-300">{status}</p>
+      </GlassCard>
     </div>
   );
 }

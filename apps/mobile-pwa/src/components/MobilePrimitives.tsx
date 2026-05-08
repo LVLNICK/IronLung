@@ -11,13 +11,29 @@ export function GlassCard({ children, className = "", as = "section" }: { childr
   );
 }
 
+export function MobilePage({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`space-y-4 scroll-smooth ${className}`}>{children}</div>;
+}
+
+export function MobileHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+  return (
+    <header className="flex items-end justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="text-[2rem] font-black leading-none tracking-tight text-white min-[390px]:text-[2.25rem]">{title}</h1>
+        {subtitle && <p className="mt-2 text-base leading-relaxed text-slate-400">{subtitle}</p>}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </header>
+  );
+}
+
 export function MobileCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <GlassCard className={`p-4 ${className}`}>{children}</GlassCard>;
 }
 
 export function MobilePrimaryButton({ children, onClick, disabled = false, type = "button", className = "" }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: "button" | "submit"; className?: string }) {
   return (
-    <button type={type} disabled={disabled} onClick={onClick} className={`min-h-12 rounded-2xl bg-blue-500 px-4 text-sm font-black text-white shadow-[0_0_32px_rgba(59,130,246,0.38)] transition active:scale-[0.98] disabled:opacity-40 ${className}`}>
+    <button type={type} disabled={disabled} onClick={onClick} className={`min-h-[44px] rounded-2xl bg-blue-500 px-4 text-sm font-black text-white shadow-[0_0_32px_rgba(59,130,246,0.38)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 active:scale-[0.98] disabled:opacity-40 ${className}`}>
       {children}
     </button>
   );
@@ -25,11 +41,13 @@ export function MobilePrimaryButton({ children, onClick, disabled = false, type 
 
 export function MobileGhostButton({ children, onClick, disabled = false, type = "button", className = "" }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: "button" | "submit"; className?: string }) {
   return (
-    <button type={type} disabled={disabled} onClick={onClick} className={`min-h-12 rounded-2xl border border-white/15 bg-white/[0.045] px-4 text-sm font-bold text-slate-100 transition active:scale-[0.98] disabled:opacity-40 ${className}`}>
+    <button type={type} disabled={disabled} onClick={onClick} className={`min-h-[44px] rounded-2xl border border-white/15 bg-white/[0.045] px-4 text-sm font-bold text-slate-100 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 active:scale-[0.98] disabled:opacity-40 ${className}`}>
       {children}
     </button>
   );
 }
+
+export const MobileSecondaryButton = MobileGhostButton;
 
 export function MobileButton({ children, onClick, variant = "primary", disabled = false, type = "button", className = "" }: { children: ReactNode; onClick?: () => void; variant?: "primary" | "ghost" | "danger"; disabled?: boolean; type?: "button" | "submit"; className?: string }) {
   if (variant === "primary") return <MobilePrimaryButton type={type} disabled={disabled} onClick={onClick} className={className}>{children}</MobilePrimaryButton>;
@@ -38,14 +56,14 @@ export function MobileButton({ children, onClick, variant = "primary", disabled 
 }
 
 export function MobileSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`min-h-12 rounded-xl border border-white/12 bg-[#070a10] px-3 text-base text-white outline-none focus:border-blue-400 ${props.className ?? ""}`} />;
+  return <select {...props} className={`min-h-[44px] rounded-xl border border-white/12 bg-[#070a10] px-3 text-base text-white outline-none focus:border-blue-400 ${props.className ?? ""}`} />;
 }
 
 export function SectionTitle({ label, action, onAction }: { label: string; action?: string; onAction?: () => void }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
       <h2 className="text-xs font-black uppercase tracking-[0.18em] text-blue-400">{label}</h2>
-      {action && <button onClick={onAction} className="shrink-0 text-sm font-bold text-blue-400">{action}</button>}
+      {action && <button onClick={onAction} className="min-h-[44px] shrink-0 rounded-xl px-2 text-sm font-bold text-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">{action}</button>}
     </div>
   );
 }
@@ -65,7 +83,7 @@ export function IconTile({ icon: Icon, size = "normal", tone = "blue" }: { icon:
 
 export function MetricChip({ icon: Icon, label, value, sub }: { icon: IconComponent; label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.045] p-3">
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-blue-400" />
         <span className="text-[0.68rem] font-black uppercase tracking-wider text-slate-400">{label}</span>
@@ -74,6 +92,21 @@ export function MetricChip({ icon: Icon, label, value, sub }: { icon: IconCompon
       {sub && <div className="mt-1 text-xs text-slate-400">{sub}</div>}
     </div>
   );
+}
+
+export function ListRow({ icon: Icon, title, subtitle, meta, onClick, tone = "blue" }: { icon?: IconComponent; title: string; subtitle?: string; meta?: ReactNode; onClick?: () => void; tone?: "blue" | "green" | "yellow" | "slate" }) {
+  const content = (
+    <>
+      {Icon && <IconTile icon={Icon} tone={tone} />}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-base font-black text-white">{title}</div>
+        {subtitle && <div className="mt-1 truncate text-sm text-slate-400">{subtitle}</div>}
+      </div>
+      {meta && <div className="shrink-0">{meta}</div>}
+    </>
+  );
+  const className = "flex min-h-[64px] w-full items-center gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.045] p-3 text-left";
+  return onClick ? <button onClick={onClick} className={`${className} focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300`}>{content}</button> : <div className={className}>{content}</div>;
 }
 
 export function StatPill({ label, value }: { label: string; value: string }) {

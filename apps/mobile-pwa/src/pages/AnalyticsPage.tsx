@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BarChart3, CalendarCheck, ChevronRight, Dumbbell, Star, TrendingUp, Trophy } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
-import { EmptyMobileState, GlassCard, IconTile, MetricChip, MiniTrendBars, SectionTitle, StatusPill } from "../components/MobilePrimitives";
+import { EmptyMobileState, GlassCard, IconTile, MetricChip, MiniTrendBars, MobileHeader, MobilePage, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
 type AnalyticsSection = "Overview" | "Strength" | "Volume" | "Balance";
@@ -19,10 +19,10 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
 
   if (!hasData) {
     return (
-      <div className="space-y-4">
+      <MobilePage>
         <PageHeader range={range} setRange={setRange} />
         <EmptyMobileState icon={BarChart3} title="Import desktop data" body="Analytics unlock after you import an IronLung desktop seed. Your cache stays local on this phone." />
-      </div>
+      </MobilePage>
     );
   }
 
@@ -31,12 +31,12 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
   const muscles = muscleSummary(analyzer);
 
   return (
-    <div className="space-y-4">
+    <MobilePage>
       <PageHeader range={range} setRange={setRange} />
 
       <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
         {sections.map((tab) => (
-          <button key={tab} onClick={() => setActiveSection(tab)} className={`h-11 rounded-xl text-[0.73rem] font-black transition min-[390px]:text-sm ${activeSection === tab ? "bg-blue-500 text-white shadow-[0_0_22px_rgba(59,130,246,0.28)]" : "text-slate-300"}`}>
+          <button key={tab} onClick={() => setActiveSection(tab)} className={`min-h-[44px] rounded-xl text-[0.73rem] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 min-[390px]:text-sm ${activeSection === tab ? "bg-blue-500 text-white shadow-[0_0_22px_rgba(59,130,246,0.28)]" : "text-slate-300"}`}>
             {tab}
           </button>
         ))}
@@ -86,7 +86,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
           <SectionTitle label="Top lifts" action="View all" onAction={() => setActiveSection("Strength")} />
           <div className="space-y-3">
             {topLifts.length ? topLifts.map((lift, index) => (
-              <button key={lift.exerciseId} onClick={() => setSelectedInsight(`${lift.exerciseName}: best set ${lift.bestSet}, estimated 1RM ${formatNumber(lift.estimatedOneRm)} lb.`)} className="grid w-full grid-cols-[1rem_2.55rem_minmax(0,1fr)_3rem] items-center gap-2 text-left">
+              <button key={lift.exerciseId} onClick={() => setSelectedInsight(`${lift.exerciseName}: best set ${lift.bestSet}, estimated 1RM ${formatNumber(lift.estimatedOneRm)} lb.`)} className="grid min-h-[56px] w-full grid-cols-[1rem_2.55rem_minmax(0,1fr)_3rem] items-center gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
                 <span className="font-mono text-lg font-black">{index + 1}</span>
                 <IconTile icon={Dumbbell} />
                 <div className="min-w-0">
@@ -107,20 +107,17 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
         ))}
         <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
       </GlassCard>
-    </div>
+    </MobilePage>
   );
 }
 
 function PageHeader({ range, setRange }: { range: RangeLabel; setRange: (range: RangeLabel) => void }) {
   return (
     <header className="space-y-4">
-      <div>
-        <h1 className="text-[2.25rem] font-black leading-none">Analytics</h1>
-        <p className="mt-2 text-base leading-relaxed text-slate-400">Understand your training. Improve every week.</p>
-      </div>
+      <MobileHeader title="Analytics" subtitle="Understand your training. Improve every week." />
       <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
         {ranges.map((item) => (
-          <button key={item} onClick={() => setRange(item)} className={`h-10 rounded-xl text-sm font-black transition ${range === item ? "bg-blue-500 text-white" : "text-slate-300"}`}>{item}</button>
+          <button key={item} onClick={() => setRange(item)} className={`min-h-[44px] rounded-xl text-sm font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 ${range === item ? "bg-blue-500 text-white" : "text-slate-300"}`}>{item}</button>
         ))}
       </div>
     </header>
@@ -129,7 +126,7 @@ function PageHeader({ range, setRange }: { range: RangeLabel; setRange: (range: 
 
 function InsightRow({ icon: Icon, title, detail, tone = "blue", onOpen }: { icon: typeof Dumbbell; title: string; detail: string; tone?: "blue" | "yellow" | "green"; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} className="mt-4 grid w-full grid-cols-[3rem_minmax(0,1fr)_1.25rem] items-center gap-3 border-b border-white/10 pb-4 text-left last:border-0">
+    <button onClick={onOpen} className="mt-4 grid min-h-[64px] w-full grid-cols-[3rem_minmax(0,1fr)_1.25rem] items-center gap-3 border-b border-white/10 pb-4 text-left last:border-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
       <IconTile icon={Icon} tone={tone} />
       <div className="min-w-0">
         <div className="text-base font-black leading-tight">{title}</div>

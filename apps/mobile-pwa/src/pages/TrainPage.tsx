@@ -3,7 +3,7 @@ import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dum
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
-import { GlassCard, IconTile, MetricChip, MobileGhostButton, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
+import { GlassCard, IconTile, ListRow, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
 type LoggedSet = {
@@ -29,6 +29,7 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
   const [nextReps, setNextReps] = useState(5);
   const [nextRpe, setNextRpe] = useState(9);
   const [notice, setNotice] = useState("Local preview mode");
+  const [lastAddedPr, setLastAddedPr] = useState(false);
   const [activeExercise, setActiveExercise] = useState("Bench Press");
   const completedSets = sets.filter((set) => set.completed).length;
   const volume = sets.reduce((sum, set) => sum + set.weight * set.reps, 0);
@@ -40,9 +41,17 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
   // APIs for sessions, sessionExercises, setLogs, operationLog entries, and PR
   // recalculation. Until then this screen must not claim persisted saves.
   const addSet = () => {
-    const e1rm = Math.round(nextWeight * (1 + nextReps / 30));
-    setSets((current) => [...current, { set: current.length + 1, weight: nextWeight, reps: nextReps, rpe: nextRpe, e1rm, completed: false, pr: e1rm > topE1rm }]);
-    setNotice(`Preview set added: ${nextWeight} lb x ${nextReps}.`);
+    const sanitizedWeight = Math.max(0, Math.round(nextWeight));
+    const sanitizedReps = Math.max(1, Math.round(nextReps));
+    const sanitizedRpe = Math.max(0, Math.min(10, Math.round(nextRpe * 2) / 2));
+    const e1rm = Math.round(sanitizedWeight * (1 + sanitizedReps / 30));
+    const isPr = e1rm > topE1rm;
+    setNextWeight(sanitizedWeight);
+    setNextReps(sanitizedReps);
+    setNextRpe(sanitizedRpe);
+    setSets((current) => [...current, { set: current.length + 1, weight: sanitizedWeight, reps: sanitizedReps, rpe: sanitizedRpe, e1rm, completed: false, pr: isPr }]);
+    setLastAddedPr(isPr);
+    setNotice(isPr ? "Preview PR detected" : `Preview set added: ${sanitizedWeight} lb x ${sanitizedReps}.`);
   };
 
   const copyLastSet = () => {
@@ -53,23 +62,36 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
     setNotice("Copied last set into the entry row.");
   };
 
+  const repeatLastSet = () => {
+    const last = sets[sets.length - 1];
+    const e1rm = Math.round(last.weight * (1 + last.reps / 30));
+    const isPr = e1rm > topE1rm;
+    setNextWeight(last.weight);
+    setNextReps(last.reps);
+    setNextRpe(last.rpe);
+    setSets((current) => [...current, { set: current.length + 1, weight: last.weight, reps: last.reps, rpe: last.rpe, e1rm, completed: false, pr: isPr }]);
+    setLastAddedPr(isPr);
+    setNotice(`Repeated preview set: ${last.weight} lb x ${last.reps}.`);
+  };
+
   return (
-    <div className="space-y-4">
+    <MobilePage>
       <header className="flex items-start justify-between pt-1">
-        <button onClick={() => onNavigate("home")} aria-label="Back to Home" className="grid h-10 w-10 place-items-center rounded-full bg-white/[0.045]"><ChevronLeft className="h-7 w-7 text-white" /></button>
+        <button onClick={() => onNavigate("home")} aria-label="Back to Home" className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><ChevronLeft className="h-7 w-7 text-white" /></button>
         <div className="text-center">
           <div className="text-xl font-black leading-tight min-[400px]:text-2xl">Upper Strength - Active</div>
           <div className="mt-1 flex items-center justify-center gap-1 text-sm text-slate-400"><Clock className="h-4 w-4" />01:22 elapsed</div>
         </div>
-        <button onClick={() => setNotice("Workout actions are local preview only.")} aria-label="Workout menu" className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/[0.045]"><MoreHorizontal className="h-5 w-5" /></button>
+        <button onClick={() => setNotice("Workout actions are local preview only.")} aria-label="Workout menu" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><MoreHorizontal className="h-5 w-5" /></button>
       </header>
 
       <div className="flex items-center justify-between gap-3">
         <StatusPill tone="slate">{notice}</StatusPill>
+        {lastAddedPr && <StatusPill tone="green">New PR</StatusPill>}
         <span className="text-xs text-slate-500">Phone-local UI</span>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-4">
         <TopMetric icon={Dumbbell} value={formatNumber(volume)} label="Volume" />
         <TopMetric icon={List} value={formatNumber(sets.length)} label="Sets" />
         <TopMetric icon={Trophy} value={formatNumber(prCount)} label="PRs" />
@@ -116,11 +138,16 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
             <EntryBox label="Reps" value={formatNumber(nextReps)} unit="reps" />
             <EntryBox label="RPE" value={formatNumber(nextRpe)} unit="RPE" />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 min-[400px]:grid-cols-[1fr_1fr_1.55fr_1.55fr]">
+          <div className="mt-3 grid grid-cols-2 gap-2 min-[400px]:grid-cols-4">
             <MobileGhostButton onClick={() => setNextWeight((value) => Math.max(0, value - 5))}>-5 lb</MobileGhostButton>
             <MobileGhostButton onClick={() => setNextWeight((value) => value + 5)}>+5 lb</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextReps((value) => Math.max(1, Math.round(value - 1)))}>-1 rep</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextReps((value) => Math.round(value + 1))}>+1 rep</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextRpe((value) => Math.max(0, Math.round((value - 0.5) * 2) / 2))}>-0.5 RPE</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextRpe((value) => Math.min(10, Math.round((value + 0.5) * 2) / 2))}>+0.5 RPE</MobileGhostButton>
             <MobileGhostButton onClick={copyLastSet} className="flex items-center justify-center gap-2"><Copy className="h-4 w-4" />Copy</MobileGhostButton>
-            <MobilePrimaryButton onClick={addSet}>Add Set</MobilePrimaryButton>
+            <MobileGhostButton onClick={repeatLastSet}>Repeat set</MobileGhostButton>
+            <MobilePrimaryButton onClick={addSet} className="col-span-2 min-[400px]:col-span-4">Add Set</MobilePrimaryButton>
           </div>
         </GlassCard>
 
@@ -137,22 +164,14 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
           ["Cable Row", "Mid back", "0 / 3", "slate"],
           ["Lateral Raise", "Shoulders", "0 / 2", "slate"]
         ].map(([name, muscles, progress, tone]) => (
-          <button key={name} onClick={() => { setActiveExercise(name); setNotice(`${name} selected.`); }} className="flex w-full items-center gap-3 rounded-[1.35rem] border border-white/10 bg-white/[0.045] p-3 text-left">
-            <IconTile icon={Dumbbell} />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-lg font-black">{name}</div>
-              <div className="truncate text-sm text-slate-400">{muscles}</div>
-            </div>
-            <StatusPill tone={tone === "green" ? "green" : "slate"}>{progress} sets</StatusPill>
-            <ChevronDown className="h-5 w-5 shrink-0 text-slate-300" />
-          </button>
+          <ListRow key={name} icon={Dumbbell} title={name} subtitle={muscles} tone={tone === "green" ? "green" : "slate"} meta={<div className="flex items-center gap-2"><StatusPill tone={tone === "green" ? "green" : "slate"}>{progress} sets</StatusPill><ChevronDown className="h-5 w-5 text-slate-300" /></div>} onClick={() => { setActiveExercise(name); setNotice(`${name} selected.`); }} />
         ))}
       </div>
 
       <MobilePrimaryButton onClick={() => setNotice("Finish summary opened in preview mode.")} className="sticky bottom-28 z-10 flex h-14 w-full items-center justify-center gap-3 text-lg">
         <Check className="h-5 w-5 rounded-full border border-white" />Finish Workout
       </MobilePrimaryButton>
-    </div>
+    </MobilePage>
   );
 }
 

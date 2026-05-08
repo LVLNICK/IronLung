@@ -1,8 +1,8 @@
-import { Bell, ChevronRight, Dumbbell, ShieldCheck, Target, TrendingUp, Zap } from "lucide-react";
+import { Bell, ChevronRight, Dumbbell, ShieldCheck, Target, Zap } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
-import { CircularScore, GlassCard, IconTile, MiniTrendBars, MobileGhostButton, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
+import { CircularScore, GlassCard, IconTile, MiniTrendBars, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
 export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
@@ -16,7 +16,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
   const hasFatigue = analyzer.summary.fatigueFlags.length > 0;
 
   return (
-    <div className="space-y-4">
+    <MobilePage>
       <BrandHeader />
 
       <section className="pt-1">
@@ -25,7 +25,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
       </section>
 
       <GlassCard className="p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] items-center gap-3 min-[400px]:grid-cols-[minmax(0,1fr)_7.75rem]">
+        <div className="grid gap-4 min-[390px]:grid-cols-[minmax(0,1fr)_6.5rem] min-[400px]:grid-cols-[minmax(0,1fr)_7.75rem] min-[390px]:items-center">
           <div className="min-w-0">
             <SectionTitle label="Today's readiness" />
             <h2 className="text-[1.45rem] font-black leading-tight">Upper Strength Ready</h2>
@@ -52,7 +52,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
       </button>
 
       <GlassCard className="p-4">
-        <div className="grid grid-cols-[minmax(0,1fr)_9rem] items-end gap-4">
+        <div className="grid gap-4 min-[390px]:grid-cols-[minmax(0,1fr)_9rem] min-[390px]:items-end">
           <div>
             <SectionTitle label="Weekly load trend" />
             <div className="font-mono text-[2.05rem] font-black leading-none">{readableVolume} lb</div>
@@ -62,7 +62,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
         </div>
       </GlassCard>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2">
         <GlassCard className="p-4">
           <SectionTitle label="Recent PR" />
           <div className="flex items-center gap-3">
@@ -99,7 +99,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
           </div>
         </div>
       </GlassCard>
-    </div>
+    </MobilePage>
   );
 }
 
@@ -115,7 +115,7 @@ export function BrandHeader() {
           <div className="mt-1 text-xs font-black uppercase tracking-widest text-slate-400">Local-first fitness</div>
         </div>
       </div>
-      <div className="relative grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04]">
+      <div className="relative grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.04]" aria-label="Local-first privacy status">
         <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-blue-500" />
         <Bell className="h-6 w-6 text-white" />
       </div>

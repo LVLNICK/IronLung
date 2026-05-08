@@ -1,5 +1,6 @@
 import { SyncPage } from "./SyncPage";
 import type { MobileSnapshot } from "../data/mobileRepository";
+import { MobileHeader, MobilePage } from "../components/MobilePrimitives";
 
 type SettingsPageProps = {
   snapshot: MobileSnapshot;
@@ -10,12 +11,9 @@ type SettingsPageProps = {
 
 export function SettingsPage(props: SettingsPageProps) {
   return (
-    <div className="space-y-4">
-      <header>
-        <h1 className="text-[2rem] font-black leading-none min-[400px]:text-[2.4rem]">Settings</h1>
-        <p className="mt-2 text-base text-slate-400 min-[400px]:mt-3 min-[400px]:text-lg">Local data, privacy, import, and export.</p>
-      </header>
+    <MobilePage>
+      <MobileHeader title="Settings" subtitle="Local data, privacy, import, and export." />
       <SyncPage {...props} />
-    </div>
+    </MobilePage>
   );
 }
