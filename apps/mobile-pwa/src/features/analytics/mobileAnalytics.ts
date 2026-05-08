@@ -74,7 +74,7 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
 
   const strengthPrs = nonBaselinePrs(dataset.personalRecords)
     .sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
-  const recentPrs = strengthPrs.filter((record) => record.importance === "major" || record.importance === "medium");
+  const recentPrs = strengthPrs;
   const muscleRows = summary.muscleVolume.map((metric) => ({
     label: metric.muscle,
     value: metric.volume,

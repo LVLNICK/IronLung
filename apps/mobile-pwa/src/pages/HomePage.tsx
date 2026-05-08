@@ -10,7 +10,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
   const readableVolume = formatNumber(volume || 18400);
   const readiness = readinessScore(analyzer);
   const bestPr = analyzer.recentPrs[0];
-  const bestLift = analyzer.strengthRows[0];
+  const bestPrExercise = bestPr ? analyzer.strengthRows.find((row) => row.exerciseId === bestPr.exerciseId) : null;
   const topInsight = splitInsight(analyzer.topInsight);
   const focus = splitInsight(analyzer.weakPoint);
   const hasFatigue = analyzer.summary.fatigueFlags.length > 0;
@@ -68,7 +68,7 @@ export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: Mobil
           <div className="flex items-center gap-3">
             <IconTile icon={Dumbbell} />
             <div className="min-w-0">
-              <div className="truncate text-base font-black">{bestLift?.exerciseName ?? "No PR yet"}</div>
+              <div className="truncate text-base font-black">{bestPrExercise?.exerciseName ?? "No PR yet"}</div>
               <div className="mt-1 font-mono text-xl font-black text-blue-400">{bestPr ? `${formatNumber(bestPr.value)} ${bestPr.unit}` : "Import data"}</div>
             </div>
           </div>

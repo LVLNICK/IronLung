@@ -29,11 +29,11 @@ describe("mobile analyzer model", () => {
     expect(model.muscleRows.map((row) => row.meta)).toEqual(expect.arrayContaining(["1 related set"]));
   });
 
-  it("keeps Home PRs major and medium while preserving small PRs for strength details", () => {
+  it("keeps Home PRs non-baseline so the newest small PR can still surface", () => {
     const model = buildMobileAnalyzer(snapshot(), "30d");
 
     expect(model.recentPrs.map((record) => record.importance)).toEqual(expect.arrayContaining(["major", "medium"]));
-    expect(model.recentPrs.map((record) => record.importance)).not.toContain("small");
+    expect(model.recentPrs.map((record) => record.importance)).toContain("small");
     expect(model.recentPrs.map((record) => record.importance)).not.toContain("baseline");
     expect(model.strengthPrs.map((record) => record.importance)).toContain("small");
     expect(model.strengthPrs.map((record) => record.importance)).not.toContain("baseline");
