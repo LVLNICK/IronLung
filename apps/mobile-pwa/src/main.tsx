@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { installUuidFallback } from "./lib/uuid";
 import "./styles.css";
 
@@ -8,7 +9,9 @@ installUuidFallback();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </React.StrictMode>
 );
 

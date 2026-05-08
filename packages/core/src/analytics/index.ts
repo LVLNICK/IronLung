@@ -181,11 +181,12 @@ export function buildTrainingAnalytics(dataset: AnalyticsDataset, preset: DateRa
 }
 
 export function resolveDateRange(sessions: WorkoutSession[], preset: DateRangePreset, now = new Date()): DateRange {
-  const latest = sessions.map((session) => session.startedAt).sort().at(-1);
+  const sortedSessionDates = sessions.map((session) => session.startedAt).sort();
+  const latest = sortedSessionDates[sortedSessionDates.length - 1];
   if (preset === "all") {
     return {
       preset,
-      start: sessions.map((session) => session.startedAt).sort()[0] ?? null,
+      start: sortedSessionDates[0] ?? null,
       end: latest ?? null
     };
   }
@@ -289,7 +290,7 @@ export function exerciseMetrics(dataset: AnalyticsDataset): ExerciseMetric[] {
         bestSetVolume: max(sets.map((set) => setVolume(set.weight, set.reps))),
         estimatedOneRepMax: max(oneRepMaxes),
         prs: prs.length,
-        lastTrained: sessionDates.sort().at(-1) ?? null,
+        lastTrained: lastSortedValue(sessionDates),
         sessionsSincePr,
         strengthTrend,
         volumeTrend: slope(sessionVolumes.slice(-6)),
@@ -311,7 +312,7 @@ export function groupPrsByType(records: PersonalRecord[]): Array<{ type: PRType;
   return [...groupBy(records, (record) => record.type).entries()].map(([type, rows]) => ({
     type,
     count: rows.length,
-    lastAchievedAt: rows.map((row) => row.achievedAt).sort().at(-1) ?? null
+    lastAchievedAt: lastSortedValue(rows.map((row) => row.achievedAt))
   })).sort((a, b) => b.count - a.count);
 }
 
@@ -544,7 +545,13 @@ function deltaPercent(current: number, previous: number) {
 
 function slope(values: number[]) {
   if (values.length < 2) return 0;
-  return round(values.at(-1)! - values[0]);
+  return round(values[values.length - 1] - values[0]);
+}
+
+function lastSortedValue(values: string[]) {
+  if (!values.length) return null;
+  const sorted = [...values].sort();
+  return sorted[sorted.length - 1] ?? null;
 }
 
 function median(values: number[]) {

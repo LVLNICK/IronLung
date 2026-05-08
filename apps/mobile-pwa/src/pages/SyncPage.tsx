@@ -115,5 +115,5 @@ function pickRecords(snapshot: MobileSnapshot) {
 function cachedDateRange(snapshot: MobileSnapshot): string {
   const dates = snapshot.sessions.filter((session) => !session.deletedAt).map((session) => session.startedAt).sort();
   if (!dates.length) return "No workouts cached";
-  return `${new Date(dates[0]).toLocaleDateString()} - ${new Date(dates.at(-1) ?? dates[0]).toLocaleDateString()}`;
+  return `${new Date(dates[0]).toLocaleDateString()} - ${new Date(dates[dates.length - 1] ?? dates[0]).toLocaleDateString()}`;
 }

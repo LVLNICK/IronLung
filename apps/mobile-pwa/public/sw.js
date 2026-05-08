@@ -1,4 +1,4 @@
-const CACHE_NAME = "ironlung-analyzer-v3";
+const CACHE_NAME = "ironlung-analyzer-v4";
 const fromScope = (path) => new URL(path, self.registration.scope).toString();
 const APP_SHELL = [fromScope("./"), fromScope("index.html"), fromScope("manifest.webmanifest"), fromScope("icons/icon-192.svg"), fromScope("icons/icon-512.svg")];
 
@@ -27,8 +27,16 @@ self.addEventListener("fetch", (event) => {
 
 async function cacheAppShell() {
   const cache = await caches.open(CACHE_NAME);
-  const results = await Promise.allSettled(APP_SHELL.map((url) => cache.add(url)));
-  if (results[0]?.status === "rejected" && results[1]?.status === "rejected") {
+  const results = [];
+  for (const url of APP_SHELL) {
+    try {
+      await cache.add(url);
+      results.push({ status: "fulfilled" });
+    } catch {
+      results.push({ status: "rejected" });
+    }
+  }
+  if (results[0] && results[0].status === "rejected" && results[1] && results[1].status === "rejected") {
     throw new Error("IronLung Analyzer shell could not be cached.");
   }
 }

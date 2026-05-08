@@ -13,6 +13,7 @@ export function createMobileExportBundle(records: MobileRecords, settings: Mobil
     templateExercises: records.templateExercises.filter((row) => !row.deletedAt)
   };
   const dates = filteredRecords.sessions.map((session) => session.startedAt).sort();
+  const lastDate = dates[dates.length - 1];
   return {
     schemaVersion: 1,
     bundleType: "ironlung-mobile-export",
@@ -29,7 +30,7 @@ export function createMobileExportBundle(records: MobileRecords, settings: Mobil
       exercises: filteredRecords.exercises.length,
       dateRange: {
         start: dates[0],
-        end: dates.at(-1)
+        end: lastDate
       }
     }
   };
