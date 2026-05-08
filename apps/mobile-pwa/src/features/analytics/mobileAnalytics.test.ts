@@ -29,6 +29,16 @@ describe("mobile analyzer model", () => {
     expect(model.muscleRows.map((row) => row.meta)).toEqual(expect.arrayContaining(["1 related set"]));
   });
 
+  it("changes totals when analytics date range changes", () => {
+    const data = snapshot();
+    const sevenDays = buildMobileAnalyzer(data, "7d");
+    const allTime = buildMobileAnalyzer(data, "all");
+
+    expect(sevenDays.summary.totals.sessions).toBe(1);
+    expect(allTime.summary.totals.sessions).toBe(2);
+    expect(allTime.summary.totals.volume).toBeGreaterThan(sevenDays.summary.totals.volume);
+  });
+
   it("keeps Home PRs non-baseline so the newest small PR can still surface", () => {
     const model = buildMobileAnalyzer(snapshot(), "30d");
 

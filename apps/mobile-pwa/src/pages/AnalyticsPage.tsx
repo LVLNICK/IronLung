@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BarChart3, CalendarCheck, ChevronRight, Dumbbell, Star, TrendingUp, Trophy } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
-import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
+import { buildMobileAnalyzer, type MobileAnalyzerModel, type MobileRangePreset } from "../features/analytics/mobileAnalytics";
 import { EmptyMobileState, GlassCard, IconTile, MetricChip, MiniTrendBars, MobileHeader, MobilePage, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
@@ -15,7 +15,9 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
   const [activeSection, setActiveSection] = useState<AnalyticsSection>("Overview");
   const [range, setRange] = useState<RangeLabel>("30D");
   const [selectedInsight, setSelectedInsight] = useState("Tap an insight to see the reasoning.");
+  const rangeAnalyzer = useMemo(() => buildMobileAnalyzer(snapshot, toRangePreset(range), "all"), [snapshot, range]);
   const hasData = snapshot.setLogs.some((set) => !set.deletedAt);
+  const activeAnalyzer = hasData ? rangeAnalyzer : analyzer;
 
   if (!hasData) {
     return (
@@ -26,9 +28,9 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
     );
   }
 
-  const volumeValues = trendValues(analyzer.dailyRows);
-  const topLifts = analyzer.strengthRows.slice(0, 5);
-  const muscles = muscleSummary(analyzer);
+  const volumeValues = trendValues(activeAnalyzer.dailyRows);
+  const topLifts = activeAnalyzer.strengthRows.slice(0, 5);
+  const muscles = muscleSummary(activeAnalyzer);
 
   return (
     <MobilePage>
@@ -48,10 +50,10 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
       </GlassCard>
 
       <div className="grid grid-cols-2 gap-3">
-        <MetricChip icon={Dumbbell} label="Total Volume" value={`${shortVolume(analyzer.summary.totals.volume)} lb`} sub={formatDelta(analyzer.summary.comparison.volumeDeltaPercent)} />
-        <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(analyzer.summary.totals.sessions)} sub={`${formatDelta(analyzer.summary.comparison.sessionsDeltaPercent)} vs prev`} />
-        <MetricChip icon={Star} label="PRs" value={formatNumber(analyzer.recentPrs.length)} sub="meaningful only" />
-        <MetricChip icon={Trophy} label="Balance" value={`${Math.round(analyzer.summary.balance.overall || 0)}`} sub="muscle score" />
+        <MetricChip icon={Dumbbell} label="Total Volume" value={`${shortVolume(activeAnalyzer.summary.totals.volume)} lb`} sub={formatDelta(activeAnalyzer.summary.comparison.volumeDeltaPercent)} />
+        <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(activeAnalyzer.summary.totals.sessions)} sub={`${formatDelta(activeAnalyzer.summary.comparison.sessionsDeltaPercent)} vs prev`} />
+        <MetricChip icon={Star} label="PRs" value={formatNumber(activeAnalyzer.recentPrs.length)} sub="non-baseline" />
+        <MetricChip icon={Trophy} label="Balance" value={`${Math.round(activeAnalyzer.summary.balance.overall || 0)}`} sub="muscle score" />
       </div>
 
       <GlassCard className="p-5">
@@ -60,7 +62,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
             <h2 className="text-xl font-black">Volume Trend</h2>
             <p className="mt-1 text-sm text-slate-400">Blue bars show daily workload.</p>
           </div>
-          <StatusPill tone="green">{formatDelta(analyzer.summary.comparison.volumeDeltaPercent)}</StatusPill>
+          <StatusPill tone="green">{formatDelta(activeAnalyzer.summary.comparison.volumeDeltaPercent)}</StatusPill>
         </div>
         <MiniTrendBars values={volumeValues} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
       </GlassCard>
@@ -102,7 +104,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
 
       <GlassCard className="p-5">
         <h2 className="text-xl font-black">Insights & Recommendations</h2>
-        {insightRows(analyzer).map((insight) => (
+        {insightRows(activeAnalyzer).map((insight) => (
           <InsightRow key={insight.title} {...insight} onOpen={() => setSelectedInsight(insight.detail)} />
         ))}
         <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
@@ -117,11 +119,18 @@ function PageHeader({ range, setRange }: { range: RangeLabel; setRange: (range: 
       <MobileHeader title="Analytics" subtitle="Understand your training. Improve every week." />
       <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
         {ranges.map((item) => (
-          <button key={item} onClick={() => setRange(item)} className={`min-h-[44px] rounded-xl text-sm font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 ${range === item ? "bg-blue-500 text-white" : "text-slate-300"}`}>{item}</button>
+          <button key={item} aria-label={`Range ${item}`} onClick={() => setRange(item)} className={`min-h-[44px] rounded-xl text-sm font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 ${range === item ? "bg-blue-500 text-white" : "text-slate-300"}`}>{item}</button>
         ))}
       </div>
     </header>
   );
+}
+
+function toRangePreset(range: RangeLabel): MobileRangePreset {
+  if (range === "7D") return "7d";
+  if (range === "90D") return "90d";
+  if (range === "All") return "all";
+  return "30d";
 }
 
 function InsightRow({ icon: Icon, title, detail, tone = "blue", onOpen }: { icon: typeof Dumbbell; title: string; detail: string; tone?: "blue" | "yellow" | "green"; onOpen: () => void }) {
