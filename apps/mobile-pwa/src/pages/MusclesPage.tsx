@@ -18,16 +18,16 @@ export function MusclesPage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProp
       </MobileCard>
       <MobileCard>
         <WidgetTitle meta={snapshot.settings.unitPreference}>Top muscles</WidgetTitle>
-        <MiniBarChart rows={analyzer.topMuscleRows} />
-        <CompactProgressRows rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <MiniBarChart rows={analyzer.topMuscleRows} caption="Top muscles by distributed volume. Taller bars mean more estimated work for that muscle." />
+        <CompactProgressRows rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="Muscle volume is distributed by exercise contribution estimates. Longer bars mean more estimated work." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle>Neglected muscles</WidgetTitle>
-        <RankedBars rows={analyzer.neglectedMuscles} unit={snapshot.settings.unitPreference} invert onOpenSync={onOpenSync} />
+        <RankedBars rows={analyzer.neglectedMuscles} unit={snapshot.settings.unitPreference} invert onOpenSync={onOpenSync} caption="Lowest trained muscles with nonzero volume. Longer bars still mean more volume, so the shortest rows are most neglected." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle>Muscle drilldown</WidgetTitle>
-        <RankedBars rows={analyzer.muscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <RankedBars rows={analyzer.muscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="All muscles ranked by distributed volume. Longer bars mean more estimated work in the selected range." />
       </MobileCard>
     </div>
   );

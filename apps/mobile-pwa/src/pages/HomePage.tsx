@@ -15,7 +15,7 @@ export function HomePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps) 
           <span className="font-bold text-white">{status.label}</span>
           {status.warning && <div className="mt-1 text-yellow-200">{status.warning}</div>}
         </div>
-        <MiniBarChart rows={analyzer.dailyRows} />
+        <MiniBarChart rows={analyzer.dailyRows} caption="Daily volume for the selected range. Each bar is one day; taller bars mean more total weight moved that day." />
       </MobileCard>
       {status.isEmpty && <EmptyState icon={Database} title="Import desktop data" body="IronLung Analyzer is read-only. Import a desktop seed bundle to view analytics offline on this phone." actionLabel="Import Desktop Data" onAction={onOpenSync} />}
       <div className="grid grid-cols-3 gap-2">
@@ -37,7 +37,7 @@ export function HomePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps) 
       </div>
       <MobileCard>
         <WidgetTitle meta={`${analyzer.topMuscleRows.length}`}>Muscle momentum</WidgetTitle>
-        <CompactProgressRows rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <CompactProgressRows rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="Distributed volume by muscle. Longer bars mean that muscle received more estimated work." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle>Recent PR cards</WidgetTitle>

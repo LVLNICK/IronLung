@@ -38,25 +38,37 @@ export function WidgetTitle({ children, meta }: { children: string; meta?: strin
   );
 }
 
-export function MiniBarChart({ rows, tone = "blue" }: { rows: RankedValue[]; tone?: "blue" | "yellow" | "red" }) {
-  const values = rows.length ? rows.slice(0, 12).map((row) => row.value) : [3, 5, 4, 7, 6, 9, 5, 8, 10, 4, 7, 11];
-  const max = Math.max(...values, 1);
-  const fill = tone === "yellow" ? "bg-yellow-300" : tone === "red" ? "bg-red-400" : "bg-electric";
+export function ChartCaption({ children }: { children: string }) {
   return (
-    <div className="mt-4 grid h-20 grid-cols-12 items-end gap-1.5">
-      {values.map((value, index) => (
-        <div key={`${value}-${index}`} className={`min-h-2 rounded-t-full ${fill}`} style={{ height: `${Math.max(10, (value / max) * 100)}%` }} />
-      ))}
+    <div className="mt-3 rounded-xl border border-line bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-white/55">
+      {children}
     </div>
   );
 }
 
-export function CompactProgressRows({ rows, unit, onOpenSync, limit = 5 }: { rows: RankedValue[]; unit: string; onOpenSync?: () => void; limit?: number }) {
+export function MiniBarChart({ rows, tone = "blue", caption }: { rows: RankedValue[]; tone?: "blue" | "yellow" | "red"; caption?: string }) {
+  const values = rows.length ? rows.slice(0, 12).map((row) => row.value) : [3, 5, 4, 7, 6, 9, 5, 8, 10, 4, 7, 11];
+  const max = Math.max(...values, 1);
+  const fill = tone === "yellow" ? "bg-yellow-300" : tone === "red" ? "bg-red-400" : "bg-electric";
+  return (
+    <div>
+      <div className="mt-4 grid h-20 grid-cols-12 items-end gap-1.5" aria-label={caption ?? "Bar chart"}>
+        {values.map((value, index) => (
+          <div key={`${value}-${index}`} className={`min-h-2 rounded-t-full ${fill}`} style={{ height: `${Math.max(10, (value / max) * 100)}%` }} />
+        ))}
+      </div>
+      {caption && <ChartCaption>{caption}</ChartCaption>}
+    </div>
+  );
+}
+
+export function CompactProgressRows({ rows, unit, onOpenSync, limit = 5, caption = "Bars compare rows inside this card. Longer means more of the metric shown on the right." }: { rows: RankedValue[]; unit: string; onOpenSync?: () => void; limit?: number; caption?: string }) {
   if (!rows.length) return <EmptyState icon={BarChart3} title="No data yet" body="Import a desktop seed bundle to view analyzer widgets offline." actionLabel="Import Desktop Data" onAction={onOpenSync} />;
   const visibleRows = rows.slice(0, limit);
   const max = Math.max(...visibleRows.map((row) => row.value), 1);
   return (
     <div className="space-y-3">
+      {caption && <ChartCaption>{caption}</ChartCaption>}
       {visibleRows.map((row, index) => {
         const width = Math.max(4, (row.value / max) * 100);
         const status = width < 45 ? "Under" : width > 96 && index > 0 ? "Over" : "Optimal";
@@ -102,11 +114,12 @@ export function StrengthRows({ rows, unit, metric = "e1rm", onOpenSync }: { rows
   );
 }
 
-export function RankedBars({ rows, unit, invert = false, onOpenSync }: { rows: RankedValue[]; unit: string; invert?: boolean; onOpenSync?: () => void }) {
+export function RankedBars({ rows, unit, invert = false, onOpenSync, caption = "Bars compare rows inside this card. Longer means more of the metric shown on the right." }: { rows: RankedValue[]; unit: string; invert?: boolean; onOpenSync?: () => void; caption?: string }) {
   if (!rows.length) return <EmptyState icon={BarChart3} title="No data yet" body="Import a desktop seed bundle to view analyzer charts offline." actionLabel="Import Desktop Data" onAction={onOpenSync} />;
   const max = Math.max(...rows.map((row) => row.value), 1);
   return (
     <div className="space-y-3">
+      {caption && <ChartCaption>{caption}</ChartCaption>}
       {rows.map((row) => (
         <div key={row.label} className="rounded-xl border border-line bg-panelSoft p-3">
           <div className="flex items-center justify-between gap-3">

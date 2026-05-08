@@ -7,7 +7,7 @@ export function StrengthPage({ snapshot, analyzer, onOpenSync }: AnalyzerPagePro
       <PageIntro kicker="Strength" title="Best lifts" body="Top estimated 1RM, max weight, recent PRs, plateau candidates, and improving exercises." />
       <MobileCard>
         <WidgetTitle meta={snapshot.settings.unitPreference}>Top by estimated 1RM</WidgetTitle>
-        <MiniBarChart rows={analyzer.strengthRows.map((row) => ({ label: row.exerciseName, value: row.estimatedOneRm }))} />
+        <MiniBarChart rows={analyzer.strengthRows.map((row) => ({ label: row.exerciseName, value: row.estimatedOneRm }))} caption="Top lifts by estimated 1RM. Each bar is one exercise; taller bars mean a higher estimated max." />
         <StrengthRows rows={analyzer.strengthRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
       </MobileCard>
       <MobileCard>
@@ -20,12 +20,12 @@ export function StrengthPage({ snapshot, analyzer, onOpenSync }: AnalyzerPagePro
       </MobileCard>
       <MobileCard>
         <WidgetTitle>Plateau candidates</WidgetTitle>
-        <RankedBars rows={analyzer.plateauRows.map((row) => ({ label: row.exerciseName, value: Math.max(1, Math.abs(row.strengthTrend)), meta: "plateau signal" })).slice(0, 5)} unit="" />
+        <RankedBars rows={analyzer.plateauRows.map((row) => ({ label: row.exerciseName, value: Math.max(1, Math.abs(row.strengthTrend)), meta: "plateau signal" })).slice(0, 5)} unit="" caption="Plateau signal based on recent estimated strength trend. Longer bars mean a stronger plateau warning." />
         {!analyzer.plateauRows.length && <p className="text-sm text-white/55">No plateau candidates in this range.</p>}
       </MobileCard>
       <MobileCard>
         <WidgetTitle>Fastest improving</WidgetTitle>
-        <RankedBars rows={analyzer.improvingRows.map((row) => ({ label: row.exerciseName, value: row.strengthTrend, meta: "trend" })).slice(0, 5)} unit="" />
+        <RankedBars rows={analyzer.improvingRows.map((row) => ({ label: row.exerciseName, value: row.strengthTrend, meta: "trend" })).slice(0, 5)} unit="" caption="Recent improvement by estimated strength trend. Longer bars mean faster improvement in this range." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle>All non-baseline PRs</WidgetTitle>

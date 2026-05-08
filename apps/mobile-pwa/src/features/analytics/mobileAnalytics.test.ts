@@ -21,6 +21,14 @@ describe("mobile analyzer model", () => {
     expect(buildMobileAnalyzer(data, "30d", "Anterior deltoids").strengthRows.map((row) => row.exerciseName)).toContain("Bench Press");
   });
 
+  it("formats distributed muscle set labels without decimal noise", () => {
+    const model = buildMobileAnalyzer(snapshot(), "30d");
+
+    expect(model.muscleRows.length).toBeGreaterThan(0);
+    expect(model.muscleRows.every((row) => !/\d+\.\d/.test(row.meta ?? ""))).toBe(true);
+    expect(model.muscleRows.map((row) => row.meta)).toEqual(expect.arrayContaining(["1 related set"]));
+  });
+
   it("keeps Home PRs major and medium while preserving small PRs for strength details", () => {
     const model = buildMobileAnalyzer(snapshot(), "30d");
 

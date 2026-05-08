@@ -78,7 +78,7 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
   const muscleRows = summary.muscleVolume.map((metric) => ({
     label: metric.muscle,
     value: metric.volume,
-    meta: `${metric.sets} related sets`
+    meta: formatRelatedSets(metric.sets)
   }));
   const topMuscle = muscleRows[0];
   const leastMuscle = [...muscleRows].reverse().find((row) => row.value > 0);
@@ -105,9 +105,9 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
     maxWeightRows: [...strengthRows].sort((a, b) => b.maxWeight - a.maxWeight),
     plateauRows: strengthRows.filter((row) => row.plateau),
     improvingRows: [...strengthRows].filter((row) => row.strengthTrend > 0).sort((a, b) => b.strengthTrend - a.strengthTrend),
-    dailyRows: summary.dailyVolume.map((row) => ({ label: shortDate(row.date), value: row.volume, meta: `${row.sets} sets` })).reverse(),
-    weeklyRows: summary.weeklyVolume.map((row) => ({ label: `Week ${shortDate(row.weekStart)}`, value: row.volume, meta: `${row.sessions} sessions` })).reverse(),
-    topExerciseVolumeRows: summary.exerciseMetrics.map((metric) => ({ label: metric.name, value: metric.volume, meta: `${metric.sets} sets` })).sort((a, b) => b.value - a.value),
+    dailyRows: summary.dailyVolume.map((row) => ({ label: shortDate(row.date), value: row.volume, meta: formatCountWithUnit(row.sets, "set") })).reverse(),
+    weeklyRows: summary.weeklyVolume.map((row) => ({ label: `Week ${shortDate(row.weekStart)}`, value: row.volume, meta: formatCountWithUnit(row.sessions, "session") })).reverse(),
+    topExerciseVolumeRows: summary.exerciseMetrics.map((metric) => ({ label: metric.name, value: metric.volume, meta: formatCountWithUnit(metric.sets, "set") })).sort((a, b) => b.value - a.value),
     topMuscleRows: muscleRows.slice(0, 6),
     muscleRows,
     neglectedMuscles: [...muscleRows].filter((row) => row.value > 0).sort((a, b) => a.value - b.value).slice(0, 6)
@@ -203,4 +203,15 @@ function formatPr(type: string): string {
 
 function formatNumber(value: number): string {
   return Math.round(value).toLocaleString();
+}
+
+function formatCountWithUnit(value: number, unit: string): string {
+  const rounded = Math.round(value);
+  return `${rounded.toLocaleString()} ${unit}${rounded === 1 ? "" : "s"}`;
+}
+
+function formatRelatedSets(value: number): string {
+  const rounded = Math.round(value);
+  if (value > 0 && rounded === 0) return "less than 1 related set";
+  return `${rounded.toLocaleString()} related set${rounded === 1 ? "" : "s"}`;
 }

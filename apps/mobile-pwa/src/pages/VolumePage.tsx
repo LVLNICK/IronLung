@@ -12,16 +12,16 @@ export function VolumePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps
       </div>
       <MobileCard>
         <WidgetTitle meta={snapshot.settings.unitPreference}>Weekly volume</WidgetTitle>
-        <MiniBarChart rows={analyzer.weeklyRows} />
-        <CompactProgressRows rows={analyzer.weeklyRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <MiniBarChart rows={analyzer.weeklyRows} caption="Weekly total volume. Each bar is one week; taller bars mean more total weight moved that week." />
+        <CompactProgressRows rows={analyzer.weeklyRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="Weekly workload ranked inside this range. Longer bars mean higher total weekly volume." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle meta={snapshot.settings.unitPreference}>Daily volume</WidgetTitle>
-        <RankedBars rows={analyzer.dailyRows.slice(0, 14)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <RankedBars rows={analyzer.dailyRows.slice(0, 14)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="Daily workload ranked by volume. Longer bars mean more total weight moved that day." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle meta={snapshot.settings.unitPreference}>Top exercises by volume</WidgetTitle>
-        <CompactProgressRows rows={analyzer.topExerciseVolumeRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} />
+        <CompactProgressRows rows={analyzer.topExerciseVolumeRows.slice(0, 8)} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="Exercise workload ranked by volume. Longer bars mean that exercise contributed more total volume." />
       </MobileCard>
       <MobileCard>
         <WidgetTitle>Warnings</WidgetTitle>
