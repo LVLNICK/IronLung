@@ -109,18 +109,30 @@ export function IconTile({ icon: Icon, size = "normal" }: { icon: typeof Dumbbel
 }
 
 function ReadinessDial({ value }: { value: number }) {
-  const circumference = 2 * Math.PI * 46;
-  const progress = circumference * 0.72;
+  const arcPath = "M 24 104 C 30 32, 130 32, 136 104";
   return (
-    <div className="relative grid h-36 w-36 place-items-center">
-      <svg className="absolute inset-0 h-full w-full -rotate-[222deg]" viewBox="0 0 120 120" aria-hidden="true">
-        <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(71,85,105,0.56)" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${circumference * 0.78} ${circumference}`} />
-        <circle cx="60" cy="60" r="46" fill="none" stroke="#3b82f6" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${progress} ${circumference}`} />
+    <div className="relative h-36 w-36 shrink-0">
+      <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 160 140" aria-hidden="true">
+        <defs>
+          <linearGradient id="readiness-blue" x1="24" y1="104" x2="136" y2="18" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#2f7dff" />
+            <stop offset="1" stopColor="#4f91ff" />
+          </linearGradient>
+          <filter id="readiness-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <path d={arcPath} pathLength="100" fill="none" stroke="rgba(55,65,81,0.72)" strokeWidth="13" strokeLinecap="round" />
+        <path d={arcPath} pathLength="100" fill="none" stroke="url(#readiness-blue)" strokeWidth="13" strokeLinecap="round" strokeDasharray={`${Math.min(100, Math.max(0, value))} 100`} filter="url(#readiness-glow)" />
       </svg>
-      <div className="relative text-center">
-        <div className="text-[3.05rem] font-black leading-none tracking-tight">{value}</div>
-        <div className="-mt-1 text-xl text-slate-400">/100</div>
-        <div className="mt-1 text-base text-slate-400">readiness</div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-12 text-center">
+        <div className="text-[2.85rem] font-black leading-[0.86] tracking-tight">{value}</div>
+        <div className="mt-2 text-[1.28rem] leading-none text-slate-400">/100</div>
+        <div className="mt-2 text-[1rem] leading-none text-slate-400">readiness</div>
       </div>
     </div>
   );
