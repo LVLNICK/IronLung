@@ -85,7 +85,9 @@ export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings:
     onCreate: () => { summary.templatesImported += 1; },
     onUpdate: () => { summary.templatesImported += 1; }
   });
-  await mergeRows("templateExercises", templateExercises, settings.deviceId, summary);
+  await mergeRows("templateExercises", templateExercises, settings.deviceId, summary, {
+    shouldForceUpdate: (incoming, existing) => incoming.exerciseId !== existing.exerciseId
+  });
   await mergeRows("trainingBlocks", bundle.records.trainingBlocks ?? [], settings.deviceId, summary, {
     onCreate: () => { summary.blocksImported += 1; },
     onUpdate: () => { summary.blocksImported += 1; }
@@ -94,12 +96,16 @@ export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings:
     onCreate: () => { summary.workoutsCreated += 1; },
     onUpdate: () => { summary.workoutsUpdated += 1; }
   });
-  await mergeRows("sessionExercises", sessionExercises, settings.deviceId, summary);
+  await mergeRows("sessionExercises", sessionExercises, settings.deviceId, summary, {
+    shouldForceUpdate: (incoming, existing) => incoming.exerciseId !== existing.exerciseId
+  });
   await mergeRows("setLogs", bundle.records.setLogs ?? [], settings.deviceId, summary, {
     onCreate: () => { summary.setsCreated += 1; },
     onUpdate: () => { summary.setsUpdated += 1; }
   });
-  await mergeRows("personalRecords", personalRecords, settings.deviceId, summary);
+  await mergeRows("personalRecords", personalRecords, settings.deviceId, summary, {
+    shouldForceUpdate: (incoming, existing) => incoming.exerciseId !== existing.exerciseId
+  });
 
   await putInStore("settings", {
     ...settings,
@@ -136,6 +142,7 @@ async function mergeRows<K extends keyof MobileDbStores>(
     duplicateKey?: (row: MobileDbStores[K]) => string;
     onCreate?: () => void;
     onUpdate?: () => void;
+    shouldForceUpdate?: (incoming: MobileDbStores[K], existing: MobileDbStores[K]) => boolean;
   } = {}
 ) {
   const existingRows = await getAllFromStore(storeName);
@@ -163,7 +170,7 @@ async function mergeRows<K extends keyof MobileDbStores>(
       continue;
     }
 
-    if (isIncomingNewer(incoming, existing)) {
+    if (options.shouldForceUpdate?.(incoming, existing) || isIncomingNewer(incoming, existing)) {
       await putInStore(storeName, prepareIncoming({ ...existing, ...incoming }, deviceId));
       summary.updated += 1;
       options.onUpdate?.();

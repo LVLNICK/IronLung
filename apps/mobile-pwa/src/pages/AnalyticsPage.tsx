@@ -38,7 +38,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
     setActiveSection(section);
     window.requestAnimationFrame(() => document.getElementById("analytics-section-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
-  const volumeSeries = volumeTrendSeries(activeAnalyzer);
+  const volumeSeries = volumeTrendSeries(activeAnalyzer, snapshot);
   const topLifts = activeAnalyzer.strengthRows.slice(0, activeSection === "Strength" ? 24 : 5);
   const muscles = muscleSummary(activeAnalyzer);
 
@@ -350,7 +350,7 @@ function BodyMini() {
   );
 }
 
-function volumeTrendSeries(analyzer: MobileAnalyzerModel): TrendSeries {
+function volumeTrendSeries(analyzer: MobileAnalyzerModel, snapshot: MobileSnapshot): TrendSeries {
   const dailyRows = newestRowsChronological(analyzer.dailyRows);
   if (dailyRows.some((row) => row.value > 0)) {
     return padTrendRows(dailyRows, "Daily volume from imported workout sets.");
@@ -361,12 +361,26 @@ function volumeTrendSeries(analyzer: MobileAnalyzerModel): TrendSeries {
     return padTrendRows(weeklyRows, "Weekly volume shown because this range has no daily volume bars.");
   }
 
+  const rawRows = rawSetVolumeRows(snapshot);
+  if (rawRows.some((row) => row.value > 0)) {
+    return padTrendRows(rawRows, "Raw set volume shown while imported workout links are being repaired.");
+  }
+
   return {
     values: [0, 0, 0, 0, 0, 0, 0],
     labels: ["", "", "", "", "", "", ""],
     hasVolume: false,
     source: "No imported set volume was found for this range."
   };
+}
+
+function rawSetVolumeRows(snapshot: MobileSnapshot): MobileAnalyzerModel["dailyRows"] {
+  const days = new Map<string, number>();
+  for (const set of snapshot.setLogs.filter((row) => !row.deletedAt && row.isCompleted)) {
+    const day = new Date(set.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    days.set(day, (days.get(day) ?? 0) + set.weight * set.reps);
+  }
+  return [...days.entries()].map(([label, value]) => ({ label, value })).slice(-7);
 }
 
 function newestRowsChronological(rows: MobileAnalyzerModel["dailyRows"]): MobileAnalyzerModel["dailyRows"] {

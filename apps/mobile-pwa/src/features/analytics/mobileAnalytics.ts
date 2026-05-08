@@ -1,5 +1,6 @@
 import {
   buildTrainingAnalytics,
+  detectPersonalRecords,
   estimatedOneRepMax,
   setVolume,
   resolveMuscleContributions,
@@ -58,7 +59,9 @@ export interface MobileAnalyzerModel {
 
 export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRangePreset = "30d", muscleFilter = "all"): MobileAnalyzerModel {
   const dataset = toAnalyticsDataset(snapshot, range, muscleFilter);
-  const summary = buildTrainingAnalytics(dataset, range === "block" ? "all" : range);
+  const personalRecords = mergeRecords(dataset.personalRecords, derivePersonalRecords(dataset, snapshot.settings.unitPreference));
+  const datasetWithDerivedPrs = { ...dataset, personalRecords };
+  const summary = buildTrainingAnalytics(datasetWithDerivedPrs, range === "block" ? "all" : range);
   const strengthRows = summary.exerciseMetrics
     .map((metric) => ({
       exerciseId: metric.exerciseId,
@@ -72,8 +75,8 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
     }))
     .sort((a, b) => b.estimatedOneRm - a.estimatedOneRm);
 
-  const strengthPrs = nonBaselinePrs(dataset.personalRecords)
-    .sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
+  const strengthPrs = nonBaselinePrs(personalRecords)
+    .sort(compareRecentPrs);
   const recentPrs = strengthPrs;
   const muscleRows = summary.muscleVolume.map((metric) => ({
     label: metric.muscle,
@@ -93,14 +96,14 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
     topInsight: insight ? `${insight.title}: ${insight.detail}` : "Import a desktop analytics seed to unlock training insights.",
     weakPoint: weak ? `${weak.title}: ${weak.detail}` : leastMuscle ? `${leastMuscle.label} has the lowest tracked volume in this range.` : "No weak point detected yet.",
     fatigueWarning: fatigue ? `${fatigue.muscle}: ${fatigue.detail}` : "No recovery/fatigue warning detected from imported data.",
-    bestRecentLift: bestRecentLiftLabel(snapshot, dataset.personalRecords),
+    bestRecentLift: bestRecentLiftLabel(snapshot, personalRecords),
     mostTrainedMuscle: topMuscle ? `${topMuscle.label} (${formatNumber(topMuscle.value)})` : "No muscle volume yet",
     leastTrainedMuscle: leastMuscle ? `${leastMuscle.label} (${formatNumber(leastMuscle.value)})` : "No muscle volume yet",
     recentPrs,
     strengthPrs,
     prsByType: groupPrs(strengthPrs, (record) => formatPr(record.type)),
     prsByImportance: groupPrs(strengthPrs, (record) => record.importance ?? "small"),
-    allTimeBestPrs: bestPrsByExerciseAndType(dataset.personalRecords),
+    allTimeBestPrs: bestPrsByExerciseAndType(personalRecords),
     strengthRows,
     maxWeightRows: [...strengthRows].sort((a, b) => b.maxWeight - a.maxWeight),
     plateauRows: strengthRows.filter((row) => row.plateau),
@@ -112,6 +115,59 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
     muscleRows,
     neglectedMuscles: [...muscleRows].filter((row) => row.value > 0).sort((a, b) => a.value - b.value).slice(0, 6)
   };
+}
+
+function derivePersonalRecords(dataset: AnalyticsDataset, unit: string): PersonalRecord[] {
+  const sessionById = new Map(dataset.sessions.map((session) => [session.id, session]));
+  const rowById = new Map(dataset.sessionExercises.map((row) => [row.id, row]));
+  const previousSetsByExercise = new Map<string, PersonalRecordSet[]>();
+  const currentSessionSets = new Map<string, PersonalRecordSet[]>();
+  const sessionVolumesByExercise = new Map<string, number[]>();
+  const records: PersonalRecord[] = [];
+  const orderedSets = [...dataset.setLogs].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.setNumber - b.setNumber);
+
+  for (const set of orderedSets) {
+    const row = rowById.get(set.workoutSessionExerciseId);
+    const session = row ? sessionById.get(row.workoutSessionId) : undefined;
+    if (!row || !session || !set.isCompleted) continue;
+    const exerciseId = row.exerciseId;
+    const sessionKey = `${session.id}|${exerciseId}`;
+    const nextSessionSets = [...(currentSessionSets.get(sessionKey) ?? []), set];
+    currentSessionSets.set(sessionKey, nextSessionSets);
+    const detected = detectPersonalRecords({
+      exerciseId,
+      workoutSessionId: session.id,
+      achievedAt: set.createdAt,
+      unit,
+      newSet: set,
+      sessionSetsForExercise: nextSessionSets,
+      historicalSetsForExercise: previousSetsByExercise.get(exerciseId) ?? [],
+      historicalSessionVolumesForExercise: sessionVolumesByExercise.get(exerciseId) ?? []
+    });
+    for (const record of detected) {
+      records.push({ ...record, id: `derived-${set.id}-${record.type}` });
+    }
+    previousSetsByExercise.set(exerciseId, [...(previousSetsByExercise.get(exerciseId) ?? []), set]);
+
+    const finishedExerciseSessions = [...currentSessionSets.entries()]
+      .filter(([key]) => key.endsWith(`|${exerciseId}`) && key !== sessionKey && !sessionVolumesByExercise.get(exerciseId)?.length)
+      .flatMap(([, sets]) => sets);
+    if (finishedExerciseSessions.length) {
+      const volume = finishedExerciseSessions.reduce((sum, rowSet) => sum + rowSet.weight * rowSet.reps, 0);
+      sessionVolumesByExercise.set(exerciseId, [...(sessionVolumesByExercise.get(exerciseId) ?? []), volume]);
+    }
+  }
+  return records;
+}
+
+type PersonalRecordSet = AnalyticsDataset["setLogs"][number];
+
+function mergeRecords(stored: PersonalRecord[], derived: PersonalRecord[]): PersonalRecord[] {
+  const byKey = new Map<string, PersonalRecord>();
+  for (const record of [...derived, ...stored]) {
+    byKey.set(`${record.exerciseId}|${record.workoutSessionId}|${record.setLogId ?? ""}|${record.type}`, record);
+  }
+  return [...byKey.values()];
 }
 
 export function availableMuscles(snapshot: MobileSnapshot): string[] {
@@ -161,6 +217,12 @@ function bestRecentLiftLabel(snapshot: MobileSnapshot, records: PersonalRecord[]
 function nonBaselinePrs(records: PersonalRecord[]): PersonalRecord[] {
   const allowed = new Set<PRImportance>(["major", "medium", "small"]);
   return records.filter((record) => allowed.has((record.importance ?? "small") as PRImportance));
+}
+
+function compareRecentPrs(a: PersonalRecord, b: PersonalRecord): number {
+  const byDate = b.achievedAt.localeCompare(a.achievedAt);
+  if (byDate !== 0) return byDate;
+  return Number(a.id.startsWith("derived-")) - Number(b.id.startsWith("derived-"));
 }
 
 function groupPrs(records: PersonalRecord[], label: (record: PersonalRecord) => string): RankedValue[] {
