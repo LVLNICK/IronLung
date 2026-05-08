@@ -1,9 +1,10 @@
 import { ChevronRight, Dumbbell, Shield, Target, TrendingUp, Zap } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
+import type { MobileTab } from "../types";
 import { formatNumber } from "./AnalyzerShared";
 
-export function HomePage({ analyzer }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void }) {
+export function HomePage({ analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
   const volume = formatNumber(analyzer.summary.totals.volume || 18400);
   const bestPr = analyzer.recentPrs[0];
   const bestLift = analyzer.strengthRows[0];
@@ -25,12 +26,13 @@ export function HomePage({ analyzer }: { snapshot: MobileSnapshot; analyzer: Mob
           <ReadinessDial value={82} />
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blue-500 text-base font-black text-white shadow-[0_0_32px_rgba(59,130,246,0.42)] min-[400px]:min-h-14 min-[400px]:text-lg">Train Today <ChevronRight className="h-5 w-5" /></button>
-          <button className="min-h-12 rounded-2xl border border-white/25 bg-white/[0.03] text-base font-bold text-white min-[400px]:min-h-14 min-[400px]:text-lg">Edit Plan</button>
+          <button onClick={() => onNavigate("train")} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-blue-500 text-base font-black text-white shadow-[0_0_32px_rgba(59,130,246,0.42)] min-[400px]:min-h-14 min-[400px]:text-lg">Train Today <ChevronRight className="h-5 w-5" /></button>
+          <button onClick={onOpenSync} className="min-h-12 rounded-2xl border border-white/25 bg-white/[0.03] text-base font-bold text-white min-[400px]:min-h-14 min-[400px]:text-lg">Edit Plan</button>
         </div>
       </GlassCard>
 
-      <GlassCard className="grid grid-cols-[3.5rem_1fr_1.25rem] items-center gap-3 p-4 min-[400px]:grid-cols-[4.6rem_1fr_1.5rem] min-[400px]:gap-4 min-[400px]:p-5">
+      <button onClick={() => onNavigate("analytics")} className="block w-full text-left">
+      <GlassCard className="grid grid-cols-[3.5rem_1fr_1.25rem] items-center gap-3 p-4 transition hover:border-blue-500/45 min-[400px]:grid-cols-[4.6rem_1fr_1.5rem] min-[400px]:gap-4 min-[400px]:p-5">
         <IconTile icon={Target} size="large" />
         <div>
           <div className="text-xs font-black uppercase tracking-wider text-blue-400">What to focus on</div>
@@ -39,6 +41,7 @@ export function HomePage({ analyzer }: { snapshot: MobileSnapshot; analyzer: Mob
         </div>
         <ChevronRight className="h-7 w-7 text-white" />
       </GlassCard>
+      </button>
 
       <GlassCard className="grid grid-cols-1 gap-4 p-4 min-[410px]:grid-cols-[1fr_11rem] min-[410px]:items-end min-[410px]:p-5">
         <div>
@@ -59,14 +62,14 @@ export function HomePage({ analyzer }: { snapshot: MobileSnapshot; analyzer: Mob
               <div className="mt-1 text-xl font-black text-blue-400 min-[400px]:text-2xl">{bestPr ? formatNumber(bestPr.value) : "225"} lb x 5</div>
             </div>
           </div>
-          <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4 text-slate-400"><span>+10 lb from last best</span><ChevronRight /></div>
+          <button onClick={() => onNavigate("analytics")} className="mt-5 flex w-full items-center justify-between border-t border-white/10 pt-4 text-left text-slate-400"><span>+10 lb from last best</span><ChevronRight /></button>
         </GlassCard>
         <GlassCard className="p-4">
           <div className="text-xs font-black uppercase tracking-wider text-blue-400">Recovery check</div>
           <StatusRow label="Fatigue" value="High" tone="yellow" />
           <StatusRow label="Sleep" value="Good" tone="green" sub="7h 42m" />
           <StatusRow label="Soreness" value="Low" tone="green" />
-          <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-blue-400">View details <ChevronRight /></div>
+          <button onClick={() => onNavigate("analytics")} className="mt-3 flex w-full items-center justify-between border-t border-white/10 pt-3 text-left text-blue-400">View details <ChevronRight /></button>
         </GlassCard>
       </div>
 
