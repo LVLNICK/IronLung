@@ -15,15 +15,15 @@ export function MobileShell({ tab, onTab, children }: { tab: MobileTab; onTab: (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto min-h-screen max-w-[430px] overflow-hidden bg-[radial-gradient(circle_at_18%_0%,rgba(59,130,246,0.15),transparent_34%),linear-gradient(155deg,#0a0f19_0%,#070a10_54%,#0d1420_100%)] shadow-[0_0_80px_rgba(0,0,0,0.85)]">
         <StatusBar />
-        <div className="px-4 pb-28">{children}</div>
+        <div className="px-4 pb-28 text-[15px] leading-snug">{children}</div>
         <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[430px] border-t border-white/10 bg-[#111827]/90 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 shadow-[0_-20px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
           <div className="grid grid-cols-5 gap-1 rounded-[1.65rem] bg-white/[0.025] p-1">
             {tabs.map((item) => {
               const Icon = item.icon;
               const active = item.tab === tab;
               return (
-                <button key={item.tab} onClick={() => onTab(item.tab)} className={`min-h-[4.4rem] rounded-2xl px-1 text-[0.72rem] font-medium transition ${active ? "bg-white/[0.06] text-[#3b82f6] shadow-[inset_0_0_26px_rgba(59,130,246,0.12)]" : "text-slate-300"}`}>
-                  <Icon className={`mx-auto mb-1 h-6 w-6 ${active ? "fill-current stroke-[2.2]" : "stroke-[2.4]"}`} />
+                <button key={item.tab} onClick={() => onTab(item.tab)} className={`min-h-[4rem] rounded-2xl px-1 text-[0.68rem] font-medium transition ${active ? "bg-white/[0.06] text-[#3b82f6] shadow-[inset_0_0_26px_rgba(59,130,246,0.12)]" : "text-slate-300"}`}>
+                  <Icon className={`mx-auto mb-1 h-5 w-5 ${active ? "fill-current stroke-[2.2]" : "stroke-[2.4]"}`} />
                   {item.label}
                 </button>
               );

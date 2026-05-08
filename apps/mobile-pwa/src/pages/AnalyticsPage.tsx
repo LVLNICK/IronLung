@@ -7,19 +7,19 @@ import { GlassCard, IconTile } from "./HomePage";
 export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel }) {
   return (
     <div className="space-y-4">
-      <header className="flex items-end justify-between">
+      <header className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-[2.55rem] font-black leading-none">Analytics</h1>
-          <p className="mt-3 text-lg text-slate-400">Understand your training. Improve every week.</p>
+          <h1 className="text-[2rem] font-black leading-none min-[400px]:text-[2.35rem]">Analytics</h1>
+          <p className="mt-2 text-base text-slate-400 min-[400px]:text-lg">Understand your training. Improve every week.</p>
         </div>
-        <button className="mb-1 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.05] px-5 py-4 text-base font-bold">Last 30 Days <ChevronDown className="h-5 w-5" /></button>
+        <button className="mb-1 flex shrink-0 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.05] px-3 py-3 text-sm font-bold min-[400px]:px-5 min-[400px]:py-4 min-[400px]:text-base">Last 30 Days <ChevronDown className="h-4 w-4 min-[400px]:h-5 min-[400px]:w-5" /></button>
       </header>
 
       <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.05] p-1">
-        {["Overview", "Strength", "Volume", "Balance"].map((tab, index) => <button key={tab} className={`h-12 rounded-xl text-base font-bold ${index === 0 ? "bg-blue-500 text-white" : "text-slate-300"}`}>{tab}</button>)}
+        {["Overview", "Strength", "Volume", "Balance"].map((tab, index) => <button key={tab} className={`h-11 rounded-xl text-[0.78rem] font-bold min-[400px]:h-12 min-[400px]:text-base ${index === 0 ? "bg-blue-500 text-white" : "text-slate-300"}`}>{tab}</button>)}
       </div>
 
-      <GlassCard className="grid grid-cols-4 divide-x divide-white/10 p-4 text-center">
+      <GlassCard className="grid grid-cols-2 gap-3 p-4 text-center min-[410px]:grid-cols-4 min-[410px]:divide-x min-[410px]:divide-white/10 min-[410px]:gap-0">
         <Metric icon={Dumbbell} label="Total Volume" value={`${shortVolume(analyzer.summary.totals.volume || 42800)} lb`} delta="+12% vs prev 30d" />
         <Metric icon={CalendarCheck} label="Sessions" value={formatNumber(analyzer.summary.totals.sessions || 12)} delta="+2 vs prev 30d" green />
         <Metric icon={Star} label="PRs" value={formatNumber(analyzer.recentPrs.length || 6)} delta="+3 vs prev 30d" green />
@@ -28,7 +28,7 @@ export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer
 
       <GlassCard className="p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black">Volume Trend</h2>
+          <h2 className="text-lg font-black min-[400px]:text-xl">Volume Trend</h2>
           <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 font-black text-emerald-400">+12%</span>
         </div>
         <div className="mt-4 flex gap-7 text-sm text-slate-400"><Legend color="bg-blue-500" label="Volume (lb)" /><Legend color="bg-emerald-400" label="4-Week Avg" /></div>
@@ -37,8 +37,8 @@ export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer
 
       <div className="grid grid-cols-2 gap-3">
         <GlassCard className="p-4">
-          <div className="flex justify-between"><h2 className="text-xl font-black">Muscle Balance</h2><span className="text-blue-400">View all</span></div>
-          <div className="mt-4 grid grid-cols-[1fr_1.2fr] gap-2">
+          <div className="flex justify-between"><h2 className="text-lg font-black min-[400px]:text-xl">Muscle Balance</h2><span className="text-blue-400">View all</span></div>
+          <div className="mt-4 grid grid-cols-1 gap-2 min-[390px]:grid-cols-[0.8fr_1.2fr]">
             <BodyMini />
             <div className="space-y-3 text-base">
               {["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"].map((m, i) => <div key={m} className="flex items-center justify-between"><span className="flex items-center gap-2"><span className={`h-3 w-3 rounded-full ${i === 2 || i === 4 ? "bg-yellow-400" : i === 1 ? "bg-blue-500" : "bg-emerald-400"}`} />{m}</span><span className={i === 2 || i === 4 ? "text-yellow-300" : "text-emerald-400"}>{i === 2 || i === 4 ? "Low" : "Good"}</span></div>)}
@@ -47,11 +47,11 @@ export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer
           <div className="mt-3 rounded-xl bg-white/[0.04] p-3 text-slate-400">Shoulders and Legs need more attention.</div>
         </GlassCard>
         <GlassCard className="p-4">
-          <div className="flex justify-between"><h2 className="text-xl font-black">Top Lifts</h2><span className="text-blue-400">View all</span></div>
+          <div className="flex justify-between"><h2 className="text-lg font-black min-[400px]:text-xl">Top Lifts</h2><span className="text-blue-400">View all</span></div>
           <div className="mt-3 space-y-3">
             {["Bench Press", "Deadlift", "Squat", "Overhead Press", "Pull-Up"].map((lift, i) => (
-              <div key={lift} className="grid grid-cols-[1.2rem_2.8rem_1fr_3rem] items-center gap-3">
-                <span className="text-xl font-black">{i + 1}</span><IconTile icon={Dumbbell} /><div><div className="font-bold">{lift}</div><div className="text-blue-400">{["225 lb × 5", "405 lb × 3", "315 lb × 5", "135 lb × 6", "+35 lb × 5"][i]}</div></div><span className="rounded-full bg-emerald-500/15 px-2 py-1 text-sm font-bold text-emerald-400">+{[8, 6, 5, 4, 14][i]}%</span>
+              <div key={lift} className="grid grid-cols-[1rem_2.4rem_minmax(0,1fr)_2.5rem] items-center gap-2 min-[400px]:grid-cols-[1.2rem_2.8rem_1fr_3rem] min-[400px]:gap-3">
+                <span className="text-lg font-black min-[400px]:text-xl">{i + 1}</span><IconTile icon={Dumbbell} /><div className="min-w-0"><div className="truncate font-bold">{lift}</div><div className="truncate text-blue-400">{["225 lb × 5", "405 lb × 3", "315 lb × 5", "135 lb × 6", "+35 lb × 5"][i]}</div></div><span className="rounded-full bg-emerald-500/15 px-1.5 py-1 text-xs font-bold text-emerald-400 min-[400px]:px-2 min-[400px]:text-sm">+{[8, 6, 5, 4, 14][i]}%</span>
               </div>
             ))}
           </div>
@@ -59,7 +59,7 @@ export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer
       </div>
 
       <GlassCard className="p-5">
-        <h2 className="text-xl font-black">Insights & Recommendations</h2>
+        <h2 className="text-lg font-black min-[400px]:text-xl">Insights & Recommendations</h2>
         <Insight icon={TrendingUp} title="Volume is trending up" body="Great work—your consistency is paying off." />
         <Insight icon={Star} title="Legs are lagging" body="Add 1–2 lower body sessions this week." warn />
         <Insight icon={Trophy} title="Pulling ahead" body="Your back is improving faster than your push." />
@@ -69,7 +69,7 @@ export function AnalyticsPage({ analyzer }: { snapshot: MobileSnapshot; analyzer
 }
 
 function Metric({ icon: Icon, label, value, delta, green }: { icon: typeof Dumbbell; label: string; value: string; delta: string; green?: boolean }) {
-  return <div className="px-2"><Icon className={`mx-auto h-9 w-9 ${green ? "text-emerald-400" : "text-blue-500"}`} /><div className="mt-3 text-sm text-slate-400">{label}</div><div className="mt-1 text-2xl font-black">{value}</div><div className={`text-sm ${green ? "text-emerald-400" : "text-blue-400"}`}>{delta}</div></div>;
+  return <div className="px-1 min-[400px]:px-2"><Icon className={`mx-auto h-7 w-7 min-[400px]:h-9 min-[400px]:w-9 ${green ? "text-emerald-400" : "text-blue-500"}`} /><div className="mt-2 text-xs text-slate-400 min-[400px]:mt-3 min-[400px]:text-sm">{label}</div><div className="mt-1 text-xl font-black min-[400px]:text-2xl">{value}</div><div className={`text-xs min-[400px]:text-sm ${green ? "text-emerald-400" : "text-blue-400"}`}>{delta}</div></div>;
 }
 
 function shortVolume(value: number) {
@@ -98,5 +98,5 @@ function BodyMini() {
 }
 
 function Insight({ icon: Icon, title, body, warn }: { icon: typeof Dumbbell; title: string; body: string; warn?: boolean }) {
-  return <div className="mt-4 grid grid-cols-[3.5rem_1fr_1.5rem] items-center gap-4 border-b border-white/10 pb-4 last:border-0"><IconTile icon={Icon} /><div><div className="text-lg font-bold">{title}</div><div className="text-slate-400">{body}</div></div><ChevronRight className={warn ? "text-yellow-300" : "text-white"} /></div>;
+  return <div className="mt-4 grid grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-center gap-3 border-b border-white/10 pb-4 last:border-0 min-[400px]:grid-cols-[3.5rem_1fr_1.5rem] min-[400px]:gap-4"><IconTile icon={Icon} /><div className="min-w-0"><div className="text-base font-bold leading-tight min-[400px]:text-lg">{title}</div><div className="text-sm text-slate-400 min-[400px]:text-base">{body}</div></div><ChevronRight className={warn ? "text-yellow-300" : "text-white"} /></div>;
 }

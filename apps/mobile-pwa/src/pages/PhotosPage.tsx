@@ -9,37 +9,37 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
       <BrandHeader />
       <header className="flex items-end justify-between">
         <div>
-          <h1 className="text-[2rem] font-black leading-tight">Photos</h1>
-          <p className="text-lg text-slate-400">Private progress tracking. Photos stay on your device.</p>
+          <h1 className="text-[1.8rem] font-black leading-tight min-[400px]:text-[2rem]">Photos</h1>
+          <p className="text-base text-slate-400 min-[400px]:text-lg">Private progress tracking. Photos stay on your device.</p>
         </div>
         <button className="rounded-full border border-blue-500/40 px-4 py-2 text-blue-400">How it works</button>
       </header>
-      <GlassCard className="grid grid-cols-[2rem_1fr_10rem] items-center gap-4 p-5">
+      <GlassCard className="grid grid-cols-[2rem_minmax(0,1fr)] items-center gap-3 p-4 min-[400px]:grid-cols-[2rem_1fr_8.5rem] min-[400px]:gap-4 min-[400px]:p-5">
         <Lock className="h-8 w-8 text-blue-400" />
-        <div><div className="text-xl font-black text-blue-400">Private & local</div><p className="text-slate-400">Your photos never leave your device. Analysis runs after your consent.</p></div>
-        <button className="flex h-14 items-center justify-center gap-3 rounded-2xl bg-blue-500 text-lg font-black">Add Photo <Plus /></button>
+        <div className="min-w-0"><div className="text-lg font-black text-blue-400 min-[400px]:text-xl">Private & local</div><p className="text-sm text-slate-400 min-[400px]:text-base">Your photos never leave your device. Analysis runs after your consent.</p></div>
+        <button className="col-span-2 flex h-12 items-center justify-center gap-2 rounded-2xl bg-blue-500 text-base font-black min-[400px]:col-span-1 min-[400px]:h-14 min-[400px]:text-lg">Add Photo <Plus className="h-5 w-5" /></button>
       </GlassCard>
       <GlassCard className="p-4">
-        <div className="mb-3 flex justify-between"><h2 className="text-xl font-black">Same-pose comparison</h2><Info className="text-slate-300" /></div>
+        <div className="mb-3 flex justify-between"><h2 className="text-lg font-black min-[400px]:text-xl">Same-pose comparison</h2><Info className="text-slate-300" /></div>
         <div className="grid grid-cols-2 gap-3">
           <PhotoCompare title="Before — Jan 08" ppi="PPI 61" />
           <PhotoCompare title="After — May 08" ppi="PPI 74" active />
         </div>
-        <div className="mt-4 grid grid-cols-[3rem_1fr_1.5rem] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="mt-4 grid grid-cols-[2.4rem_minmax(0,1fr)_1.25rem] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 min-[400px]:grid-cols-[3rem_1fr_1.5rem] min-[400px]:gap-4 min-[400px]:p-4">
           <TrendingUp className="h-8 w-8 text-blue-400" />
-          <div><div className="text-xl font-black">Change summary</div><div className="text-emerald-400">+13 PPI • +8 lb bodyweight • quality matched: 92%</div></div>
+          <div className="min-w-0"><div className="text-lg font-black min-[400px]:text-xl">Change summary</div><div className="text-sm text-emerald-400 min-[400px]:text-base">+13 PPI • +8 lb bodyweight • quality matched: 92%</div></div>
           <ChevronRight />
         </div>
       </GlassCard>
       <div className="grid grid-cols-2 gap-3">
         <GlassCard className="p-4">
-          <h2 className="text-lg font-black">Progress photo index</h2>
+          <h2 className="text-base font-black min-[400px]:text-lg">Progress photo index</h2>
           <LineMini />
-          <div className="text-[3rem] font-black leading-none text-blue-400">74</div>
+          <div className="text-[2.35rem] font-black leading-none text-blue-400 min-[400px]:text-[3rem]">74</div>
           <div className="flex justify-between text-sm"><span className="text-slate-400">PPI SCORE</span><span className="text-emerald-400">+13 vs Jan 08</span></div>
         </GlassCard>
         <GlassCard className="p-4">
-          <h2 className="text-lg font-black">Retake quality checklist</h2>
+          <h2 className="text-base font-black min-[400px]:text-lg">Retake quality checklist</h2>
           <Checklist label="Same pose" value="matched" />
           <Checklist label="Lighting" value="good" />
           <Checklist label="Framing" value="good" />
@@ -49,8 +49,8 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
         </GlassCard>
       </div>
       <GlassCard className="p-4">
-        <div className="mb-4 flex justify-between"><h2 className="text-lg font-black">Your photo timeline</h2><span className="text-blue-400">View all</span></div>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="mb-4 flex justify-between"><h2 className="text-base font-black min-[400px]:text-lg">Your photo timeline</h2><span className="text-blue-400">View all</span></div>
+        <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-6">
           {["Jan 08", "May 08", "Apr 24", "Apr 10", "Mar 27", "Mar 13"].map((date, index) => <TimelineThumb key={date} date={date} active={index === 1} ppi={index === 1 ? "PPI 74" : index === 0 ? "PPI 61" : ""} />)}
         </div>
       </GlassCard>
@@ -60,11 +60,11 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
 }
 
 function PhotoCompare({ title, ppi, active }: { title: string; ppi: string; active?: boolean }) {
-  return <div className="rounded-2xl border border-white/10 bg-black/10 p-3"><div className="mb-3 flex justify-between text-sm font-black uppercase"><span>{title}</span><span className={`rounded-full px-3 py-1 ${active ? "bg-blue-500" : "bg-slate-700"}`}>{ppi}</span></div><PhotoFigure /></div>;
+  return <div className="rounded-2xl border border-white/10 bg-black/10 p-2 min-[400px]:p-3"><div className="mb-3 flex justify-between gap-2 text-[0.68rem] font-black uppercase min-[400px]:text-sm"><span>{title}</span><span className={`shrink-0 rounded-full px-2 py-1 min-[400px]:px-3 ${active ? "bg-blue-500" : "bg-slate-700"}`}>{ppi}</span></div><PhotoFigure /></div>;
 }
 
 function PhotoFigure() {
-  return <div className="relative h-56 overflow-hidden rounded-xl border border-white/5 bg-[linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] bg-[length:22px_22px]"><div className="absolute left-1/2 top-5 h-9 w-9 -translate-x-1/2 rounded-full bg-slate-500" /><div className="absolute left-1/2 top-14 h-24 w-16 -translate-x-1/2 rounded-[2rem] bg-blue-500/60" /><div className="absolute left-[31%] top-20 h-24 w-5 rotate-[20deg] rounded-full bg-blue-500/55" /><div className="absolute right-[31%] top-20 h-24 w-5 -rotate-[20deg] rounded-full bg-blue-500/55" /><div className="absolute left-[42%] top-32 h-24 w-5 rotate-12 rounded-full bg-blue-500/55" /><div className="absolute right-[42%] top-32 h-24 w-5 -rotate-12 rounded-full bg-blue-500/55" /></div>;
+  return <div className="relative h-40 overflow-hidden rounded-xl border border-white/5 bg-[linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] bg-[length:22px_22px] min-[400px]:h-56"><div className="absolute left-1/2 top-5 h-7 w-7 -translate-x-1/2 rounded-full bg-slate-500 min-[400px]:h-9 min-[400px]:w-9" /><div className="absolute left-1/2 top-12 h-20 w-12 -translate-x-1/2 rounded-[2rem] bg-blue-500/60 min-[400px]:top-14 min-[400px]:h-24 min-[400px]:w-16" /><div className="absolute left-[31%] top-16 h-20 w-4 rotate-[20deg] rounded-full bg-blue-500/55 min-[400px]:top-20 min-[400px]:h-24 min-[400px]:w-5" /><div className="absolute right-[31%] top-16 h-20 w-4 -rotate-[20deg] rounded-full bg-blue-500/55 min-[400px]:top-20 min-[400px]:h-24 min-[400px]:w-5" /><div className="absolute left-[42%] top-28 h-20 w-4 rotate-12 rounded-full bg-blue-500/55 min-[400px]:top-32 min-[400px]:h-24 min-[400px]:w-5" /><div className="absolute right-[42%] top-28 h-20 w-4 -rotate-12 rounded-full bg-blue-500/55 min-[400px]:top-32 min-[400px]:h-24 min-[400px]:w-5" /></div>;
 }
 
 function LineMini() {
