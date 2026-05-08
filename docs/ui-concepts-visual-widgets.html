@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IronLung Visual Widget UI Concepts</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #06070b;
+        color: #f8fafc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 10% 0%, rgba(59,130,246,0.18), transparent 32rem), radial-gradient(circle at 90% 10%, rgba(34,211,238,0.1), transparent 28rem), #06070b;
+      }
+      .page {
+        width: 1760px;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 30px;
+      }
+      header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        gap: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: -0.03em;
+      }
+      .subtitle {
+        margin: 7px 0 0;
+        color: rgba(255,255,255,0.62);
+        font-size: 14px;
+      }
+      .pill {
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.05);
+        border-radius: 999px;
+        padding: 10px 14px;
+        color: rgba(255,255,255,0.7);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .concept-title {
+        margin-bottom: 12px;
+      }
+      .concept-title h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .concept-title p {
+        margin: 5px 0 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: rgba(255,255,255,0.56);
+      }
+      .phone {
+        height: 840px;
+        border-radius: 34px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 26px 90px rgba(0,0,0,0.56);
+        position: relative;
+      }
+      .screen {
+        height: 100%;
+        padding: 20px 15px 78px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        font-size: 18px;
+        font-weight: 950;
+        letter-spacing: -0.04em;
+      }
+      .subbrand {
+        margin-top: 2px;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+        padding: 5px;
+        border-radius: 18px;
+      }
+      .tab {
+        display: grid;
+        place-items: center;
+        min-height: 37px;
+        border-radius: 13px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .card {
+        border-radius: 20px;
+        padding: 14px;
+      }
+      .hero h3 {
+        margin: 6px 0 7px;
+        font-size: 27px;
+        line-height: 1;
+        letter-spacing: -0.055em;
+      }
+      .hero p, .card p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.48;
+      }
+      .label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        font-weight: 900;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .stat {
+        border-radius: 16px;
+        padding: 12px;
+      }
+      .value {
+        margin-top: 7px;
+        font-size: 22px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 950;
+      }
+      .mini-bars {
+        height: 72px;
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        align-items: end;
+        gap: 5px;
+        margin-top: 13px;
+      }
+      .mini-bars i {
+        display: block;
+        border-radius: 999px 999px 3px 3px;
+        min-height: 8px;
+      }
+      .hbars {
+        display: grid;
+        gap: 10px;
+      }
+      .hbar-row {
+        display: grid;
+        grid-template-columns: 78px 1fr 42px;
+        gap: 8px;
+        align-items: center;
+        font-size: 11px;
+      }
+      .track {
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .fill {
+        height: 100%;
+        border-radius: 999px;
+      }
+      .heatmap {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        margin-top: 12px;
+      }
+      .cell {
+        aspect-ratio: 1;
+        border-radius: 7px;
+      }
+      .spark {
+        width: 100%;
+        height: 72px;
+        margin-top: 10px;
+      }
+      .ring-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .ring {
+        aspect-ratio: 1;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+      }
+      .ring > div {
+        width: 70%;
+        height: 70%;
+        border-radius: inherit;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 950;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      .row:last-child { border-bottom: 0; }
+      .row strong {
+        font-size: 12px;
+        display: block;
+      }
+      .row span {
+        font-size: 11px;
+        color: rgba(255,255,255,0.56);
+      }
+      .body-map {
+        display: grid;
+        grid-template-columns: 86px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .body {
+        height: 190px;
+        position: relative;
+      }
+      .body div {
+        position: absolute;
+        border-radius: 999px;
+      }
+      .head { width: 36px; height: 36px; left: 25px; top: 0; }
+      .torso { width: 58px; height: 82px; left: 14px; top: 39px; border-radius: 22px !important; }
+      .arm-l { width: 18px; height: 90px; left: 0; top: 48px; transform: rotate(8deg); }
+      .arm-r { width: 18px; height: 90px; right: 0; top: 48px; transform: rotate(-8deg); }
+      .leg-l { width: 22px; height: 76px; left: 22px; top: 117px; transform: rotate(5deg); }
+      .leg-r { width: 22px; height: 76px; right: 22px; top: 117px; transform: rotate(-5deg); }
+      .nav {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+        padding: 9px 8px 10px;
+      }
+      .nav div {
+        min-height: 52px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 950;
+      }
+
+      .c6 .screen { background: #070a12; }
+      .c6 .subbrand, .c6 .accent { color: #60a5fa; }
+      .c6 .badge { color: #60a5fa; background: rgba(59,130,246,0.12); border: 1px solid rgba(96,165,250,0.4); }
+      .c6 .tabs, .c6 .card, .c6 .stat, .c6 .nav { background: #121826; border: 1px solid rgba(255,255,255,0.12); }
+      .c6 .tab.active, .c6 .nav .active, .c6 .fill, .c6 .mini-bars i { background: #3b82f6; color: white; }
+      .c6 .tab { color: rgba(255,255,255,0.55); }
+      .c6 .track { background: #273149; }
+      .c6 .hero p, .c6 .card p { color: rgba(255,255,255,0.62); }
+
+      .c7 .screen { background: radial-gradient(circle at top, rgba(250,204,21,0.13), transparent 18rem), #08090d; }
+      .c7 .subbrand, .c7 .accent { color: #facc15; }
+      .c7 .badge { color: #facc15; background: rgba(250,204,21,0.1); border: 1px solid rgba(250,204,21,0.35); }
+      .c7 .tabs, .c7 .card, .c7 .stat, .c7 .nav { background: #141414; border: 1px solid rgba(250,204,21,0.16); }
+      .c7 .tab.active, .c7 .nav .active { background: #facc15; color: #171105; }
+      .c7 .tab { color: rgba(255,255,255,0.54); }
+      .c7 .fill, .c7 .mini-bars i { background: linear-gradient(180deg, #facc15, #f97316); }
+      .c7 .track { background: rgba(250,204,21,0.12); }
+      .c7 .hero p, .c7 .card p { color: rgba(255,255,255,0.62); }
+
+      .c8 .screen { background: #020617; }
+      .c8 .subbrand, .c8 .accent { color: #22d3ee; }
+      .c8 .badge { color: #67e8f9; background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.35); }
+      .c8 .tabs, .c8 .card, .c8 .stat, .c8 .nav { background: rgba(15,23,42,0.9); border: 1px solid rgba(34,211,238,0.16); }
+      .c8 .tab.active, .c8 .nav .active, .c8 .fill, .c8 .mini-bars i { background: #22d3ee; color: #001018; }
+      .c8 .tab { color: rgba(255,255,255,0.54); }
+      .c8 .track { background: rgba(34,211,238,0.13); }
+      .c8 .hero p, .c8 .card p { color: rgba(219,234,254,0.66); }
+
+      .c9 .screen { background: #090c10; }
+      .c9 .subbrand, .c9 .accent { color: #fb7185; }
+      .c9 .badge { color: #fecdd3; background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.35); }
+      .c9 .tabs, .c9 .card, .c9 .stat, .c9 .nav { background: #141a20; border: 1px solid rgba(255,255,255,0.11); }
+      .c9 .tab.active, .c9 .nav .active { background: #fb7185; color: #23070c; }
+      .c9 .tab { color: rgba(255,255,255,0.54); }
+      .c9 .fill, .c9 .mini-bars i { background: #fb7185; }
+      .c9 .track { background: rgba(251,113,133,0.12); }
+      .c9 .hero p, .c9 .card p { color: rgba(255,255,255,0.62); }
+
+      .c10 .screen { background: #0a0c0f; }
+      .c10 .subbrand, .c10 .accent { color: #a3e635; }
+      .c10 .badge { color: #d9f99d; background: rgba(163,230,53,0.1); border: 1px solid rgba(163,230,53,0.35); }
+      .c10 .tabs, .c10 .card, .c10 .stat, .c10 .nav { background: #111720; border: 1px solid rgba(255,255,255,0.11); }
+      .c10 .tab.active, .c10 .nav .active { background: #a3e635; color: #101706; }
+      .c10 .tab { color: rgba(255,255,255,0.54); }
+      .c10 .fill, .c10 .mini-bars i { background: linear-gradient(90deg, #a3e635, #22c55e); }
+      .c10 .track { background: rgba(163,230,53,0.12); }
+      .c10 .hero p, .c10 .card p { color: rgba(255,255,255,0.62); }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <div>
+          <h1>IronLung Visual Widget Concepts</h1>
+          <p class="subtitle">Five more UI directions focused on charts, bars, heatmaps, and compact fitness widgets.</p>
+        </div>
+        <div class="pill">Visual-heavy concepts - no app logic changed</div>
+      </header>
+
+      <section class="grid">
+        <article class="concept c6">
+          <div class="concept-title">
+            <h2>6. Widget Command Center</h2>
+            <p>Closest to your screenshot: desktop-like widgets, progress bars, compact tables, and strong blue CTAs.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="subbrand">Widget analytics</div></div><div class="badge">Local</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="card hero"><div class="label accent">Command Center</div><h3>Training cockpit</h3><p>Visual summary of weekly momentum, weak points, recovery, and meaningful PRs.</p><div class="mini-bars"><i style="height:42%"></i><i style="height:62%"></i><i style="height:38%"></i><i style="height:74%"></i><i style="height:58%"></i><i style="height:88%"></i><i style="height:50%"></i><i style="height:67%"></i><i style="height:78%"></i><i style="height:46%"></i><i style="height:72%"></i><i style="height:96%"></i></div></div>
+              <div class="stats"><div class="stat"><div class="label">Balance</div><div class="value">85</div></div><div class="stat"><div class="label">PRs</div><div class="value">7</div></div><div class="stat"><div class="label">Flags</div><div class="value">0</div></div></div>
+              <div class="card"><div class="label accent">Weekly momentum</div><div class="hbars"><div class="hbar-row"><b>Chest</b><div class="track"><div class="fill" style="width:88%"></div></div><span>14/16</span></div><div class="hbar-row"><b>Back</b><div class="track"><div class="fill" style="width:100%"></div></div><span>18/18</span></div><div class="hbar-row"><b>Quads</b><div class="track"><div class="fill" style="width:64%;background:#facc15"></div></div><span>8/12</span></div><div class="hbar-row"><b>Shoulders</b><div class="track"><div class="fill" style="width:100%;background:#fb7185"></div></div><span>22/16</span></div></div></div>
+              <div class="card"><div class="label accent">Recent PR cards</div><div class="row"><div><strong>Deadlift</strong><span>405 lbs x 1</span></div><span>major</span></div><div class="row"><div><strong>Barbell row</strong><span>225 lbs x 8</span></div><span>medium</span></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c7">
+          <div class="concept-title">
+            <h2>7. Strength Market Board</h2>
+            <p>A finance-style board for lifts: gainers, decliners, deltas, volume bars, and PR signals.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="subbrand">Lift markets</div></div><div class="badge">+12%</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="card hero"><div class="label accent">Top movers</div><h3>Squat is leading.</h3><p>Best performers are climbing while pressing volume is slightly below maintenance.</p><svg class="spark" viewBox="0 0 300 80"><polyline fill="none" stroke="#facc15" stroke-width="5" points="0,62 30,58 58,64 86,45 114,48 142,31 170,36 198,22 226,18 255,12 300,19"/><polyline fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3" points="0,66 30,68 58,55 86,57 114,50 142,53 170,46 198,48 226,44 255,38 300,40"/></svg></div>
+              <div class="stats"><div class="stat"><div class="label">Best gain</div><div class="value">+37</div></div><div class="stat"><div class="label">PRs</div><div class="value">7</div></div><div class="stat"><div class="label">Vol</div><div class="value">91k</div></div></div>
+              <div class="card"><div class="label accent">Lift board</div><div class="row"><div><strong>Barbell Squat</strong><span>135x5 to 185x5</span></div><span style="color:#facc15">+37%</span></div><div class="row"><div><strong>Pull-ups</strong><span>BWx3 to BWx8</span></div><span style="color:#facc15">+166%</span></div><div class="row"><div><strong>Bench Press</strong><span>plateau watch</span></div><span>-2%</span></div></div>
+              <div class="card"><div class="label accent">Daily volume</div><div class="mini-bars"><i style="height:34%"></i><i style="height:46%"></i><i style="height:70%"></i><i style="height:24%"></i><i style="height:88%"></i><i style="height:58%"></i><i style="height:78%"></i><i style="height:36%"></i><i style="height:92%"></i><i style="height:44%"></i><i style="height:60%"></i><i style="height:84%"></i></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c8">
+          <div class="concept-title">
+            <h2>8. Muscle Heat Lab</h2>
+            <p>More physiology-focused: body heat map, muscle contribution bars, and quick imbalance readouts.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="subbrand">Muscle heat lab</div></div><div class="badge">30D</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="card hero"><div class="label accent">Body heat</div><div class="body-map"><div class="body"><div class="head" style="background:#164e63"></div><div class="torso" style="background:#22d3ee"></div><div class="arm-l" style="background:#0891b2"></div><div class="arm-r" style="background:#0891b2"></div><div class="leg-l" style="background:#0e7490"></div><div class="leg-r" style="background:#164e63"></div></div><div><h3>Back and chest are hot.</h3><p>Distributed volume shows pressing and pulling are dominant this period.</p></div></div></div>
+              <div class="stats"><div class="stat"><div class="label">Balance</div><div class="value">82</div></div><div class="stat"><div class="label">Push</div><div class="value">48%</div></div><div class="stat"><div class="label">Pull</div><div class="value">52%</div></div></div>
+              <div class="card"><div class="label accent">Muscle volume</div><div class="hbars"><div class="hbar-row"><b>Pecs</b><div class="track"><div class="fill" style="width:90%"></div></div><span>21k</span></div><div class="hbar-row"><b>Lats</b><div class="track"><div class="fill" style="width:82%"></div></div><span>19k</span></div><div class="hbar-row"><b>Triceps</b><div class="track"><div class="fill" style="width:72%"></div></div><span>15k</span></div><div class="hbar-row"><b>Hams</b><div class="track"><div class="fill" style="width:34%;background:#facc15"></div></div><span>4k</span></div></div></div>
+              <div class="card"><div class="label accent">Contribution note</div><p>Bench contributes to chest, anterior delts, triceps, and serratus instead of only one primary muscle.</p></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c9">
+          <div class="concept-title">
+            <h2>9. Recovery Radar</h2>
+            <p>Visual-first fatigue screen: warning cards, weekly exposure map, strain trend, and recovery radar.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="subbrand">Recovery radar</div></div><div class="badge">Watch</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="card hero"><div class="label accent">Fatigue</div><h3>Two muscles need watching.</h3><p>Triceps and biceps have repeated exposure in the last 7 days. No medical claim, just training load.</p><div class="heatmap"><div class="cell" style="background:#3f1019"></div><div class="cell" style="background:#7f1d1d"></div><div class="cell" style="background:#fb7185"></div><div class="cell" style="background:#3f1019"></div><div class="cell" style="background:#881337"></div><div class="cell" style="background:#fb7185"></div><div class="cell" style="background:#2f1018"></div><div class="cell" style="background:#3f1019"></div><div class="cell" style="background:#701a23"></div><div class="cell" style="background:#fb7185"></div><div class="cell" style="background:#3f1019"></div><div class="cell" style="background:#be123c"></div><div class="cell" style="background:#2f1018"></div><div class="cell" style="background:#881337"></div></div></div>
+              <div class="stats"><div class="stat"><div class="label">Flags</div><div class="value">2</div></div><div class="stat"><div class="label">Hard sets</div><div class="value">64</div></div><div class="stat"><div class="label">PRs</div><div class="value">7</div></div></div>
+              <div class="card"><div class="label accent">Exposure</div><div class="row"><div><strong>Triceps brachii</strong><span>16 related sets</span></div><span style="color:#fb7185">high</span></div><div class="row"><div><strong>Biceps brachii</strong><span>14 related sets</span></div><span>mod</span></div><div class="row"><div><strong>Anterior delts</strong><span>12 related sets</span></div><span>mod</span></div></div>
+              <div class="card"><div class="label accent">Strain trend</div><svg class="spark" viewBox="0 0 300 80"><path d="M0 58 C25 40 45 70 68 42 S105 28 128 38 166 70 190 34 236 18 300 28" fill="none" stroke="#fb7185" stroke-width="5"/></svg></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c10">
+          <div class="concept-title">
+            <h2>10. Training Rings Plus</h2>
+            <p>Apple Health style, but more serious: rings, streak tiles, calendar heatmap, and compact insight cards.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="subbrand">Training health</div></div><div class="badge">Fresh</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="card hero"><div class="label accent">Today</div><h3>Your block is on track.</h3><p>Consistency is strong. Hamstrings are the only clear undertrained area.</p></div>
+              <div class="ring-grid"><div class="ring" style="background:conic-gradient(#a3e635 82%,rgba(255,255,255,0.12) 0)"><div style="background:#111720">82</div></div><div class="ring" style="background:conic-gradient(#22c55e 91%,rgba(255,255,255,0.12) 0)"><div style="background:#111720">91</div></div><div class="ring" style="background:conic-gradient(#facc15 58%,rgba(255,255,255,0.12) 0)"><div style="background:#111720">58</div></div></div>
+              <div class="stats"><div class="stat"><div class="label">Streak</div><div class="value">4</div></div><div class="stat"><div class="label">Weeks</div><div class="value">6</div></div><div class="stat"><div class="label">PRs</div><div class="value">7</div></div></div>
+              <div class="card"><div class="label accent">Training calendar</div><div class="heatmap"><div class="cell" style="background:#1f2937"></div><div class="cell" style="background:#365314"></div><div class="cell" style="background:#4d7c0f"></div><div class="cell" style="background:#a3e635"></div><div class="cell" style="background:#1f2937"></div><div class="cell" style="background:#65a30d"></div><div class="cell" style="background:#1f2937"></div><div class="cell" style="background:#365314"></div><div class="cell" style="background:#a3e635"></div><div class="cell" style="background:#4d7c0f"></div><div class="cell" style="background:#1f2937"></div><div class="cell" style="background:#84cc16"></div><div class="cell" style="background:#365314"></div><div class="cell" style="background:#a3e635"></div></div></div>
+              <div class="card"><div class="label accent">Quick coaching</div><div class="row"><div><strong>Keep</strong><span>pulling frequency</span></div><span>good</span></div><div class="row"><div><strong>Add</strong><span>hamstring sets</span></div><span>next</span></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
