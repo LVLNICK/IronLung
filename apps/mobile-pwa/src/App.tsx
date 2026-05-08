@@ -76,7 +76,7 @@ export function App() {
   return (
     <MobileShell tab={tab} onTab={changeTab}>
       {tab === "home" && <HomePage snapshot={snapshot} analyzer={analyzer} onOpenSync={openSettings} onNavigate={changeTab} />}
-      {tab === "train" && <TrainPage snapshot={snapshot} analyzer={analyzer} onNavigate={changeTab} />}
+      {tab === "train" && <TrainPage snapshot={snapshot} analyzer={analyzer} onNavigate={changeTab} onSnapshot={setSnapshot} />}
       {tab === "analytics" && <AnalyticsPage snapshot={snapshot} analyzer={analyzer} />}
       {tab === "photos" && <PhotosPage snapshot={snapshot} analyzer={analyzer} />}
       {tab === "settings" && <SettingsPage snapshot={snapshot} refresh={refresh} status={status} setStatus={setStatus} />}

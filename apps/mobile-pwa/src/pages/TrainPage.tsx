@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dumbbell, List, MessageSquare, MoreHorizontal, Trophy, Zap } from "lucide-react";
-import type { MobileSnapshot } from "../data/mobileRepository";
+import { addSetToActiveMobileWorkout, finishActiveMobileWorkout, setMobileSetCompleted, type MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
-import { GlassCard, IconTile, ListRow, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
+import { EmptyMobileState, GlassCard, IconTile, ListRow, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
 type LoggedSet = {
+  id: string;
   set: number;
   weight: number;
   reps: number;
@@ -16,7 +17,7 @@ type LoggedSet = {
   pr?: boolean;
 };
 
-type PreviewExercise = {
+type WorkoutExercise = {
   id: string;
   name: string;
   muscles: string;
@@ -26,109 +27,93 @@ type PreviewExercise = {
   sets: LoggedSet[];
 };
 
-const initialExercises: PreviewExercise[] = [
-  {
-    id: "bench",
-    name: "Bench Press",
-    muscles: "Chest, triceps, front delts",
-    targetSets: 4,
-    previousBest: "225 lb x 5",
-    lastTime: "205x8, 215x6, 225x4",
-    sets: [
-      makeSet(1, 135, 10, 6, true),
-      makeSet(2, 185, 8, 7, true),
-      makeSet(3, 205, 6, 8, true)
-    ]
-  },
-  {
-    id: "pullup",
-    name: "Weighted Pull-Up",
-    muscles: "Lats, biceps",
-    targetSets: 3,
-    previousBest: "+35 lb x 5",
-    lastTime: "+25x8, +30x6, +35x5",
-    sets: [makeSet(1, 25, 8, 7, true), makeSet(2, 30, 6, 8, true), makeSet(3, 35, 5, 9, true)]
-  },
-  {
-    id: "incline-db",
-    name: "Incline DB Press",
-    muscles: "Upper chest",
-    targetSets: 3,
-    previousBest: "100 lb x 6",
-    lastTime: "85x10, 90x8, 95x7",
-    sets: [makeSet(1, 85, 10, 7, true), makeSet(2, 90, 8, 8, true)]
-  },
-  {
-    id: "row",
-    name: "Cable Row",
-    muscles: "Mid back",
-    targetSets: 3,
-    previousBest: "180 lb x 10",
-    lastTime: "150x12, 165x10, 180x8",
-    sets: []
-  },
-  {
-    id: "lateral-raise",
-    name: "Lateral Raise",
-    muscles: "Shoulders",
-    targetSets: 2,
-    previousBest: "30 lb x 15",
-    lastTime: "25x15, 25x14",
-    sets: []
-  }
-];
-
-export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onNavigate: (tab: MobileTab) => void }) {
-  const [exercises, setExercises] = useState(initialExercises);
-  const [activeExerciseId, setActiveExerciseId] = useState(initialExercises[0].id);
-  const [nextWeight, setNextWeight] = useState(225);
-  const [nextReps, setNextReps] = useState(5);
-  const [nextRpe, setNextRpe] = useState(9);
-  const [notice, setNotice] = useState("Preview session - changes stay on this screen");
+export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onNavigate: (tab: MobileTab) => void; onSnapshot: (snapshot: MobileSnapshot) => void }) {
+  const [localSnapshot, setLocalSnapshot] = useState(snapshot);
+  const [activeExerciseId, setActiveExerciseId] = useState("");
+  const [nextWeight, setNextWeight] = useState(0);
+  const [nextReps, setNextReps] = useState(8);
+  const [nextRpe, setNextRpe] = useState(7);
+  const [notice, setNotice] = useState("Phone-local workout ready");
   const [lastAddedPr, setLastAddedPr] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [finished, setFinished] = useState(false);
 
+  useEffect(() => {
+    setLocalSnapshot(snapshot);
+  }, [snapshot]);
+
+  const exercises = useMemo(() => buildWorkoutExercises(localSnapshot, analyzer), [localSnapshot, analyzer]);
   const activeExercise = exercises.find((exercise) => exercise.id === activeExerciseId) ?? exercises[0];
+
+  useEffect(() => {
+    if (!activeExerciseId && exercises[0]) setActiveExerciseId(exercises[0].id);
+  }, [activeExerciseId, exercises]);
+
+  useEffect(() => {
+    if (!activeExercise) return;
+    const last = activeExercise.sets.at(-1);
+    if (last) {
+      setNextWeight(last.weight);
+      setNextReps(last.reps);
+      setNextRpe(last.rpe);
+    } else {
+      const recent = analyzer.strengthRows.find((row) => row.exerciseId === activeExercise.id);
+      setNextWeight(recent?.maxWeight ?? 0);
+      setNextReps(8);
+      setNextRpe(7);
+    }
+  }, [activeExercise?.id]);
+
+  if (!exercises.length || !activeExercise) {
+    return (
+      <MobilePage>
+        <header className="flex items-center gap-3 pt-1">
+          <button onClick={() => onNavigate("settings")} aria-label="Back to Settings" className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><ChevronLeft className="h-7 w-7 text-white" /></button>
+          <div>
+            <div className="text-xl font-black">Train</div>
+            <div className="text-sm text-slate-400">Import desktop data first.</div>
+          </div>
+        </header>
+        <EmptyMobileState icon={Dumbbell} title="No exercises on this phone" body="Import a desktop seed or Boostcamp history before logging mobile sets. Workouts stay local on this phone." actionLabel="Open Import" onAction={() => onNavigate("settings")} />
+      </MobilePage>
+    );
+  }
+
   const totalSets = exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
   const completedSets = exercises.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.completed).length, 0);
-  const targetSets = exercises.reduce((sum, exercise) => sum + exercise.targetSets, 0);
   const completedExercises = exercises.filter((exercise) => exercise.sets.filter((set) => set.completed).length >= exercise.targetSets).length;
   const volume = exercises.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.completed).reduce((setSum, set) => setSum + set.weight * set.reps, 0), 0);
   const topE1rm = Math.max(0, ...exercises.flatMap((exercise) => exercise.sets.map((set) => set.e1rm)));
-  const activeTopE1rm = Math.max(0, ...activeExercise.sets.map((set) => set.e1rm));
   const prCount = exercises.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.pr).length, 0);
   const progressPercent = Math.min(100, Math.round((completedExercises / exercises.length) * 100));
 
-  // TODO: Replace this local preview state with repository-backed workout writes
-  // once apps/mobile-pwa/src/data/mobileRepository.ts exposes create/update APIs
-  // for sessions, sessionExercises, setLogs, operationLog entries, and PR recalculation.
-  const updateActiveExercise = (updater: (exercise: PreviewExercise) => PreviewExercise) => {
-    setExercises((current) => current.map((exercise) => exercise.id === activeExercise.id ? updater(exercise) : exercise));
+  const saveSnapshot = (next: MobileSnapshot) => {
+    setLocalSnapshot(next);
+    onSnapshot(next);
   };
 
-  const appendSet = (weight: number, reps: number, rpe: number, source: "add" | "repeat") => {
-    const sanitizedWeight = sanitizeWeight(weight);
-    const sanitizedReps = sanitizeReps(reps);
-    const sanitizedRpe = sanitizeRpe(rpe);
-    const e1rm = calculateE1rm(sanitizedWeight, sanitizedReps);
-    const isPr = e1rm > activeTopE1rm;
-    const newSet = {
-      set: activeExercise.sets.length + 1,
-      weight: sanitizedWeight,
-      reps: sanitizedReps,
-      rpe: sanitizedRpe,
-      e1rm,
-      completed: true,
-      pr: isPr
-    };
-
-    updateActiveExercise((exercise) => ({ ...exercise, sets: [...exercise.sets, newSet] }));
-    setNextWeight(sanitizedWeight);
-    setNextReps(sanitizedReps);
-    setNextRpe(sanitizedRpe);
-    setLastAddedPr(isPr);
-    setFinished(false);
-    setNotice(isPr ? `${activeExercise.name}: preview PR detected at ${e1rm} lb e1RM.` : `${activeExercise.name}: ${source === "repeat" ? "repeated" : "added"} ${sanitizedWeight} lb x ${sanitizedReps}.`);
+  const addSet = async (weight: number, reps: number, rpe: number, source: "add" | "repeat") => {
+    setSaving(true);
+    try {
+      const result = await addSetToActiveMobileWorkout(localSnapshot.settings, {
+        exerciseId: activeExercise.id,
+        weight: sanitizeWeight(weight),
+        reps: sanitizeReps(reps),
+        rpe: sanitizeRpe(rpe),
+        setType: "working"
+      });
+      saveSnapshot(result.snapshot);
+      setNextWeight(result.setLog.weight);
+      setNextReps(result.setLog.reps);
+      setNextRpe(result.setLog.rpe ?? rpe);
+      setLastAddedPr(result.personalRecords.some((record) => record.importance === "major" || record.importance === "medium"));
+      setFinished(false);
+      setNotice(result.personalRecords.length ? `Saved ${result.personalRecords.length} PR${result.personalRecords.length === 1 ? "" : "s"} locally.` : `${source === "repeat" ? "Repeated" : "Saved"} ${result.setLog.weight} lb x ${result.setLog.reps} locally.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not save set locally.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const copyLastSet = () => {
@@ -149,30 +134,41 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
       setNotice(`No previous ${activeExercise.name} set to repeat.`);
       return;
     }
-    appendSet(last.weight, last.reps, last.rpe, "repeat");
+    void addSet(last.weight, last.reps, last.rpe, "repeat");
   };
 
-  const toggleSetCompletion = (setNumber: number) => {
-    updateActiveExercise((exercise) => ({
-      ...exercise,
-      sets: exercise.sets.map((set) => set.set === setNumber ? { ...set, completed: !set.completed } : set)
-    }));
-    setNotice(`${activeExercise.name} set ${setNumber} toggled.`);
+  const toggleSetCompletion = async (set: LoggedSet) => {
+    setSaving(true);
+    try {
+      const next = await setMobileSetCompleted(localSnapshot.settings, set.id, !set.completed);
+      saveSnapshot(next);
+      setNotice(`${activeExercise.name} set ${set.set} ${set.completed ? "unchecked" : "completed"} locally.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not update set.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const selectExercise = (exercise: PreviewExercise) => {
-    const last = exercise.sets.at(-1);
+  const selectExercise = (exercise: WorkoutExercise) => {
     setActiveExerciseId(exercise.id);
-    setNextWeight(last?.weight ?? 0);
-    setNextReps(last?.reps ?? 8);
-    setNextRpe(last?.rpe ?? 7);
     setLastAddedPr(false);
+    setFinished(false);
     setNotice(`${exercise.name} selected.`);
   };
 
-  const finishWorkout = () => {
-    setFinished(true);
-    setNotice(`Preview summary: ${completedSets} sets, ${formatNumber(volume)} lb volume, ${prCount} PR${prCount === 1 ? "" : "s"}.`);
+  const finishWorkout = async () => {
+    setSaving(true);
+    try {
+      const next = await finishActiveMobileWorkout(localSnapshot.settings);
+      saveSnapshot(next);
+      setFinished(true);
+      setNotice(`Workout saved locally: ${completedSets} sets, ${formatNumber(volume)} lb volume, ${prCount} PR${prCount === 1 ? "" : "s"}.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not finish workout.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -180,14 +176,14 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
       <header className="flex items-start justify-between pt-1">
         <button onClick={() => onNavigate("home")} aria-label="Back to Home" className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><ChevronLeft className="h-7 w-7 text-white" /></button>
         <div className="min-w-0 px-2 text-center">
-          <div className="truncate text-xl font-black leading-tight min-[400px]:text-2xl">Upper Strength - Active</div>
-          <div className="mt-1 flex items-center justify-center gap-1 text-sm text-slate-400"><Clock className="h-4 w-4" />01:22 elapsed</div>
+          <div className="truncate text-xl font-black leading-tight min-[400px]:text-2xl">Mobile Workout</div>
+          <div className="mt-1 flex items-center justify-center gap-1 text-sm text-slate-400"><Clock className="h-4 w-4" />saved on phone</div>
         </div>
-        <button onClick={() => setNotice("Menu: persistence export is not wired for preview sessions yet.")} aria-label="Workout menu" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><MoreHorizontal className="h-5 w-5" /></button>
+        <button onClick={() => setNotice("Workout actions are saved to phone-local storage.")} aria-label="Workout menu" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><MoreHorizontal className="h-5 w-5" /></button>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <StatusPill tone={finished ? "green" : "slate"}>{finished ? "Finished preview" : notice}</StatusPill>
+        <StatusPill tone={finished ? "green" : "slate"}>{saving ? "Saving..." : notice}</StatusPill>
         {lastAddedPr && <StatusPill tone="green">New PR</StatusPill>}
       </div>
 
@@ -239,21 +235,21 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
             <EntryBox label="RPE" value={nextRpe} unit="RPE" min={0} max={10} step={0.5} onChange={(value) => setNextRpe(sanitizeRpe(value))} />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 min-[400px]:grid-cols-4">
-            <MobileGhostButton onClick={() => setNextWeight((value) => sanitizeWeight(value - 5))}>-5 lb</MobileGhostButton>
-            <MobileGhostButton onClick={() => setNextWeight((value) => sanitizeWeight(value + 5))}>+5 lb</MobileGhostButton>
-            <MobileGhostButton onClick={() => setNextReps((value) => sanitizeReps(value - 1))}>-1 rep</MobileGhostButton>
-            <MobileGhostButton onClick={() => setNextReps((value) => sanitizeReps(value + 1))}>+1 rep</MobileGhostButton>
-            <MobileGhostButton onClick={() => setNextRpe((value) => sanitizeRpe(value - 0.5))}>-0.5 RPE</MobileGhostButton>
-            <MobileGhostButton onClick={() => setNextRpe((value) => sanitizeRpe(value + 0.5))}>+0.5 RPE</MobileGhostButton>
-            <MobileGhostButton onClick={copyLastSet} className="flex items-center justify-center gap-2"><Copy className="h-4 w-4" />Copy</MobileGhostButton>
-            <MobileGhostButton onClick={repeatLastSet}>Repeat set</MobileGhostButton>
-            <MobilePrimaryButton onClick={() => appendSet(nextWeight, nextReps, nextRpe, "add")} className="col-span-2 min-[400px]:col-span-4">Add Set</MobilePrimaryButton>
+            <MobileGhostButton disabled={saving} onClick={() => setNextWeight((value) => sanitizeWeight(value - 5))}>-5 lb</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={() => setNextWeight((value) => sanitizeWeight(value + 5))}>+5 lb</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={() => setNextReps((value) => sanitizeReps(value - 1))}>-1 rep</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={() => setNextReps((value) => sanitizeReps(value + 1))}>+1 rep</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={() => setNextRpe((value) => sanitizeRpe(value - 0.5))}>-0.5 RPE</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={() => setNextRpe((value) => sanitizeRpe(value + 0.5))}>+0.5 RPE</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={copyLastSet} className="flex items-center justify-center gap-2"><Copy className="h-4 w-4" />Copy</MobileGhostButton>
+            <MobileGhostButton disabled={saving} onClick={repeatLastSet}>Repeat set</MobileGhostButton>
+            <MobilePrimaryButton disabled={saving} onClick={() => void addSet(nextWeight, nextReps, nextRpe, "add")} className="col-span-2 min-[400px]:col-span-4">Add Set</MobilePrimaryButton>
           </div>
         </GlassCard>
 
         <div className="mt-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.035] py-3 text-sm text-slate-300">
-          <button onClick={() => setNotice("Rest timer ready. Full timer persistence is future work.")} className="flex min-h-[44px] items-center justify-center gap-2"><Clock className="h-5 w-5" />Rest <span className="font-mono text-blue-400">01:22</span></button>
-          <button onClick={() => setNotice("Notes are not persisted in preview sessions yet.")} className="flex min-h-[44px] items-center justify-center gap-2 border-l border-white/10"><MessageSquare className="h-5 w-5" />Note</button>
+          <button onClick={() => setNotice("Rest timer is local UI only for now; sets are saved.")} className="flex min-h-[44px] items-center justify-center gap-2"><Clock className="h-5 w-5" />Rest <span className="font-mono text-blue-400">01:22</span></button>
+          <button onClick={() => setNotice("Notes are coming next; sets are saved locally now.")} className="flex min-h-[44px] items-center justify-center gap-2 border-l border-white/10"><MessageSquare className="h-5 w-5" />Note</button>
         </div>
       </GlassCard>
 
@@ -275,15 +271,77 @@ export function TrainPage({ onNavigate }: { snapshot: MobileSnapshot; analyzer: 
         })}
       </div>
 
-      <MobilePrimaryButton onClick={finishWorkout} className="sticky bottom-28 z-10 flex h-14 w-full items-center justify-center gap-3 text-lg">
+      <MobilePrimaryButton disabled={saving} onClick={() => void finishWorkout()} className="sticky bottom-28 z-10 flex h-14 w-full items-center justify-center gap-3 text-lg">
         <Check className="h-5 w-5 rounded-full border border-white" />Finish Workout
       </MobilePrimaryButton>
     </MobilePage>
   );
 }
 
-function makeSet(set: number, weight: number, reps: number, rpe: number, completed: boolean, pr = false): LoggedSet {
-  return { set, weight, reps, rpe, completed, pr, e1rm: calculateE1rm(weight, reps) };
+function buildWorkoutExercises(snapshot: MobileSnapshot, analyzer: MobileAnalyzerModel): WorkoutExercise[] {
+  const exercisesById = new Map(snapshot.exercises.filter((exercise) => !exercise.deletedAt).map((exercise) => [exercise.id, exercise]));
+  const rankedIds = [...analyzer.strengthRows.map((row) => row.exerciseId), ...snapshot.exercises.map((exercise) => exercise.id)];
+  const uniqueIds = [...new Set(rankedIds)].filter((id) => exercisesById.has(id)).slice(0, 6);
+  const activeSession = snapshot.sessions
+    .filter((session) => !session.deletedAt && !session.finishedAt && session.importSource === "mobile-pwa")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+  const activeRows = snapshot.sessionExercises.filter((row) => !row.deletedAt && row.workoutSessionId === activeSession?.id);
+  const prsBySetId = new Set(snapshot.personalRecords.filter((record) => !record.deletedAt && record.importSource === "mobile-workout").map((record) => record.setLogId).filter(Boolean));
+
+  return uniqueIds.map((exerciseId) => {
+    const exercise = exercisesById.get(exerciseId);
+    if (!exercise) return null;
+    const activeRow = activeRows.find((row) => row.exerciseId === exercise.id);
+    const sets = activeRow
+      ? snapshot.setLogs
+        .filter((set) => !set.deletedAt && set.workoutSessionExerciseId === activeRow.id)
+        .sort((a, b) => a.setNumber - b.setNumber)
+        .map((set): LoggedSet => ({
+          id: set.id,
+          set: set.setNumber,
+          weight: set.weight,
+          reps: set.reps,
+          rpe: set.rpe ?? 0,
+          e1rm: calculateE1rm(set.weight, set.reps),
+          completed: set.isCompleted,
+          pr: prsBySetId.has(set.id)
+        }))
+      : [];
+    const history = historyForExercise(snapshot, exercise.id, activeSession?.id);
+    return {
+      id: exercise.id,
+      name: exercise.name,
+      muscles: [exercise.primaryMuscle, ...exercise.secondaryMuscles].filter(Boolean).slice(0, 3).join(", ") || "Custom exercise",
+      targetSets: Math.max(sets.length, 3),
+      previousBest: history.previousBest,
+      lastTime: history.lastTime,
+      sets
+    };
+  }).filter(Boolean) as WorkoutExercise[];
+}
+
+function historyForExercise(snapshot: MobileSnapshot, exerciseId: string, activeSessionId?: string): { previousBest: string; lastTime: string } {
+  const rows = snapshot.sessionExercises.filter((row) => !row.deletedAt && row.exerciseId === exerciseId);
+  const rowById = new Map(rows.map((row) => [row.id, row]));
+  const sessionsById = new Map(snapshot.sessions.filter((session) => !session.deletedAt).map((session) => [session.id, session]));
+  const historicalSets = snapshot.setLogs
+    .filter((set) => {
+      const row = rowById.get(set.workoutSessionExerciseId);
+      return !set.deletedAt && set.isCompleted && row && row.workoutSessionId !== activeSessionId;
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const best = [...historicalSets].sort((a, b) => calculateE1rm(b.weight, b.reps) - calculateE1rm(a.weight, a.reps))[0];
+  const latestSessionId = historicalSets.map((set) => rowById.get(set.workoutSessionExerciseId)?.workoutSessionId).find(Boolean);
+  const latestSets = latestSessionId
+    ? historicalSets
+      .filter((set) => rowById.get(set.workoutSessionExerciseId)?.workoutSessionId === latestSessionId)
+      .sort((a, b) => a.setNumber - b.setNumber)
+    : [];
+  const latestSession = latestSessionId ? sessionsById.get(latestSessionId) : undefined;
+  return {
+    previousBest: best ? `${formatNumber(best.weight)} lb x ${best.reps}` : "No previous best",
+    lastTime: latestSets.length ? `${latestSets.map((set) => `${formatNumber(set.weight)}x${set.reps}`).join(", ")}${latestSession ? ` (${new Date(latestSession.startedAt).toLocaleDateString()})` : ""}` : "No previous session"
+  };
 }
 
 function calculateE1rm(weight: number, reps: number) {
@@ -307,7 +365,7 @@ function TopMetric({ icon, value, label }: { icon: typeof Dumbbell; value: strin
   return <MetricChip icon={icon} value={value} label={label} />;
 }
 
-function SetTable({ sets, onToggle }: { sets: LoggedSet[]; onToggle: (setNumber: number) => void }) {
+function SetTable({ sets, onToggle }: { sets: LoggedSet[]; onToggle: (set: LoggedSet) => void }) {
   if (!sets.length) {
     return (
       <div className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.035] p-4 text-center text-sm text-slate-400">
@@ -323,7 +381,7 @@ function SetTable({ sets, onToggle }: { sets: LoggedSet[]; onToggle: (setNumber:
       </div>
       <div className="mt-2 space-y-1.5">
         {sets.map((row) => (
-          <button key={row.set} onClick={() => onToggle(row.set)} className={`grid min-h-[48px] w-full grid-cols-[0.7fr_1.3fr_0.8fr_0.8fr_1.1fr_1.4rem] items-center rounded-xl border border-white/10 px-2 py-3 text-left font-mono text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 ${row.pr ? "border-l-4 border-l-blue-500 bg-blue-500/10 text-blue-300" : row.completed ? "bg-black/12 text-slate-100" : "bg-white/[0.035] text-slate-500"}`}>
+          <button key={row.id} onClick={() => onToggle(row)} className={`grid min-h-[48px] w-full grid-cols-[0.7fr_1.3fr_0.8fr_0.8fr_1.1fr_1.4rem] items-center rounded-xl border border-white/10 px-2 py-3 text-left font-mono text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 ${row.pr ? "border-l-4 border-l-blue-500 bg-blue-500/10 text-blue-300" : row.completed ? "bg-black/12 text-slate-100" : "bg-white/[0.035] text-slate-500"}`}>
             <span className="font-black">{row.set}</span>
             <span className="font-bold">{row.weight} lb</span>
             <span>{row.reps}</span>
