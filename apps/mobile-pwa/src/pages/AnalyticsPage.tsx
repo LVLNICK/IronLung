@@ -51,7 +51,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
 
       <div className="grid grid-cols-2 gap-3">
         <MetricChip icon={Dumbbell} label="Total Volume" value={`${shortVolume(activeAnalyzer.summary.totals.volume)} lb`} sub={formatDelta(activeAnalyzer.summary.comparison.volumeDeltaPercent)} />
-        <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(activeAnalyzer.summary.totals.sessions)} sub={`${formatDelta(activeAnalyzer.summary.comparison.sessionsDeltaPercent)} vs prev`} />
+        <MetricChip icon={CalendarCheck} label="Sessions" value={formatNumber(activeAnalyzer.summary.totals.sessions)} sub={formatDelta(activeAnalyzer.summary.comparison.sessionsDeltaPercent)} />
         <MetricChip icon={Star} label="PRs" value={formatNumber(activeAnalyzer.recentPrs.length)} sub="non-baseline" />
         <MetricChip icon={Trophy} label="Balance" value={`${Math.round(activeAnalyzer.summary.balance.overall || 0)}`} sub="muscle score" />
       </div>
@@ -67,10 +67,10 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
         <MiniTrendBars values={volumeValues} labels={["M", "T", "W", "T", "F", "S", "S"]} className="h-40" />
       </GlassCard>
 
-      <div className="grid grid-cols-1 gap-3 min-[405px]:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <GlassCard className="p-4">
           <SectionTitle label="Muscle balance" action="View all" onAction={() => setActiveSection("Balance")} />
-          <div className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-3">
+          <div className="grid grid-cols-[minmax(7.5rem,9rem)_minmax(0,1fr)] items-center gap-3">
             <BodyMini />
             <div className="space-y-2">
               {muscles.map((muscle) => (
@@ -81,7 +81,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
               ))}
             </div>
           </div>
-          <p className="mt-3 rounded-2xl bg-white/[0.045] p-3 text-sm leading-relaxed text-slate-400">Muscle volume is distributed from exercise contribution estimates.</p>
+          <p className="mt-3 rounded-2xl bg-white/[0.045] p-3 text-sm leading-relaxed text-slate-400">Muscle volume is distributed from exercise contribution estimates. Diagram: OpenStax Anatomy & Physiology, CC BY 4.0.</p>
         </GlassCard>
 
         <GlassCard className="p-4">
@@ -148,14 +148,14 @@ function InsightRow({ icon: Icon, title, detail, tone = "blue", onOpen }: { icon
 
 function BodyMini() {
   return (
-    <div className="relative mx-auto h-44 w-20">
-      <div className="absolute left-7 top-0 h-7 w-7 rounded-full bg-slate-600" />
-      <div className="absolute left-4 top-8 h-20 w-12 rounded-[2rem] bg-blue-700" />
-      <div className="absolute left-0 top-11 h-14 w-5 rotate-[22deg] rounded-full bg-emerald-500/70" />
-      <div className="absolute right-0 top-11 h-14 w-5 -rotate-[22deg] rounded-full bg-emerald-500/70" />
-      <div className="absolute left-4 top-[6.25rem] h-16 w-5 rotate-12 rounded-full bg-yellow-500/80" />
-      <div className="absolute right-4 top-[6.25rem] h-16 w-5 -rotate-12 rounded-full bg-yellow-500/80" />
-    </div>
+    <figure className="overflow-hidden rounded-2xl border border-blue-400/20 bg-white shadow-[0_0_28px_rgba(59,130,246,0.18)]">
+      <img
+        src={`${import.meta.env.BASE_URL}assets/openstax-muscles-front-back.jpg`}
+        alt="Anterior and posterior muscle diagram"
+        className="h-52 w-full object-cover object-top"
+        loading="lazy"
+      />
+    </figure>
   );
 }
 
@@ -165,13 +165,25 @@ function trendValues(rows: MobileAnalyzerModel["dailyRows"]) {
 }
 
 function muscleSummary(analyzer: MobileAnalyzerModel) {
-  const base = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"];
-  const max = Math.max(...analyzer.muscleRows.map((row) => row.value), 1);
-  return base.map((label) => {
-    const found = analyzer.muscleRows.find((row) => row.label.toLowerCase().includes(label.toLowerCase()));
-    const ratio = found ? found.value / max : 0;
+  const groups = [
+    { label: "Chest", terms: ["chest", "pectoral"] },
+    { label: "Back", terms: ["back", "lat", "rhomboid", "trap", "teres", "erector"] },
+    { label: "Shoulders", terms: ["shoulder", "deltoid", "rotator cuff", "supraspinatus"] },
+    { label: "Arms", terms: ["biceps", "triceps", "brachialis", "forearm", "brachioradialis"] },
+    { label: "Legs", terms: ["quad", "hamstring", "glute", "calf", "soleus", "adductor", "vastus"] },
+    { label: "Core", terms: ["core", "abs", "abdominis", "oblique"] }
+  ];
+  const grouped = groups.map((group) => ({
+    label: group.label,
+    value: analyzer.muscleRows
+      .filter((row) => group.terms.some((term) => row.label.toLowerCase().includes(term)))
+      .reduce((sum, row) => sum + row.value, 0)
+  }));
+  const max = Math.max(...grouped.map((row) => row.value), 1);
+  return grouped.map((group) => {
+    const ratio = group.value / max;
     const status = ratio < 0.35 ? "Low" : ratio > 0.9 ? "High" : "Good";
-    return { label, status, tone: status === "Low" ? "yellow" as const : status === "High" ? "blue" as const : "green" as const };
+    return { label: group.label, status, tone: status === "Low" ? "yellow" as const : status === "High" ? "blue" as const : "green" as const };
   });
 }
 
