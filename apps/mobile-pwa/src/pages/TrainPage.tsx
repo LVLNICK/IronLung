@@ -95,13 +95,13 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   const addSet = async (weight: number, reps: number, rpe: number, source: "add" | "repeat") => {
     setSaving(true);
     try {
-      const result = await addSetToActiveMobileWorkout(localSnapshot.settings, {
+      const result = await withSaveTimeout(addSetToActiveMobileWorkout(localSnapshot.settings, {
         exerciseId: activeExercise.id,
         weight: sanitizeWeight(weight),
         reps: sanitizeReps(reps),
         rpe: sanitizeRpe(rpe),
         setType: "working"
-      });
+      }));
       saveSnapshot(result.snapshot);
       setNextWeight(result.setLog.weight);
       setNextReps(result.setLog.reps);
@@ -140,7 +140,7 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   const toggleSetCompletion = async (set: LoggedSet) => {
     setSaving(true);
     try {
-      const next = await setMobileSetCompleted(localSnapshot.settings, set.id, !set.completed);
+      const next = await withSaveTimeout(setMobileSetCompleted(localSnapshot.settings, set.id, !set.completed));
       saveSnapshot(next);
       setNotice(`${activeExercise.name} set ${set.set} ${set.completed ? "unchecked" : "completed"} locally.`);
     } catch (error) {
@@ -160,7 +160,7 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   const finishWorkout = async () => {
     setSaving(true);
     try {
-      const next = await finishActiveMobileWorkout(localSnapshot.settings);
+      const next = await withSaveTimeout(finishActiveMobileWorkout(localSnapshot.settings));
       saveSnapshot(next);
       setFinished(true);
       setNotice(`Workout saved locally: ${completedSets} sets, ${formatNumber(volume)} lb volume, ${prCount} PR${prCount === 1 ? "" : "s"}.`);
@@ -235,13 +235,13 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
             <EntryBox label="RPE" value={nextRpe} unit="RPE" min={0} max={10} step={0.5} onChange={(value) => setNextRpe(sanitizeRpe(value))} />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 min-[400px]:grid-cols-4">
-            <MobileGhostButton disabled={saving} onClick={() => setNextWeight((value) => sanitizeWeight(value - 5))}>-5 lb</MobileGhostButton>
-            <MobileGhostButton disabled={saving} onClick={() => setNextWeight((value) => sanitizeWeight(value + 5))}>+5 lb</MobileGhostButton>
-            <MobileGhostButton disabled={saving} onClick={() => setNextReps((value) => sanitizeReps(value - 1))}>-1 rep</MobileGhostButton>
-            <MobileGhostButton disabled={saving} onClick={() => setNextReps((value) => sanitizeReps(value + 1))}>+1 rep</MobileGhostButton>
-            <MobileGhostButton disabled={saving} onClick={() => setNextRpe((value) => sanitizeRpe(value - 0.5))}>-0.5 RPE</MobileGhostButton>
-            <MobileGhostButton disabled={saving} onClick={() => setNextRpe((value) => sanitizeRpe(value + 0.5))}>+0.5 RPE</MobileGhostButton>
-            <MobileGhostButton disabled={saving} onClick={copyLastSet} className="flex items-center justify-center gap-2"><Copy className="h-4 w-4" />Copy</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextWeight((value) => sanitizeWeight(value - 5))}>-5 lb</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextWeight((value) => sanitizeWeight(value + 5))}>+5 lb</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextReps((value) => sanitizeReps(value - 1))}>-1 rep</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextReps((value) => sanitizeReps(value + 1))}>+1 rep</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextRpe((value) => sanitizeRpe(value - 0.5))}>-0.5 RPE</MobileGhostButton>
+            <MobileGhostButton onClick={() => setNextRpe((value) => sanitizeRpe(value + 0.5))}>+0.5 RPE</MobileGhostButton>
+            <MobileGhostButton onClick={copyLastSet} className="flex items-center justify-center gap-2"><Copy className="h-4 w-4" />Copy</MobileGhostButton>
             <MobileGhostButton disabled={saving} onClick={repeatLastSet}>Repeat set</MobileGhostButton>
             <MobilePrimaryButton disabled={saving} onClick={() => void addSet(nextWeight, nextReps, nextRpe, "add")} className="col-span-2 min-[400px]:col-span-4">Add Set</MobilePrimaryButton>
           </div>
@@ -359,6 +359,19 @@ function sanitizeReps(value: number) {
 function sanitizeRpe(value: number) {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(10, Math.round(value * 2) / 2));
+}
+
+function withSaveTimeout<T>(operation: Promise<T>, timeoutMs = 4500): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error("Phone storage took too long. Try again after reopening the app.")), timeoutMs);
+    operation.then((value) => {
+      window.clearTimeout(timeout);
+      resolve(value);
+    }, (error) => {
+      window.clearTimeout(timeout);
+      reject(error);
+    });
+  });
 }
 
 function TopMetric({ icon, value, label }: { icon: typeof Dumbbell; value: string; label: string }) {

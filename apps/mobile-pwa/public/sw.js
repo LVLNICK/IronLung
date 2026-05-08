@@ -1,4 +1,4 @@
-const CACHE_NAME = "ironlung-analyzer-v5";
+const CACHE_NAME = "ironlung-analyzer-v6";
 const fromScope = (path) => new URL(path, self.registration.scope).toString();
 const APP_SHELL = [fromScope("./"), fromScope("index.html"), fromScope("manifest.webmanifest"), fromScope("icons/icon-192.svg"), fromScope("icons/icon-512.svg")];
 
