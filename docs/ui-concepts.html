@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IronLung UI Concepts</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #07080d;
+        color: #f8fafc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 34rem), #07080d;
+      }
+      .page {
+        max-width: 1580px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: end;
+        margin-bottom: 28px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: -0.02em;
+      }
+      .subtitle {
+        margin: 8px 0 0;
+        color: rgba(255,255,255,0.62);
+        font-size: 14px;
+      }
+      .pill {
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 999px;
+        padding: 10px 14px;
+        color: rgba(255,255,255,0.66);
+        background: rgba(255,255,255,0.05);
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(260px, 1fr));
+        gap: 20px;
+      }
+      .concept {
+        min-height: 900px;
+      }
+      .concept-title {
+        margin-bottom: 12px;
+      }
+      .concept-title h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .concept-title p {
+        margin: 5px 0 0;
+        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+        line-height: 1.4;
+      }
+      .phone {
+        height: 812px;
+        border-radius: 34px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.16);
+        box-shadow: 0 26px 80px rgba(0,0,0,0.55);
+        position: relative;
+      }
+      .screen {
+        height: 100%;
+        padding: 22px 16px 80px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        font-weight: 900;
+        font-size: 18px;
+        letter-spacing: -0.03em;
+      }
+      .kicker {
+        margin-top: 2px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .badge {
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        padding: 6px;
+        border-radius: 18px;
+      }
+      .tab {
+        min-height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 13px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .select {
+        width: fit-content;
+        min-width: 124px;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+      .hero, .card {
+        border-radius: 20px;
+        padding: 16px;
+      }
+      .hero h3 {
+        margin: 6px 0 8px;
+        font-size: 28px;
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+      .hero p, .card p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .stat {
+        border-radius: 16px;
+        padding: 13px 12px;
+      }
+      .label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        font-weight: 800;
+      }
+      .value {
+        margin-top: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 22px;
+        font-weight: 900;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      .row:last-child { border-bottom: 0; }
+      .row strong {
+        display: block;
+        font-size: 13px;
+      }
+      .row span {
+        color: rgba(255,255,255,0.52);
+        font-size: 11px;
+      }
+      .bar {
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+      .fill {
+        height: 100%;
+        border-radius: 999px;
+      }
+      .nav {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        padding: 9px 8px 10px;
+        gap: 5px;
+      }
+      .nav div {
+        min-height: 52px;
+        display: grid;
+        place-items: center;
+        border-radius: 15px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      /* Concept 1 */
+      .c1 .screen { background: #08090e; }
+      .c1 .kicker, .c1 .accent { color: #60a5fa; }
+      .c1 .badge { border: 1px solid rgba(96,165,250,0.55); color: #60a5fa; background: rgba(59,130,246,0.12); }
+      .c1 .tabs, .c1 .hero, .c1 .card, .c1 .stat, .c1 .nav { background: #13161f; border: 1px solid rgba(255,255,255,0.12); }
+      .c1 .tab.active, .c1 .nav .active, .c1 .fill { background: #3b82f6; color: white; }
+      .c1 .tab { color: rgba(255,255,255,0.58); }
+      .c1 .select { background: #08090e; border: 1px solid rgba(255,255,255,0.14); }
+      .c1 .hero { box-shadow: inset 0 0 0 1px rgba(96,165,250,0.12); }
+      .c1 .hero p, .c1 .card p { color: rgba(255,255,255,0.62); }
+      .c1 .bar { background: #252c42; }
+
+      /* Concept 2 */
+      .c2 .screen { background: #0a0a0b; }
+      .c2 .kicker, .c2 .accent { color: #d4d4d8; }
+      .c2 .badge { color: #09090b; background: #fafafa; }
+      .c2 .tabs, .c2 .hero, .c2 .card, .c2 .stat, .c2 .nav { background: #171717; border: 1px solid rgba(255,255,255,0.1); }
+      .c2 .tab.active, .c2 .nav .active, .c2 .fill { background: #fafafa; color: #09090b; }
+      .c2 .tab { color: rgba(255,255,255,0.56); }
+      .c2 .select { background: #171717; border: 1px solid rgba(255,255,255,0.12); }
+      .c2 .hero p, .c2 .card p { color: rgba(255,255,255,0.58); }
+      .c2 .bar { background: #303030; }
+
+      /* Concept 3 */
+      .c3 .screen { background: radial-gradient(circle at top, rgba(34,211,238,0.18), transparent 20rem), #010409; }
+      .c3 .kicker, .c3 .accent { color: #22d3ee; }
+      .c3 .badge { color: #67e8f9; border: 1px solid rgba(34,211,238,0.42); background: rgba(34,211,238,0.1); }
+      .c3 .tabs, .c3 .hero, .c3 .card, .c3 .stat, .c3 .nav { background: rgba(2, 8, 23, 0.88); border: 1px solid rgba(34,211,238,0.23); }
+      .c3 .tab.active, .c3 .nav .active, .c3 .fill { background: #22d3ee; color: #001018; }
+      .c3 .tab { color: rgba(255,255,255,0.55); }
+      .c3 .select { background: #020817; border: 1px solid rgba(34,211,238,0.24); }
+      .c3 .hero p, .c3 .card p { color: rgba(219,234,254,0.68); }
+      .c3 .bar { background: rgba(34,211,238,0.14); }
+
+      /* Concept 4 */
+      .c4 .screen { background: #090b12; }
+      .c4 .kicker, .c4 .accent { color: #a3e635; }
+      .c4 .badge { color: #ecfccb; background: rgba(132,204,22,0.16); border: 1px solid rgba(163,230,53,0.32); }
+      .c4 .tabs, .c4 .hero, .c4 .card, .c4 .stat, .c4 .nav { background: #121724; border: 1px solid rgba(255,255,255,0.11); }
+      .c4 .tab.active, .c4 .nav .active { background: #a3e635; color: #101706; }
+      .c4 .tab { color: rgba(255,255,255,0.56); }
+      .c4 .select { background: #0e1320; border: 1px solid rgba(255,255,255,0.12); }
+      .c4 .hero p, .c4 .card p { color: rgba(255,255,255,0.62); }
+      .c4 .bar { background: rgba(255,255,255,0.11); }
+      .c4 .fill { background: linear-gradient(90deg, #a3e635, #38bdf8); }
+      .rings {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .ring {
+        aspect-ratio: 1;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: conic-gradient(var(--ring) var(--p), rgba(255,255,255,0.12) 0);
+      }
+      .ring div {
+        width: 70%;
+        height: 70%;
+        border-radius: inherit;
+        background: #121724;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 12px;
+      }
+
+      /* Concept 5 */
+      .c5 .screen { background: #0d1117; font-family: "SF Mono", Consolas, ui-monospace, monospace; }
+      .c5 .brand { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      .c5 .kicker, .c5 .accent { color: #facc15; }
+      .c5 .badge { color: #facc15; border: 1px solid rgba(250,204,21,0.38); background: rgba(250,204,21,0.08); }
+      .c5 .tabs, .c5 .hero, .c5 .card, .c5 .stat, .c5 .nav { background: #111827; border: 1px solid rgba(250,204,21,0.18); border-radius: 10px; }
+      .c5 .tab.active, .c5 .nav .active, .c5 .fill { background: #facc15; color: #171105; }
+      .c5 .tab { color: rgba(255,255,255,0.56); }
+      .c5 .select { background: #0d1117; border: 1px solid rgba(250,204,21,0.24); border-radius: 10px; }
+      .c5 .hero p, .c5 .card p { color: rgba(255,255,255,0.62); }
+      .c5 .bar { background: rgba(250,204,21,0.12); }
+      .c5 .hero h3 { font-size: 25px; letter-spacing: -0.04em; }
+      .c5 .stat { border-left: 3px solid #facc15; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <h1>IronLung UI Concepts</h1>
+          <p class="subtitle">Five visual directions for the mobile Analyzer and the broader product language.</p>
+        </div>
+        <div class="pill">Concept board - no app logic changed</div>
+      </header>
+
+      <section class="grid">
+        <article class="concept c1">
+          <div class="concept-title">
+            <h2>1. Obsidian Command</h2>
+            <p>Closest to current app: premium dark panels, electric blue actions, clean analyst dashboard.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung Analyzer</div><div class="kicker">Offline analytics</div></div><div class="badge">Local</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="select">All muscles</div>
+              <div class="hero"><div class="kicker">Command Center</div><h3>Training overview</h3><p>Chest volume is down 18% while triceps are up. Pressing may be becoming triceps-dominant.</p></div>
+              <div class="stats"><div class="stat"><div class="label">Workouts</div><div class="value">18</div></div><div class="stat"><div class="label">Sets</div><div class="value">312</div></div><div class="stat"><div class="label">Volume</div><div class="value">91k</div></div></div>
+              <div class="card"><div class="label accent">What to focus on</div><div class="row"><div><strong>Hamstrings</strong><span>under target frequency</span></div><span>6d ago</span></div><div class="row"><div><strong>Bench press</strong><span>plateau candidate</span></div><span>4 sessions</span></div></div>
+              <div class="card"><div class="label accent">Muscle balance</div><div class="bar"><div class="fill" style="width: 82%"></div></div><p style="margin-top:10px">Push / pull is solid. Quad / hamstring is the main gap.</p></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c2">
+          <div class="concept-title">
+            <h2>2. Graphite Pro</h2>
+            <p>Minimal, monochrome, executive. Less gamer, more Linear/Notion productivity app.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="kicker">Analyzer</div></div><div class="badge">Offline</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="select">All muscles</div>
+              <div class="hero"><div class="kicker">Summary</div><h3>Steady block. One weak link.</h3><p>Your strength work is consistent. Lower posterior chain volume is lagging behind quad-dominant work.</p></div>
+              <div class="stats"><div class="stat"><div class="label">Sessions</div><div class="value">18</div></div><div class="stat"><div class="label">PRs</div><div class="value">7</div></div><div class="stat"><div class="label">Balance</div><div class="value">84</div></div></div>
+              <div class="card"><div class="row"><div><strong>Best recent lift</strong><span>Bench press estimated 1RM</span></div><span>263</span></div><div class="row"><div><strong>Most trained</strong><span>Pectoralis major</span></div><span>21k</span></div><div class="row"><div><strong>Least trained</strong><span>Hamstrings</span></div><span>4k</span></div></div>
+              <div class="card"><div class="label">Volume trend</div><div class="bar"><div class="fill" style="width: 66%"></div></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c3">
+          <div class="concept-title">
+            <h2>3. OLED Performance</h2>
+            <p>High-contrast black, cyan signals, more energetic and gym-tech focused.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="kicker">Performance OS</div></div><div class="badge">Cached</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="select">All muscles</div>
+              <div class="hero"><div class="kicker">Signal</div><h3>Pressing output is hot.</h3><p>Triceps are carrying more of your press volume. Add chest-biased work next block.</p></div>
+              <div class="stats"><div class="stat"><div class="label">E1RM PR</div><div class="value">263</div></div><div class="stat"><div class="label">Hard sets</div><div class="value">92</div></div><div class="stat"><div class="label">Fatigue</div><div class="value">2</div></div></div>
+              <div class="card"><div class="label accent">Live insights</div><div class="row"><div><strong>Triceps brachii</strong><span>high 7-day exposure</span></div><span>16</span></div><div class="row"><div><strong>Biceps brachii</strong><span>moderate repeated exposure</span></div><span>14</span></div></div>
+              <div class="card"><div class="label accent">Strength ramp</div><div class="bar"><div class="fill" style="width: 76%"></div></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c4">
+          <div class="concept-title">
+            <h2>4. Health Rings</h2>
+            <p>Apple Health inspired. Softer, more visual, uses rings and friendly coaching.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="kicker">Training Health</div></div><div class="badge">Private</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">All</div></div>
+              <div class="hero"><div class="kicker">Today</div><h3>Your block is balanced.</h3><p>Upper/lower split is even. Hamstrings need one more touch this week.</p></div>
+              <div class="rings"><div class="ring" style="--ring:#a3e635;--p:82%"><div>82</div></div><div class="ring" style="--ring:#38bdf8;--p:74%"><div>74</div></div><div class="ring" style="--ring:#facc15;--p:58%"><div>58</div></div></div>
+              <div class="stats"><div class="stat"><div class="label">Balance</div><div class="value">82</div></div><div class="stat"><div class="label">Streak</div><div class="value">4</div></div><div class="stat"><div class="label">PRs</div><div class="value">7</div></div></div>
+              <div class="card"><div class="row"><div><strong>Muscle balance</strong><span>push/pull looks healthy</span></div><span>91</span></div><div class="row"><div><strong>Recovery</strong><span>triceps trained often</span></div><span>watch</span></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>Strength</div><div>Volume</div><div>Muscles</div><div>Sync</div></nav>
+          </div>
+        </article>
+
+        <article class="concept c5">
+          <div class="concept-title">
+            <h2>5. Coach Terminal</h2>
+            <p>Data-dense analyst console. Strong for power users, less soft, more command-line feel.</p>
+          </div>
+          <div class="phone">
+            <div class="screen">
+              <div class="topbar"><div><div class="brand">IronLung</div><div class="kicker">Analyzer CLI</div></div><div class="badge">LOCAL</div></div>
+              <div class="tabs"><div class="tab">7D</div><div class="tab active">30D</div><div class="tab">90D</div><div class="tab">1Y</div><div class="tab">ALL</div></div>
+              <div class="select">muscle=all</div>
+              <div class="hero"><div class="kicker">REPORT</div><h3>BLOCK_STATUS: productive</h3><p>PR density is useful. Pulling volume is 41% higher than pushing volume. Check chest recovery before adding more press work.</p></div>
+              <div class="stats"><div class="stat"><div class="label">SETS</div><div class="value">312</div></div><div class="stat"><div class="label">VOL</div><div class="value">91k</div></div><div class="stat"><div class="label">FLAGS</div><div class="value">02</div></div></div>
+              <div class="card"><div class="row"><div><strong>&gt; weak_point</strong><span>hamstrings below median</span></div><span>HIGH</span></div><div class="row"><div><strong>&gt; plateau</strong><span>bench press 4 sessions</span></div><span>MED</span></div><div class="row"><div><strong>&gt; next_action</strong><span>posterior chain focus</span></div><span>NOW</span></div></div>
+              <div class="card"><div class="label">LOAD_DISTRIBUTION</div><div class="bar"><div class="fill" style="width: 69%"></div></div></div>
+            </div>
+            <nav class="nav"><div class="active">Home</div><div>STR</div><div>VOL</div><div>MSL</div><div>SYNC</div></nav>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
