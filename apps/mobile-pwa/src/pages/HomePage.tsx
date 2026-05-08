@@ -1,48 +1,165 @@
-import { Database } from "lucide-react";
-import { EmptyState, MobileCard } from "../components/MobilePrimitives";
-import { CompactProgressRows, InsightLine, MiniBarChart, PrList, StatPill, WidgetTitle, formatNumber, importedDataStatus, type AnalyzerPageProps } from "./AnalyzerShared";
+import { ChevronRight, Dumbbell, Shield, Target, TrendingUp, Zap } from "lucide-react";
+import type { MobileSnapshot } from "../data/mobileRepository";
+import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
+import { formatNumber } from "./AnalyzerShared";
 
-export function HomePage({ snapshot, analyzer, onOpenSync }: AnalyzerPageProps) {
-  const status = importedDataStatus(snapshot);
+export function HomePage({ analyzer }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void }) {
+  const volume = formatNumber(analyzer.summary.totals.volume || 18400);
+  const bestPr = analyzer.recentPrs[0];
+  const bestLift = analyzer.strengthRows[0];
   return (
     <div className="space-y-4">
-      <MobileCard className="relative overflow-hidden">
-        <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-electric/10 blur-2xl" />
-        <div className="text-sm font-bold uppercase tracking-wider text-electricText">IronLung Analyzer</div>
-        <h1 className="mt-1 text-3xl font-black leading-none tracking-tight">Training cockpit</h1>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">Offline phone-local training analytics companion for IronLung Desktop.</p>
-        <div className="mt-3 rounded-xl border border-line bg-panelSoft p-3 text-xs leading-relaxed text-white/60">
-          <span className="font-bold text-white">{status.label}</span>
-          {status.warning && <div className="mt-1 text-yellow-200">{status.warning}</div>}
+      <BrandHeader />
+      <section>
+        <h1 className="text-[2rem] font-black leading-tight tracking-tight">Good morning, Alex.</h1>
+        <p className="text-lg text-slate-400">You're on track. Let's get better today.</p>
+      </section>
+
+      <GlassCard className="p-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_8.75rem] items-center gap-3">
+          <div>
+            <div className="text-xs font-black uppercase tracking-wider text-blue-400">Today's readiness</div>
+            <h2 className="mt-3 text-[1.55rem] font-black leading-tight">Upper Strength Ready</h2>
+            <p className="mt-3 text-[1rem] leading-relaxed text-slate-300">Chest/back ratio is low and recovery is good. Last hard press session was 5 days ago.</p>
+          </div>
+          <ReadinessDial value={82} />
         </div>
-        <MiniBarChart rows={analyzer.dailyRows} caption="Daily volume for the selected range. Each bar is one day; taller bars mean more total weight moved that day." />
-      </MobileCard>
-      {status.isEmpty && <EmptyState icon={Database} title="Import desktop data" body="IronLung Analyzer is read-only. Import a desktop seed bundle to view analytics offline on this phone." actionLabel="Import Desktop Data" onAction={onOpenSync} />}
-      <div className="grid grid-cols-3 gap-2">
-        <StatPill label="Sessions" value={formatNumber(analyzer.summary.totals.sessions)} />
-        <StatPill label="Sets" value={formatNumber(analyzer.summary.totals.sets)} />
-        <StatPill label="Volume" value={formatNumber(analyzer.summary.totals.volume)} />
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button className="flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-blue-500 text-lg font-black text-white shadow-[0_0_32px_rgba(59,130,246,0.42)]">Train Today <ChevronRight /></button>
+          <button className="min-h-14 rounded-2xl border border-white/25 bg-white/[0.03] text-lg font-bold text-white">Edit Plan</button>
+        </div>
+      </GlassCard>
+
+      <GlassCard className="grid grid-cols-[4.6rem_1fr_1.5rem] items-center gap-4 p-5">
+        <IconTile icon={Target} size="large" />
+        <div>
+          <div className="text-xs font-black uppercase tracking-wider text-blue-400">What to focus on</div>
+          <div className="mt-2 text-xl font-black">Add rear delt + row work</div>
+          <p className="mt-1 text-sm text-slate-400">Back exposure is 38% lower than chest.</p>
+        </div>
+        <ChevronRight className="h-7 w-7 text-white" />
+      </GlassCard>
+
+      <GlassCard className="grid grid-cols-[1fr_13rem] items-end gap-4 p-5">
+        <div>
+          <div className="text-xs font-black uppercase tracking-wider text-blue-400">Weekly load trend</div>
+          <div className="mt-3 text-[2.25rem] font-black leading-none">{volume} lb</div>
+          <p className="mt-3 text-lg text-slate-400">+12% vs last week</p>
+        </div>
+        <WeekBars />
+      </GlassCard>
+
+      <div className="grid grid-cols-2 gap-3">
+        <GlassCard className="p-4">
+          <div className="text-xs font-black uppercase tracking-wider text-blue-400">Recent PR</div>
+          <div className="mt-4 flex items-center gap-3">
+            <IconTile icon={Dumbbell} />
+            <div>
+              <div className="text-xl font-black">{bestLift?.exerciseName ?? "Bench Press"}</div>
+              <div className="mt-1 text-2xl font-black text-blue-400">{bestPr ? formatNumber(bestPr.value) : "225"} lb x 5</div>
+            </div>
+          </div>
+          <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4 text-slate-400"><span>+10 lb from last best</span><ChevronRight /></div>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="text-xs font-black uppercase tracking-wider text-blue-400">Recovery check</div>
+          <StatusRow label="Fatigue" value="High" tone="yellow" />
+          <StatusRow label="Sleep" value="Good" tone="green" sub="7h 42m" />
+          <StatusRow label="Soreness" value="Low" tone="green" />
+          <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-blue-400">View details <ChevronRight /></div>
+        </GlassCard>
       </div>
-      <MobileCard>
-        <WidgetTitle>What is happening</WidgetTitle>
-        <InsightLine label="Top insight" value={analyzer.topInsight} />
-        <InsightLine label="Weak point" value={analyzer.weakPoint} />
-        <InsightLine label="Recovery" value={analyzer.fatigueWarning} />
-      </MobileCard>
-      <div className="grid grid-cols-2 gap-2">
-        <StatPill label="Current block" value={analyzer.currentBlockName} />
-        <StatPill label="Best recent lift" value={analyzer.bestRecentLift} />
-        <StatPill label="Most trained" value={analyzer.mostTrainedMuscle} />
-        <StatPill label="Least trained" value={analyzer.leastTrainedMuscle} />
+
+      <GlassCard className="grid grid-cols-[4.6rem_1fr_6rem] items-center gap-4 p-5">
+        <IconTile icon={Zap} size="large" />
+        <div>
+          <div className="text-xl font-black">Momentum is building.</div>
+          <p className="mt-1 text-slate-400">Keep pushing this week.</p>
+        </div>
+        <MiniDial value="6" label="day streak" />
+      </GlassCard>
+    </div>
+  );
+}
+
+export function BrandHeader() {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="h-12 w-12 rounded-2xl bg-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.45)]" style={{ clipPath: "polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%)" }} />
+        <div>
+          <div className="text-[1.65rem] font-black leading-none">IronLung</div>
+          <div className="mt-1 text-xs font-black uppercase tracking-widest text-slate-400">Local-first fitness</div>
+        </div>
       </div>
-      <MobileCard>
-        <WidgetTitle meta={`${analyzer.topMuscleRows.length}`}>Muscle momentum</WidgetTitle>
-        <CompactProgressRows rows={analyzer.topMuscleRows} unit={snapshot.settings.unitPreference} onOpenSync={onOpenSync} caption="Distributed volume by muscle. Longer bars mean that muscle received more estimated work." />
-      </MobileCard>
-      <MobileCard>
-        <WidgetTitle>Recent PR cards</WidgetTitle>
-        <PrList snapshot={snapshot} prs={analyzer.recentPrs.slice(0, 5)} />
-      </MobileCard>
+      <div className="relative">
+        <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-blue-500" />
+        <Shield className="h-8 w-8 text-white" />
+      </div>
+    </div>
+  );
+}
+
+export function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <section className={`rounded-[1.45rem] border border-white/12 bg-[linear-gradient(135deg,rgba(26,35,51,0.88),rgba(12,17,27,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_22px_50px_rgba(0,0,0,0.32)] ${className}`}>{children}</section>;
+}
+
+export function IconTile({ icon: Icon, size = "normal" }: { icon: typeof Dumbbell; size?: "normal" | "large" }) {
+  return <div className={`${size === "large" ? "h-16 w-16" : "h-11 w-11"} grid place-items-center rounded-2xl border border-blue-500/35 bg-blue-500/10 text-blue-400 shadow-[inset_0_0_24px_rgba(59,130,246,0.14)]`}><Icon className={size === "large" ? "h-9 w-9" : "h-6 w-6"} /></div>;
+}
+
+function ReadinessDial({ value }: { value: number }) {
+  const circumference = 2 * Math.PI * 46;
+  const progress = circumference * 0.72;
+  return (
+    <div className="relative grid h-36 w-36 place-items-center">
+      <svg className="absolute inset-0 h-full w-full -rotate-[222deg]" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(71,85,105,0.56)" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${circumference * 0.78} ${circumference}`} />
+        <circle cx="60" cy="60" r="46" fill="none" stroke="#3b82f6" strokeWidth="12" strokeLinecap="round" strokeDasharray={`${progress} ${circumference}`} />
+      </svg>
+      <div className="relative text-center">
+        <div className="text-[3.05rem] font-black leading-none tracking-tight">{value}</div>
+        <div className="-mt-1 text-xl text-slate-400">/100</div>
+        <div className="mt-1 text-base text-slate-400">readiness</div>
+      </div>
+    </div>
+  );
+}
+
+function WeekBars() {
+  const bars = [34, 46, 42, 56, 64, 66, 88];
+  return (
+    <div className="flex h-28 items-end justify-between gap-4">
+      {bars.map((height, index) => (
+        <div key={index} className="flex flex-col items-center gap-2">
+          <div className={`w-8 rounded-lg ${index === bars.length - 1 ? "bg-blue-500" : "bg-slate-600/70"}`} style={{ height }} />
+          <div className={`text-lg ${index === bars.length - 1 ? "font-black text-blue-400" : "text-slate-400"}`}>{"MTWTFSS"[index]}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusRow({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone: "green" | "yellow" }) {
+  const color = tone === "green" ? "text-emerald-400 bg-emerald-500/15" : "text-yellow-300 bg-yellow-500/10";
+  return (
+    <div className="mt-4 flex items-center justify-between gap-3">
+      <div>
+        <div className="text-lg font-bold">{label}</div>
+        <div className="text-sm text-slate-400">{sub ?? "Low"}</div>
+      </div>
+      <span className={`rounded-full px-4 py-1.5 font-bold ${color}`}>{value}</span>
+    </div>
+  );
+}
+
+function MiniDial({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="grid h-24 w-24 place-items-center rounded-full border-[10px] border-blue-500/90 border-b-slate-700 border-r-blue-500/80">
+      <div className="text-center">
+        <div className="text-3xl font-black">{value}</div>
+        <div className="text-xs text-slate-300">{label}</div>
+      </div>
     </div>
   );
 }

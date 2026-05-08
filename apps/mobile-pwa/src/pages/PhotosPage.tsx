@@ -1,0 +1,80 @@
+import { ChevronRight, Info, Lock, Plus, ShieldCheck, TrendingUp, CheckCircle, AlertTriangle } from "lucide-react";
+import type { MobileSnapshot } from "../data/mobileRepository";
+import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
+import { BrandHeader, GlassCard } from "./HomePage";
+
+export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel }) {
+  return (
+    <div className="space-y-4">
+      <BrandHeader />
+      <header className="flex items-end justify-between">
+        <div>
+          <h1 className="text-[2rem] font-black leading-tight">Photos</h1>
+          <p className="text-lg text-slate-400">Private progress tracking. Photos stay on your device.</p>
+        </div>
+        <button className="rounded-full border border-blue-500/40 px-4 py-2 text-blue-400">How it works</button>
+      </header>
+      <GlassCard className="grid grid-cols-[2rem_1fr_10rem] items-center gap-4 p-5">
+        <Lock className="h-8 w-8 text-blue-400" />
+        <div><div className="text-xl font-black text-blue-400">Private & local</div><p className="text-slate-400">Your photos never leave your device. Analysis runs after your consent.</p></div>
+        <button className="flex h-14 items-center justify-center gap-3 rounded-2xl bg-blue-500 text-lg font-black">Add Photo <Plus /></button>
+      </GlassCard>
+      <GlassCard className="p-4">
+        <div className="mb-3 flex justify-between"><h2 className="text-xl font-black">Same-pose comparison</h2><Info className="text-slate-300" /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <PhotoCompare title="Before — Jan 08" ppi="PPI 61" />
+          <PhotoCompare title="After — May 08" ppi="PPI 74" active />
+        </div>
+        <div className="mt-4 grid grid-cols-[3rem_1fr_1.5rem] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+          <TrendingUp className="h-8 w-8 text-blue-400" />
+          <div><div className="text-xl font-black">Change summary</div><div className="text-emerald-400">+13 PPI • +8 lb bodyweight • quality matched: 92%</div></div>
+          <ChevronRight />
+        </div>
+      </GlassCard>
+      <div className="grid grid-cols-2 gap-3">
+        <GlassCard className="p-4">
+          <h2 className="text-lg font-black">Progress photo index</h2>
+          <LineMini />
+          <div className="text-[3rem] font-black leading-none text-blue-400">74</div>
+          <div className="flex justify-between text-sm"><span className="text-slate-400">PPI SCORE</span><span className="text-emerald-400">+13 vs Jan 08</span></div>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <h2 className="text-lg font-black">Retake quality checklist</h2>
+          <Checklist label="Same pose" value="matched" />
+          <Checklist label="Lighting" value="good" />
+          <Checklist label="Framing" value="good" />
+          <Checklist label="Pump tag" value="missing" warn />
+          <Checklist label="Bodyweight" value="logged" />
+          <button className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-blue-400">View guidance <ChevronRight /></button>
+        </GlassCard>
+      </div>
+      <GlassCard className="p-4">
+        <div className="mb-4 flex justify-between"><h2 className="text-lg font-black">Your photo timeline</h2><span className="text-blue-400">View all</span></div>
+        <div className="grid grid-cols-6 gap-2">
+          {["Jan 08", "May 08", "Apr 24", "Apr 10", "Mar 27", "Mar 13"].map((date, index) => <TimelineThumb key={date} date={date} active={index === 1} ppi={index === 1 ? "PPI 74" : index === 0 ? "PPI 61" : ""} />)}
+        </div>
+      </GlassCard>
+      <div className="flex items-center gap-3 px-2 text-sm text-slate-400"><ShieldCheck className="h-5 w-5 text-blue-400" />By adding photos, you agree to local analysis only. <span className="text-blue-400">Learn more</span></div>
+    </div>
+  );
+}
+
+function PhotoCompare({ title, ppi, active }: { title: string; ppi: string; active?: boolean }) {
+  return <div className="rounded-2xl border border-white/10 bg-black/10 p-3"><div className="mb-3 flex justify-between text-sm font-black uppercase"><span>{title}</span><span className={`rounded-full px-3 py-1 ${active ? "bg-blue-500" : "bg-slate-700"}`}>{ppi}</span></div><PhotoFigure /></div>;
+}
+
+function PhotoFigure() {
+  return <div className="relative h-56 overflow-hidden rounded-xl border border-white/5 bg-[linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] bg-[length:22px_22px]"><div className="absolute left-1/2 top-5 h-9 w-9 -translate-x-1/2 rounded-full bg-slate-500" /><div className="absolute left-1/2 top-14 h-24 w-16 -translate-x-1/2 rounded-[2rem] bg-blue-500/60" /><div className="absolute left-[31%] top-20 h-24 w-5 rotate-[20deg] rounded-full bg-blue-500/55" /><div className="absolute right-[31%] top-20 h-24 w-5 -rotate-[20deg] rounded-full bg-blue-500/55" /><div className="absolute left-[42%] top-32 h-24 w-5 rotate-12 rounded-full bg-blue-500/55" /><div className="absolute right-[42%] top-32 h-24 w-5 -rotate-12 rounded-full bg-blue-500/55" /></div>;
+}
+
+function LineMini() {
+  return <svg className="my-4 h-32 w-full overflow-visible" viewBox="0 0 180 90"><path d="M8 72 L45 60 L82 48 L116 45 L148 29 L174 16" fill="none" stroke="#3b82f6" strokeWidth="3" /><path d="M8 72 L45 60 L82 48 L116 45 L148 29 L174 16 L174 90 L8 90Z" fill="rgba(59,130,246,.12)" />{[8,45,82,116,148,174].map((x,i)=><circle key={x} cx={x} cy={[72,60,48,45,29,16][i]} r="4" fill="#3b82f6" />)}</svg>;
+}
+
+function Checklist({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  return <div className="mt-3 flex items-center justify-between"><span className="flex items-center gap-2">{warn ? <AlertTriangle className="h-5 w-5 text-yellow-300" /> : <CheckCircle className="h-5 w-5 text-emerald-400" />}{label}</span><span className={warn ? "text-yellow-300" : "text-emerald-400"}>{value}</span></div>;
+}
+
+function TimelineThumb({ date, ppi, active }: { date: string; ppi?: string; active?: boolean }) {
+  return <div className="text-center"><div className={`rounded-xl border ${active ? "border-blue-500" : "border-white/10"} p-1`}><PhotoFigure /></div><div className="mt-2 text-sm text-slate-300">{date}</div>{ppi && <div className={`mx-auto mt-1 rounded-full px-2 py-1 text-xs ${active ? "bg-blue-500 text-white" : "bg-slate-700"}`}>{ppi}</div>}</div>;
+}
