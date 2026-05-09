@@ -7,3 +7,4 @@ export * from "./pr";
 export * from "./body-analysis";
 export * from "./importers";
 export * from "./analytics";
+export * from "./training-intelligence";
