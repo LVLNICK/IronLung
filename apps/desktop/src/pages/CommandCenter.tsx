@@ -1,4 +1,4 @@
-import { Activity, Camera, CheckCircle2, Dumbbell, Flame, Plus, Target, Trophy } from "lucide-react";
+import { Activity, Brain, Camera, CheckCircle2, Dumbbell, Flame, Plus, Target, Trophy, TrendingUp } from "lucide-react";
 import { isMeaningfulPr, prLabel, type DateRangePreset } from "@ironlung/core";
 import { useState } from "react";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
@@ -14,7 +14,7 @@ import type { AppScreen } from "../app/navigation";
 export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) => void }) {
   const [range, setRange] = useState<DateRangePreset>("30d");
   const state = useIronLungStore();
-  const { core, desktop } = useTrainingAnalytics(range);
+  const { core, desktop, intelligence } = useTrainingAnalytics(range);
   const openSession = selectOpenSession(state);
   const latestPhoto = [...state.photos].sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))[0];
   const latestAnalysis = [...state.analyses].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
@@ -29,7 +29,13 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
   const lastSessionRows = lastSession ? state.sessionExercises.filter((row) => row.workoutSessionId === lastSession.id) : [];
   const lastSessionSets = lastSessionRows.flatMap((row) => state.setLogs.filter((set) => set.workoutSessionExerciseId === row.id));
   const recoveryConcern = core.fatigueFlags[0];
-  const nextFocus = core.recommendations[0] ?? core.insights.find((item) => item.severity !== "positive");
+  const coreFocus = core.recommendations[0] ?? core.insights.find((item) => item.severity !== "positive");
+  const nextFocus = intelligence.recommendations[0]
+    ? { title: intelligence.recommendations[0].title, detail: intelligence.recommendations[0].suggestedAction }
+    : coreFocus
+      ? { title: coreFocus.title, detail: coreFocus.recommendation ?? coreFocus.detail }
+      : null;
+  const topForecast = intelligence.forecasts.find((forecast) => forecast.type === "pr_likelihood") ?? intelligence.forecasts[0];
 
   return (
     <ScreenShell
@@ -39,18 +45,18 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
     >
       <div className="grid grid-cols-4 gap-4">
         <MetricCard label="Muscle balance" value={`${core.balance.overall}/100`} hint="overall score" tone={core.balance.overall >= 75 ? "good" : "warn"} />
-        <MetricCard label="Volume trend" value={`${core.comparison.volumeDeltaPercent}%`} hint="vs previous period" tone={core.comparison.volumeDeltaPercent >= 0 ? "good" : "warn"} />
+        <MetricCard label="Readiness" value={`${intelligence.analyst.readinessScore}/100`} hint="training intelligence" tone={intelligence.analyst.readinessScore >= 70 ? "good" : "warn"} />
         <MetricCard label="Meaningful PRs" value={countNumber(meaningfulPrs.length)} hint="major/medium only" />
         <MetricCard label="Fatigue flags" value={countNumber(core.fatigueFlags.length)} hint="rule-based" tone={core.fatigueFlags.length ? "warn" : "good"} />
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-4 gap-5">
         <Card>
           <SectionHeader title="What To Focus On Next" icon={Target} />
           {nextFocus ? (
             <div className="rounded-xl border border-electric bg-electric-muted p-4">
               <div className="font-semibold">{nextFocus.title}</div>
-              <p className="mt-2 text-sm leading-relaxed text-obsidian-muted">{nextFocus.recommendation ?? nextFocus.detail}</p>
+              <p className="mt-2 text-sm leading-relaxed text-obsidian-muted">{nextFocus.detail}</p>
               {core.currentBlock && <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-obsidian-subtle">Current block: {core.currentBlock.name}</p>}
             </div>
           ) : <EmptyState icon={Target} title="No focus signal yet" body="Log or import enough sessions for IronLung to compare trends." />}
@@ -58,6 +64,16 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
         <Card>
           <SectionHeader title="Most Improved This Period" icon={CheckCircle2} />
           {mostImproved ? <StatRows rows={[["Exercise", mostImproved.name], ["Estimated 1RM", compactNumber(mostImproved.estimatedOneRepMax)], ["Trend", `${mostImproved.strengthTrend}`], ["Last trained", mostImproved.lastTrained ? shortDate(mostImproved.lastTrained) : "--"]]} /> : <EmptyState icon={CheckCircle2} title="No improvement signal" body="Strength trends appear after multiple sets or sessions." />}
+        </Card>
+        <Card>
+          <SectionHeader title="Top Forecast" icon={TrendingUp} />
+          {topForecast ? <StatRows rows={[
+            ["Signal", topForecast.targetName],
+            ["Type", topForecast.type.replace(/_/g, " ")],
+            ["Forecast", `${compactNumber(topForecast.value)} ${topForecast.unit}`],
+            ["Confidence", `${topForecast.confidence}/100`],
+            ["Sample", countNumber(topForecast.sampleSize)]
+          ]} /> : <EmptyState icon={TrendingUp} title="No forecast yet" body="Forecasts need multiple logged sets or sessions." />}
         </Card>
         <Card>
           <SectionHeader title="Potential Recovery Concern" icon={Flame} />
@@ -121,9 +137,14 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
         </Card>
 
         <Card>
-          <SectionHeader title="Smart Insights" icon={CheckCircle2} />
+          <SectionHeader title="Training Intelligence" icon={Brain} />
           <div className="space-y-3">
-            {core.insights.slice(0, 6).map((item) => (
+            {[
+              { id: "readiness", title: "Readiness", detail: `${intelligence.analyst.readinessScore}/100 - ${intelligence.analyst.focus}` },
+              { id: "weak", title: "Weak point", detail: intelligence.analyst.weakPoint },
+              { id: "recovery", title: "Recovery concern", detail: intelligence.analyst.recoveryConcern },
+              ...core.insights.slice(0, 3)
+            ].map((item) => (
               <div key={item.id} className="rounded-xl border border-obsidian-strong bg-obsidian-700 p-3">
                 <div className="font-medium text-white">{item.title}</div>
                 <div className="mt-1 text-sm leading-relaxed text-obsidian-muted">{item.detail}</div>

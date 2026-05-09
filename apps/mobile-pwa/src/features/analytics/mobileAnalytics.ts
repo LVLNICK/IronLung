@@ -1,5 +1,6 @@
 import {
   buildTrainingAnalytics,
+  buildTrainingIntelligence,
   detectPersonalRecords,
   estimatedOneRepMax,
   setVolume,
@@ -8,7 +9,8 @@ import {
   type AnalyticsSummary,
   type DateRangePreset,
   type PersonalRecord,
-  type PRImportance
+  type PRImportance,
+  type TrainingIntelligence
 } from "@ironlung/core";
 import type { MobileSnapshot } from "../../data/mobileRepository";
 
@@ -33,6 +35,7 @@ export interface MobileStrengthRow {
 
 export interface MobileAnalyzerModel {
   summary: AnalyticsSummary;
+  intelligence: TrainingIntelligence;
   currentBlockName: string;
   topInsight: string;
   weakPoint: string;
@@ -62,6 +65,7 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
   const personalRecords = mergeRecords(dataset.personalRecords, derivePersonalRecords(dataset, snapshot.settings.unitPreference));
   const datasetWithDerivedPrs = { ...dataset, personalRecords };
   const summary = buildTrainingAnalytics(datasetWithDerivedPrs, range === "block" ? "all" : range);
+  const intelligence = buildTrainingIntelligence(datasetWithDerivedPrs, range === "block" ? "all" : range);
   const strengthRows = summary.exerciseMetrics
     .map((metric) => ({
       exerciseId: metric.exerciseId,
@@ -92,6 +96,7 @@ export function buildMobileAnalyzer(snapshot: MobileSnapshot, range: MobileRange
 
   return {
     summary,
+    intelligence,
     currentBlockName: currentBlock,
     topInsight: insight ? `${insight.title}: ${insight.detail}` : "Import a desktop analytics seed to unlock training insights.",
     weakPoint: weak ? `${weak.title}: ${weak.detail}` : leastMuscle ? `${leastMuscle.label} has the lowest tracked volume in this range.` : "No weak point detected yet.",

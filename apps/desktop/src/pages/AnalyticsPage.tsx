@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, CalendarDays, Flame, Gauge, Layers, LineChart as LineIcon, Target, Trophy } from "lucide-react";
+import { BarChart3, Brain, CalendarDays, Flame, Gauge, Layers, LineChart as LineIcon, Target, Trophy } from "lucide-react";
 import { type DateRangePreset } from "@ironlung/core";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
@@ -63,14 +63,15 @@ function Overview({ analytics }: { analytics: ReturnType<typeof useTrainingAnaly
   const neglected = [...core.exerciseMetrics].sort((a, b) => String(a.lastTrained ?? "").localeCompare(String(b.lastTrained ?? "")))[0];
   return (
     <>
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <MetricCard label="Volume" value={compactNumber(core.totals.volume)} hint={`${core.comparison.volumeDeltaPercent}% vs previous`} />
         <MetricCard label="Sets" value={countNumber(core.totals.sets)} hint="completed" />
         <MetricCard label="Sessions" value={countNumber(core.totals.sessions)} hint={`${countNumber(core.totals.activeDays)} active days`} />
         <MetricCard label="PRs" value={countNumber(core.totals.prs)} hint="by type" />
         <MetricCard label="Balance" value={`${core.balance.overall}/100`} hint="muscle score" />
+        <MetricCard label="Readiness" value={`${analytics.intelligence.analyst.readinessScore}/100`} hint="forecast layer" tone={analytics.intelligence.analyst.readinessScore >= 70 ? "good" : "warn"} />
       </div>
-      <div className="grid grid-cols-[1fr_.8fr] gap-5">
+      <div className="grid grid-cols-[1fr_.8fr_.8fr] gap-5">
         <TrendChart title="Weekly trend" data={core.weeklyVolume} x="weekStart" bars={["volume", "sessions"]} />
         <Card>
           <SectionHeader title="Smart Summary" icon={Gauge} />
@@ -84,6 +85,13 @@ function Overview({ analytics }: { analytics: ReturnType<typeof useTrainingAnaly
             ["Training goal", goalLabel(core.trainingGoal)],
             ["Current block", core.currentBlock?.name ?? "--"]
           ]} />
+        </Card>
+        <Card>
+          <SectionHeader title="Forecast Snapshot" icon={Brain} />
+          <StatRows rows={analytics.intelligence.forecasts.slice(0, 6).map((forecast) => [
+            forecast.targetName,
+            `${forecast.type.replace(/_/g, " ")}: ${compactNumber(forecast.value)} ${forecast.unit} (${forecast.confidence}/100)`
+          ])} />
         </Card>
       </div>
       <Insights analytics={analytics} compact />
@@ -104,6 +112,7 @@ function Strength({ analytics }: { analytics: ReturnType<typeof useTrainingAnaly
         </Card>
       </div>
       <Card><SectionHeader title="Best Sets Leaderboard" icon={Trophy} /><AnalyticsTable headers={["Exercise", "Best e1RM", "Max Weight", "Best Set Volume", "Strength Trend", "PRs"]} rows={topSets.map((row) => [row.name, row.estimatedOneRepMax, row.maxWeight, row.bestSetVolume, row.strengthTrend, row.prs])} /></Card>
+      <Card><SectionHeader title="Strength Forecasts" icon={Brain} /><AnalyticsTable headers={["Lift", "Type", "Forecast", "Range", "Confidence", "Sample"]} rows={analytics.intelligence.forecasts.filter((forecast) => forecast.type === "next_e1rm" || forecast.type === "pr_likelihood" || forecast.type === "plateau_risk").slice(0, 20).map((forecast) => [forecast.targetName, forecast.type.replace(/_/g, " "), `${compactNumber(forecast.value)} ${forecast.unit}`, forecast.lowerBound !== undefined && forecast.upperBound !== undefined ? `${compactNumber(forecast.lowerBound)}-${compactNumber(forecast.upperBound)}` : "--", `${forecast.confidence}/100`, countNumber(forecast.sampleSize)])} /></Card>
     </>
   );
 }
@@ -177,7 +186,7 @@ function Insights({ analytics, compact = false }: { analytics: ReturnType<typeof
   return (
     <div className="grid grid-cols-2 gap-5">
       <Card><SectionHeader title="Rule-Based Analyst" icon={Target} /><div className="space-y-3">{items.map((item) => <div key={item.id} className="rounded-xl border border-obsidian-strong bg-obsidian-700 p-3"><div className="font-medium text-white">{item.title}</div><div className="mt-1 text-sm leading-relaxed text-obsidian-muted">{item.detail}</div>{item.metric && <div className="mt-2 text-xs font-semibold uppercase tracking-wider text-obsidian-subtle">{item.metric}</div>}</div>)}</div></Card>
-      <Card><SectionHeader title="Current Focus Recommendations" icon={Flame} /><div className="space-y-3">{analytics.core.recommendations.map((item) => <div key={item.id} className="rounded-xl border border-electric bg-electric-muted p-3"><div className="font-medium text-white">{item.title}</div><div className="mt-1 text-sm leading-relaxed text-obsidian-muted">{item.recommendation}</div></div>)}</div></Card>
+      <Card><SectionHeader title="Training Intelligence Recommendations" icon={Brain} /><div className="space-y-3">{analytics.intelligence.recommendations.map((item) => <div key={item.id} className="rounded-xl border border-electric bg-electric-muted p-3"><div className="font-medium text-white">{item.title}</div><div className="mt-1 text-sm leading-relaxed text-obsidian-muted">{item.detail}</div><div className="mt-2 text-sm font-semibold text-electric">{item.suggestedAction}</div></div>)}</div></Card>
     </div>
   );
 }

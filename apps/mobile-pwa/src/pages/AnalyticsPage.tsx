@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { BarChart3, CalendarCheck, ChevronRight, Dumbbell, Star, TrendingUp, Trophy } from "lucide-react";
+import { BarChart3, Brain, CalendarCheck, ChevronRight, Dumbbell, Star, TrendingUp, Trophy } from "lucide-react";
 import type { MobileSnapshot } from "../data/mobileRepository";
 import { buildMobileAnalyzer, type MobileAnalyzerModel, type MobileRangePreset } from "../features/analytics/mobileAnalytics";
 import { EmptyMobileState, GlassCard, IconTile, MetricChip, MiniTrendBars, MobileHeader, MobilePage, SectionTitle, StatusPill } from "../components/MobilePrimitives";
 import { formatNumber } from "./AnalyzerShared";
 
-type AnalyticsSection = "Overview" | "Strength" | "Volume" | "Balance";
+type AnalyticsSection = "Overview" | "Strength" | "Volume" | "Balance" | "Intel";
 type RangeLabel = "7D" | "30D" | "90D" | "All";
 type TrendSeries = {
   values: number[];
@@ -14,7 +14,7 @@ type TrendSeries = {
   source: string;
 };
 
-const sections: AnalyticsSection[] = ["Overview", "Strength", "Volume", "Balance"];
+const sections: AnalyticsSection[] = ["Overview", "Strength", "Volume", "Balance", "Intel"];
 const ranges: RangeLabel[] = ["7D", "30D", "90D", "All"];
 
 export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel }) {
@@ -46,7 +46,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
     <MobilePage>
       <PageHeader range={range} setRange={setRange} />
 
-      <div className="grid grid-cols-4 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
+      <div className="grid grid-cols-5 rounded-2xl border border-white/10 bg-white/[0.045] p-1">
         {sections.map((tab) => (
           <button key={tab} onClick={() => switchSection(tab)} className={`min-h-[44px] rounded-xl text-[0.73rem] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 min-[390px]:text-sm ${activeSection === tab ? "bg-blue-500 text-white shadow-[0_0_22px_rgba(59,130,246,0.28)]" : "text-slate-300"}`}>
             {tab}
@@ -89,6 +89,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
           <BalanceSection analyzer={activeAnalyzer} muscles={muscles} />
         </>
       )}
+      {activeSection === "Intel" && <IntelligenceSection analyzer={activeAnalyzer} />}
     </MobilePage>
   );
 }
@@ -180,6 +181,57 @@ function InsightsCard({ analyzer, selectedInsight, onInsight }: { analyzer: Mobi
       ))}
       <div className="mt-4 rounded-2xl border border-blue-500/25 bg-blue-500/10 p-3 text-sm leading-relaxed text-slate-200">{selectedInsight}</div>
     </GlassCard>
+  );
+}
+
+function IntelligenceSection({ analyzer }: { analyzer: MobileAnalyzerModel }) {
+  const intelligence = analyzer.intelligence;
+  return (
+    <div className="grid gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <MetricChip icon={Brain} label="Readiness" value={`${intelligence.analyst.readinessScore}`} sub="training score" />
+        <MetricChip icon={TrendingUp} label="Forecasts" value={formatNumber(intelligence.forecasts.length)} sub="statistical signals" />
+      </div>
+      <GlassCard className="p-4">
+        <SectionTitle label="Analyst report" />
+        <div className="space-y-2">
+          <InsightRow icon={Brain} title="Focus" detail={intelligence.analyst.focus} tone="blue" onOpen={() => undefined} />
+          <InsightRow icon={Star} title="Weak point" detail={intelligence.analyst.weakPoint} tone="yellow" onOpen={() => undefined} />
+          <InsightRow icon={Trophy} title="Best improvement" detail={intelligence.analyst.bestImprovement} tone="green" onOpen={() => undefined} />
+        </div>
+      </GlassCard>
+      <GlassCard className="p-4">
+        <SectionTitle label="Forecasts" />
+        <div className="space-y-2">
+          {intelligence.forecasts.slice(0, 10).map((forecast) => (
+            <div key={forecast.id} className="rounded-2xl bg-white/[0.045] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-black">{forecast.targetName}</div>
+                  <div className="mt-1 text-xs capitalize text-slate-400">{forecast.type.replace(/_/g, " ")}</div>
+                </div>
+                <StatusPill tone="blue">{forecast.confidence}/100</StatusPill>
+              </div>
+              <div className="mt-2 font-mono text-lg font-black text-blue-300">{formatNumber(forecast.value)} {forecast.unit}</div>
+              <p className="mt-1 text-sm leading-relaxed text-slate-400">{forecast.detail}</p>
+            </div>
+          ))}
+          {!intelligence.forecasts.length && <p className="text-sm text-slate-400">No forecasts yet. Import or log more sessions.</p>}
+        </div>
+      </GlassCard>
+      <GlassCard className="p-4">
+        <SectionTitle label="Recommendations" />
+        <div className="space-y-2">
+          {intelligence.recommendations.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-3">
+              <div className="text-base font-black">{item.title}</div>
+              <p className="mt-1 text-sm leading-relaxed text-slate-300">{item.detail}</p>
+              <p className="mt-2 text-sm font-bold text-blue-300">{item.suggestedAction}</p>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    </div>
   );
 }
 
@@ -428,9 +480,12 @@ function muscleSummary(analyzer: MobileAnalyzerModel) {
 }
 
 function insightRows(analyzer: MobileAnalyzerModel) {
+  const recommendation = analyzer.intelligence.recommendations[0];
+  const forecast = analyzer.intelligence.forecasts[0];
   return [
-    { icon: TrendingUp, title: "Top signal", detail: analyzer.topInsight, tone: "blue" as const },
-    { icon: Star, title: "Weak point", detail: analyzer.weakPoint, tone: "yellow" as const },
+    { icon: Brain, title: "Training intelligence", detail: recommendation ? recommendation.suggestedAction : analyzer.intelligence.analyst.focus, tone: "blue" as const },
+    { icon: TrendingUp, title: "Top forecast", detail: forecast ? forecast.detail : analyzer.topInsight, tone: "blue" as const },
+    { icon: Star, title: "Weak point", detail: analyzer.intelligence.analyst.weakPoint, tone: "yellow" as const },
     { icon: Trophy, title: "Best recent lift", detail: analyzer.bestRecentLift, tone: "green" as const }
   ];
 }
@@ -439,6 +494,7 @@ function sectionCopy(section: AnalyticsSection, range: RangeLabel) {
   if (section === "Strength") return `Strength view for ${range}: best sets, estimated 1RM, and meaningful PR direction.`;
   if (section === "Volume") return `Volume view for ${range}: workload trend, daily bars, and period-over-period movement.`;
   if (section === "Balance") return `Balance view for ${range}: distributed muscle volume and weak point signals.`;
+  if (section === "Intel") return `Intelligence view for ${range}: readiness, forecasts, PR likelihood, plateau risk, and ranked recommendations.`;
   return `Overview for ${range}: the most important training signals in one screen.`;
 }
 

@@ -7,17 +7,19 @@ import { formatNumber } from "./AnalyzerShared";
 
 export function HomePage({ snapshot, analyzer, onOpenSync, onNavigate }: { snapshot: MobileSnapshot; analyzer: MobileAnalyzerModel; onOpenSync: () => void; onNavigate: (tab: MobileTab) => void }) {
   const homeTrend = homeTrendSeries(analyzer, snapshot);
+  const intelligence = analyzer.intelligence;
   const volume = analyzer.summary.totals.volume || homeTrend.values.reduce((sum, value) => sum + value, 0);
   const readableVolume = formatNumber(volume);
-  const readiness = readinessScore(analyzer);
+  const readiness = intelligence.analyst.readinessScore;
   const bestPr = analyzer.recentPrs[0];
   const bestPrExerciseName = bestPr
     ? analyzer.strengthRows.find((row) => row.exerciseId === bestPr.exerciseId)?.exerciseName
       ?? snapshot.exercises.find((exercise) => exercise.id === bestPr.exerciseId)?.name
       ?? "Exercise"
     : null;
-  const topInsight = splitInsight(analyzer.topInsight);
-  const focus = splitInsight(analyzer.weakPoint);
+  const topRecommendation = intelligence.recommendations[0];
+  const focus = topRecommendation ? { title: topRecommendation.title, detail: topRecommendation.suggestedAction } : splitInsight(analyzer.weakPoint);
+  const topForecast = intelligence.forecasts.find((forecast) => forecast.type === "pr_likelihood") ?? intelligence.forecasts[0];
   const hasFatigue = analyzer.summary.fatigueFlags.length > 0;
 
   return (
@@ -33,8 +35,8 @@ export function HomePage({ snapshot, analyzer, onOpenSync, onNavigate }: { snaps
         <div className="grid gap-4 min-[390px]:grid-cols-[minmax(0,1fr)_6.5rem] min-[400px]:grid-cols-[minmax(0,1fr)_7.75rem] min-[390px]:items-center">
           <div className="min-w-0">
             <SectionTitle label="Today's readiness" />
-            <h2 className="text-[1.45rem] font-black leading-tight">Upper Strength Ready</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-300">{topInsight.detail || "Recovery looks steady. Keep the first heavy sets crisp and stop if reps slow down hard."}</p>
+            <h2 className="text-[1.45rem] font-black leading-tight">{readiness >= 70 ? "Ready to train" : "Train with caution"}</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-300">{intelligence.analyst.focus}</p>
           </div>
           <CircularScore value={readiness} label="ready" size="normal" />
         </div>
@@ -91,6 +93,17 @@ export function HomePage({ snapshot, analyzer, onOpenSync, onNavigate }: { snaps
         </GlassCard>
       </div>
 
+      <GlassCard className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-3 p-4">
+        <IconTile icon={Target} size="large" />
+        <div className="min-w-0">
+          <SectionTitle label="Training intelligence" />
+          <div className="text-lg font-black leading-tight">{topForecast?.targetName ?? "No forecast yet"}</div>
+          <p className="mt-1 text-sm leading-relaxed text-slate-400">
+            {topForecast ? `${topForecast.type.replace(/_/g, " ")}: ${formatNumber(topForecast.value)} ${topForecast.unit} with ${topForecast.confidence}/100 confidence.` : "Import more workout history to unlock forecasts."}
+          </p>
+        </div>
+      </GlassCard>
+
       <GlassCard className="grid grid-cols-[3.5rem_minmax(0,1fr)_5.5rem] items-center gap-3 p-4">
         <IconTile icon={Zap} size="large" />
         <div className="min-w-0">
@@ -138,12 +151,6 @@ function RecoveryRow({ label, value, sub, tone }: { label: string; value: string
       <StatusPill tone={tone}>{value}</StatusPill>
     </div>
   );
-}
-
-function readinessScore(analyzer: MobileAnalyzerModel) {
-  const balance = analyzer.summary.balance.overall || 78;
-  const fatiguePenalty = Math.min(18, analyzer.summary.fatigueFlags.length * 8);
-  return Math.max(45, Math.min(96, Math.round(balance - fatiguePenalty)));
 }
 
 function splitInsight(value: string) {

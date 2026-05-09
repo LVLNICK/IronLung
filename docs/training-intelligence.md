@@ -85,3 +85,12 @@ If deep learning is added later, it should plug in behind the same interfaces ra
 - no attractiveness/body-shaming score
 
 For workout analytics, a trained model should only be promoted if it beats the current explainable forecasts on held-out personal data.
+
+## UI Integration
+
+The engine is now visible in:
+
+- Desktop Command Center: readiness score, top forecast, and training intelligence cards.
+- Desktop Analytics: readiness metric, forecast snapshot, strength forecasts, and intelligence recommendations.
+- Mobile Home: readiness copy, focus recommendation, and top forecast card.
+- Mobile Analytics: `Intel` tab with analyst report, forecasts, and recommendations.
