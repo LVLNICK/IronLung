@@ -5,6 +5,7 @@ import { loadMobileSnapshot, type MobileSnapshot } from "./data/mobileRepository
 import { buildMobileAnalyzer } from "./features/analytics/mobileAnalytics";
 import { HomePage } from "./pages/HomePage";
 import { TrainPage } from "./pages/TrainPage";
+import { ExercisesPage } from "./pages/ExercisesPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { PhotosPage } from "./pages/PhotosPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -77,6 +78,7 @@ export function App() {
     <MobileShell tab={tab} onTab={changeTab}>
       {tab === "home" && <HomePage snapshot={snapshot} analyzer={analyzer} onOpenSync={openSettings} onNavigate={changeTab} />}
       {tab === "train" && <TrainPage snapshot={snapshot} analyzer={analyzer} onNavigate={changeTab} onSnapshot={setSnapshot} />}
+      {tab === "exercises" && <ExercisesPage snapshot={snapshot} analyzer={analyzer} onSnapshot={setSnapshot} />}
       {tab === "analytics" && <AnalyticsPage snapshot={snapshot} analyzer={analyzer} />}
       {tab === "photos" && <PhotosPage snapshot={snapshot} analyzer={analyzer} />}
       {tab === "settings" && <SettingsPage snapshot={snapshot} refresh={refresh} status={status} setStatus={setStatus} />}
@@ -86,5 +88,5 @@ export function App() {
 
 function initialTab(): MobileTab {
   const hash = typeof window === "undefined" ? "" : window.location.hash.replace("#", "");
-  return hash === "train" || hash === "analytics" || hash === "photos" || hash === "settings" ? hash : "home";
+  return hash === "train" || hash === "exercises" || hash === "analytics" || hash === "photos" || hash === "settings" ? hash : "home";
 }

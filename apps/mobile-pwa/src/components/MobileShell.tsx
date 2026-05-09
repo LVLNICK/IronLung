@@ -1,13 +1,14 @@
-import { BarChart3, Camera, Dumbbell, Home, Settings } from "lucide-react";
+import { BarChart3, Camera, Dumbbell, Home, LibraryBig, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import type { MobileTab } from "../types";
 
 const tabs: Array<{ tab: MobileTab; label: string; icon: typeof Dumbbell }> = [
   { tab: "home", label: "Home", icon: Home },
   { tab: "train", label: "Train", icon: Dumbbell },
+  { tab: "exercises", label: "Exercises", icon: LibraryBig },
   { tab: "analytics", label: "Analytics", icon: BarChart3 },
   { tab: "photos", label: "Photos", icon: Camera },
-  { tab: "settings", label: "Settings", icon: Settings }
+  { tab: "settings", label: "Data", icon: Settings }
 ];
 
 export function MobileShell({ tab, onTab, children }: { tab: MobileTab; onTab: (tab: MobileTab) => void; children: ReactNode }) {
@@ -17,13 +18,13 @@ export function MobileShell({ tab, onTab, children }: { tab: MobileTab; onTab: (
         <StatusBar />
         <div className="px-4 pb-32 text-[15px] leading-snug min-[400px]:px-5">{children}</div>
         <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[430px] border-t border-white/10 bg-[#0b111d]/85 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 shadow-[0_-22px_70px_rgba(0,0,0,0.62)] backdrop-blur-2xl min-[400px]:px-4">
-          <div className="grid grid-cols-5 gap-1 rounded-[1.75rem] border border-white/[0.06] bg-white/[0.035] p-1">
+          <div className="grid grid-cols-6 gap-1 rounded-[1.75rem] border border-white/[0.06] bg-white/[0.035] p-1">
             {tabs.map((item) => {
               const Icon = item.icon;
               const active = item.tab === tab;
               return (
-                <button key={item.tab} onClick={() => onTab(item.tab)} aria-current={active ? "page" : undefined} className={`min-h-[4rem] rounded-2xl px-1 text-[0.68rem] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 active:scale-[0.98] ${active ? "bg-white/[0.08] text-[#3b82f6] shadow-[inset_0_0_30px_rgba(59,130,246,0.18),0_10px_30px_rgba(0,0,0,0.24)]" : "text-slate-300 hover:text-white"}`}>
-                  <Icon className={`mx-auto mb-1 h-5 w-5 ${active ? "fill-current stroke-[2.35]" : "stroke-[2.35]"}`} />
+                <button key={item.tab} onClick={() => onTab(item.tab)} aria-current={active ? "page" : undefined} className={`min-h-[3.7rem] rounded-2xl px-0.5 text-[0.58rem] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300 active:scale-[0.98] min-[390px]:text-[0.62rem] ${active ? "bg-white/[0.08] text-[#3b82f6] shadow-[inset_0_0_30px_rgba(59,130,246,0.18),0_10px_30px_rgba(0,0,0,0.24)]" : "text-slate-300 hover:text-white"}`}>
+                  <Icon className={`mx-auto mb-1 h-[1.15rem] w-[1.15rem] ${active ? "fill-current stroke-[2.35]" : "stroke-[2.35]"}`} />
                   {item.label}
                 </button>
               );

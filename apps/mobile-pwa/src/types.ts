@@ -1,1 +1,1 @@
-export type MobileTab = "home" | "train" | "analytics" | "photos" | "settings";
+export type MobileTab = "home" | "train" | "exercises" | "analytics" | "photos" | "settings";

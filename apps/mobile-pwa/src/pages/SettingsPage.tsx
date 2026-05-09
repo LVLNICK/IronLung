@@ -12,7 +12,7 @@ type SettingsPageProps = {
 export function SettingsPage(props: SettingsPageProps) {
   return (
     <MobilePage>
-      <MobileHeader title="Settings" subtitle="Local data, privacy, import, and export." />
+      <MobileHeader title="Data & Settings" subtitle="Local data, privacy, import, export, and mobile cache controls." />
       <SyncPage {...props} />
     </MobilePage>
   );

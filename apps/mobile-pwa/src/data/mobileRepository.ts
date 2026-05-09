@@ -1,6 +1,6 @@
-import { detectPersonalRecords, type SetType } from "@ironlung/core";
+import { detectPersonalRecords, inferExerciseTargetProfile, type SetType } from "@ironlung/core";
 import { clearStore, getAllFromStore, putInStore } from "./mobileDb";
-import { nowIso, type MobileOperationLogEntry, type MobilePersonalRecord, type MobileRecords, type MobileSetLog, type MobileSettings, type MobileWorkoutSession, type MobileWorkoutSessionExercise } from "./mobileSyncTypes";
+import { nowIso, type MobileExercise, type MobileOperationLogEntry, type MobilePersonalRecord, type MobileRecords, type MobileSetLog, type MobileSettings, type MobileWorkoutSession, type MobileWorkoutSessionExercise } from "./mobileSyncTypes";
 import { createId } from "../lib/uuid";
 
 export interface MobileSnapshot extends MobileRecords {
@@ -81,6 +81,17 @@ export interface MobileWorkoutWriteResult {
   personalRecords: MobilePersonalRecord[];
 }
 
+export interface MobileExerciseWriteInput {
+  id?: string;
+  name: string;
+  primaryMuscle?: string;
+  secondaryMuscles?: string[];
+  equipment?: string;
+  movementPattern?: string;
+  isUnilateral?: boolean;
+  notes?: string;
+}
+
 const MOBILE_WORKOUT_SOURCE = "mobile-pwa";
 
 export async function ensureActiveMobileWorkout(settings: MobileSettings): Promise<MobileWorkoutSession> {
@@ -107,6 +118,35 @@ export async function ensureActiveMobileWorkout(settings: MobileSettings): Promi
   await putInStore("sessions", session);
   await appendOperation(settings, "create", "sessions", session.id, now);
   return session;
+}
+
+export async function saveMobileExercise(settings: MobileSettings, input: MobileExerciseWriteInput): Promise<MobileSnapshot> {
+  const exercises = await getAllFromStore("exercises");
+  const now = nowIso();
+  const existing = input.id ? exercises.find((exercise) => exercise.id === input.id) : undefined;
+  const inferred = inferExerciseTargetProfile(input.name || existing?.name || "Custom Exercise");
+  const exercise: MobileExercise = {
+    id: existing?.id ?? createId(),
+    name: cleanText(input.name || existing?.name || "Custom Exercise"),
+    primaryMuscle: cleanText(input.primaryMuscle || existing?.primaryMuscle || inferred.primaryMuscle),
+    secondaryMuscles: input.secondaryMuscles ?? existing?.secondaryMuscles ?? inferred.secondaryMuscles,
+    muscleContributions: existing?.muscleContributions,
+    equipment: cleanText(input.equipment || existing?.equipment || inferred.equipment),
+    movementPattern: cleanText(input.movementPattern || existing?.movementPattern || inferred.movementPattern),
+    isUnilateral: input.isUnilateral ?? existing?.isUnilateral ?? inferred.isUnilateral,
+    notes: input.notes ?? existing?.notes ?? inferred.notes,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+    deletedAt: existing?.deletedAt ?? null,
+    originDeviceId: existing?.originDeviceId ?? settings.deviceId,
+    lastModifiedDeviceId: settings.deviceId,
+    syncVersion: (existing?.syncVersion ?? 0) + 1,
+    importSource: existing?.importSource ?? "mobile-pwa",
+    mobileBatchId: existing?.mobileBatchId ?? null
+  };
+  await putInStore("exercises", exercise);
+  await appendOperation(settings, existing ? "update" : "create", "exercises", exercise.id, now);
+  return loadMobileSnapshot();
 }
 
 export async function addSetToActiveMobileWorkout(settings: MobileSettings, input: MobileSetWriteInput): Promise<MobileWorkoutWriteResult> {
@@ -271,4 +311,8 @@ function sanitizeReps(value: number) {
 function sanitizeRpe(value: number) {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(10, Math.round(value * 2) / 2));
+}
+
+function cleanText(value: string) {
+  return value.trim() || "Unspecified";
 }
