@@ -193,6 +193,40 @@ export async function finishActiveMobileWorkout(settings: MobileSettings): Promi
   return loadMobileSnapshot();
 }
 
+export async function discardActiveMobileWorkout(settings: MobileSettings): Promise<MobileSnapshot> {
+  const sessions = await getAllFromStore("sessions");
+  const active = sessions
+    .filter((session) => !session.deletedAt && !session.finishedAt && session.importSource === MOBILE_WORKOUT_SOURCE)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+  if (!active) return loadMobileSnapshot();
+
+  const now = nowIso();
+  const sessionRows = (await getAllFromStore("sessionExercises"))
+    .filter((row) => !row.deletedAt && row.workoutSessionId === active.id);
+  const rowIds = new Set(sessionRows.map((row) => row.id));
+  const sets = (await getAllFromStore("setLogs"))
+    .filter((set) => !set.deletedAt && rowIds.has(set.workoutSessionExerciseId));
+  const setIds = new Set(sets.map((set) => set.id));
+  const prs = (await getAllFromStore("personalRecords"))
+    .filter((record) => !record.deletedAt && (record.workoutSessionId === active.id || Boolean(record.setLogId && setIds.has(record.setLogId))));
+
+  await putInStore("sessions", softDelete(active, settings, now));
+  await appendOperation(settings, "delete", "sessions", active.id, now);
+  for (const row of sessionRows) {
+    await putInStore("sessionExercises", softDelete(row, settings, now));
+    await appendOperation(settings, "delete", "sessionExercises", row.id, now);
+  }
+  for (const set of sets) {
+    await putInStore("setLogs", softDelete(set, settings, now));
+    await appendOperation(settings, "delete", "setLogs", set.id, now);
+  }
+  for (const record of prs) {
+    await putInStore("personalRecords", softDelete(record, settings, now));
+    await appendOperation(settings, "delete", "personalRecords", record.id, now);
+  }
+  return loadMobileSnapshot();
+}
+
 export async function setMobileSetCompleted(settings: MobileSettings, setId: string, isCompleted: boolean): Promise<MobileSnapshot> {
   const sets = await getAllFromStore("setLogs");
   const existing = sets.find((set) => set.id === setId);
@@ -206,6 +240,16 @@ export async function setMobileSetCompleted(settings: MobileSettings, setId: str
   });
   await appendOperation(settings, "update", "setLogs", setId, now);
   return loadMobileSnapshot();
+}
+
+function softDelete<T extends { deletedAt?: string | null; updatedAt?: string; lastModifiedDeviceId: string; syncVersion: number }>(record: T, settings: MobileSettings, now: string): T {
+  return {
+    ...record,
+    deletedAt: now,
+    updatedAt: now,
+    lastModifiedDeviceId: settings.deviceId,
+    syncVersion: record.syncVersion + 1
+  };
 }
 
 async function ensureSessionExercise(settings: MobileSettings, session: MobileWorkoutSession, exerciseId: string): Promise<MobileWorkoutSessionExercise> {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dumbbell, List, MessageSquare, MoreHorizontal, Play, Plus, Trophy, Zap } from "lucide-react";
-import { addSetToActiveMobileWorkout, ensureActiveMobileWorkout, finishActiveMobileWorkout, loadMobileSnapshot, setMobileSetCompleted, type MobileSnapshot } from "../data/mobileRepository";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dumbbell, List, MessageSquare, MoreHorizontal, Play, Plus, Trash2, Trophy, Zap } from "lucide-react";
+import { addSetToActiveMobileWorkout, discardActiveMobileWorkout, ensureActiveMobileWorkout, finishActiveMobileWorkout, loadMobileSnapshot, setMobileSetCompleted, type MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
 import { EmptyMobileState, GlassCard, IconTile, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
@@ -114,15 +114,16 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
     onSnapshot(next);
   };
 
-  const openLogger = async () => {
+  const openLogger = async (preferredExerciseId?: string) => {
     setSaving(true);
     try {
       await withSaveTimeout(ensureActiveMobileWorkout(localSnapshot.settings));
       const next = await withSaveTimeout(loadMobileSnapshot());
       saveSnapshot(next);
+      if (preferredExerciseId) setActiveExerciseId(preferredExerciseId);
       setLoggerOpen(true);
       setFinished(false);
-      setNotice("New phone-local workout started.");
+      setNotice(preferredExerciseId ? "New phone-local workout started with selected exercise." : "New phone-local workout started.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Could not start workout.");
     } finally {
@@ -136,6 +137,21 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
     setNotice("Active phone-local workout resumed.");
   };
 
+  const discardActiveWorkout = async () => {
+    setSaving(true);
+    try {
+      const next = await withSaveTimeout(discardActiveMobileWorkout(localSnapshot.settings));
+      saveSnapshot(next);
+      setLoggerOpen(false);
+      setFinished(false);
+      setNotice("Discarded active phone-local workout.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not discard workout.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!loggerOpen) {
     return (
       <TrainStartScreen
@@ -145,8 +161,9 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
         lastWorkoutName={lastCompletedMobileWorkout?.name}
         onBack={() => onNavigate("home")}
         onImport={() => onNavigate("settings")}
+        onDiscard={() => void discardActiveWorkout()}
         onResume={resumeLogger}
-        onStart={() => void openLogger()}
+        onStart={(exerciseId) => void openLogger(exerciseId)}
         saving={saving}
         snapshot={localSnapshot}
       />
@@ -376,6 +393,7 @@ function TrainStartScreen({
   hasActiveWorkout,
   lastWorkoutName,
   onBack,
+  onDiscard,
   onImport,
   onResume,
   onStart,
@@ -387,12 +405,14 @@ function TrainStartScreen({
   hasActiveWorkout: boolean;
   lastWorkoutName?: string;
   onBack: () => void;
+  onDiscard: () => void;
   onImport: () => void;
   onResume: () => void;
-  onStart: () => void;
+  onStart: (exerciseId?: string) => void;
   saving: boolean;
   snapshot: MobileSnapshot;
 }) {
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const recentExercises = exercises.slice(0, 5);
   const lastSession = latestImportedWorkout(snapshot);
   const weeklyVolume = analyzer.summary.totals.volume;
@@ -434,7 +454,22 @@ function TrainStartScreen({
             <MobileGhostButton disabled className="h-12 w-full">Finish the active workout before starting another</MobileGhostButton>
           )}
           <MobileGhostButton onClick={onImport} className="h-12 w-full">Import / Data Settings</MobileGhostButton>
+          {hasActiveWorkout && (
+            <MobileGhostButton disabled={saving} onClick={() => setConfirmDiscard((value) => !value)} className="h-12 w-full border-red-400/30 bg-red-500/10 text-red-200">
+              <Trash2 className="mr-2 inline h-4 w-4" />Discard Active Workout
+            </MobileGhostButton>
+          )}
         </div>
+        {confirmDiscard && (
+          <div className="mt-4 rounded-2xl border border-red-400/25 bg-red-500/10 p-3">
+            <div className="text-sm font-black text-red-100">Discard the active phone workout?</div>
+            <p className="mt-1 text-xs leading-relaxed text-red-100/70">This only removes the unfinished phone-local session and its sets. Imported desktop data stays intact.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <MobileGhostButton onClick={() => setConfirmDiscard(false)}>Keep it</MobileGhostButton>
+              <MobileGhostButton disabled={saving} onClick={onDiscard} className="border-red-400/35 bg-red-500/15 text-red-100">Discard</MobileGhostButton>
+            </div>
+          </div>
+        )}
       </GlassCard>
 
       <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-4">
@@ -460,7 +495,7 @@ function TrainStartScreen({
             {recentExercises.map((exercise) => (
               <button
                 key={exercise.id}
-                onClick={onStart}
+                onClick={() => onStart(exercise.id)}
                 className="flex min-h-[64px] w-full items-center gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.045] p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"
               >
                 <IconTile icon={Dumbbell} tone="blue" />

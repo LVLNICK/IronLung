@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clearAllMobileData, putInStore } from "./mobileDb";
-import { addSetToActiveMobileWorkout, finishActiveMobileWorkout, loadMobileSnapshot, setMobileSetCompleted } from "./mobileRepository";
+import { addSetToActiveMobileWorkout, discardActiveMobileWorkout, finishActiveMobileWorkout, loadMobileSnapshot, setMobileSetCompleted } from "./mobileRepository";
 import type { MobileExercise, MobileSettings } from "./mobileSyncTypes";
 
 describe("mobile workout repository", () => {
@@ -25,6 +25,24 @@ describe("mobile workout repository", () => {
     const persisted = await loadMobileSnapshot();
     expect(persisted.setLogs).toHaveLength(1);
     expect(persisted.sessions[0].finishedAt).toBeTruthy();
+  });
+
+  it("discards an accidental active workout without deleting imported exercise data", async () => {
+    await clearAllMobileData();
+    await putInStore("settings", settings());
+    await putInStore("exercises", exercise());
+
+    const first = await addSetToActiveMobileWorkout(settings(), { exerciseId: "bench", weight: 135, reps: 10, rpe: 7 });
+    expect(first.snapshot.sessions.filter((session) => !session.deletedAt && !session.finishedAt)).toHaveLength(1);
+
+    const discarded = await discardActiveMobileWorkout(settings());
+    expect(discarded.exercises.filter((item) => !item.deletedAt)).toHaveLength(1);
+    expect(discarded.sessions.filter((session) => !session.deletedAt && !session.finishedAt)).toHaveLength(0);
+    expect(discarded.setLogs.filter((set) => !set.deletedAt)).toHaveLength(0);
+
+    const next = await addSetToActiveMobileWorkout(settings(), { exerciseId: "bench", weight: 185, reps: 5, rpe: 8 });
+    expect(next.snapshot.sessions.filter((session) => !session.deletedAt && !session.finishedAt)).toHaveLength(1);
+    expect(next.snapshot.setLogs.filter((set) => !set.deletedAt)).toHaveLength(1);
   });
 });
 
