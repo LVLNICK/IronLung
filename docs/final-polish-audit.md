@@ -10,7 +10,7 @@ Baseline verification before changes:
 
 - Six-page navigation is present and tested: Command Center, Train, Exercises, Analytics, Photos, Data & Settings.
 - Boostcamp CSV/JSON import exists with local parsing, dry-run preview, mapping, duplicate hash detection, and summary.
-- IronLung JSON import/export exists.
+- IronLog JSON import/export exists.
 - Workout templates, active logging, exercise CRUD, PR detection, analytics charts, progress photos, and local photo analysis exist.
 - Privacy safety copy exists on Photos and Command Center.
 - Shared analytics engine exists in `packages/core/src/analytics`.

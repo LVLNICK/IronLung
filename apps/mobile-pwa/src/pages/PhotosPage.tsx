@@ -24,7 +24,7 @@ export function PhotosPage(_: { snapshot: MobileSnapshot; analyzer: MobileAnalyz
       <MobileHeader title="Photos" subtitle="Private progress tracking. Photos stay on your device." action={<button onClick={() => setPanel(panel === "how" ? "none" : "how")} className="min-h-[44px] shrink-0 rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-300">How it works</button>} />
 
       {panel === "how" && (
-        <InfoPanel title="Local-only photo analysis" body="IronLung does not upload progress photos. Mobile currently previews selected files locally; desktop remains the permanent photo analysis source." />
+        <InfoPanel title="Local-only photo analysis" body="IronLog does not upload progress photos. Mobile currently previews selected files locally; desktop remains the permanent photo analysis source." />
       )}
 
       <GlassCard className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 p-4 min-[400px]:grid-cols-[2.75rem_1fr_8.75rem]">

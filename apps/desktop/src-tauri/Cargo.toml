@@ -1,8 +1,8 @@
 [package]
-name = "ironlung-desktop"
+name = "ironlog-desktop"
 version = "0.1.0"
-description = "IronLung Desktop"
-authors = ["IronLung"]
+description = "IronLog Desktop"
+authors = ["IronLog"]
 edition = "2021"
 
 [build-dependencies]

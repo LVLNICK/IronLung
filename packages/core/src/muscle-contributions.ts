@@ -114,7 +114,7 @@ export function muscleContributionWarnings(exercise: Exercise): string[] {
   const raw = safeMuscleContributions(exercise.muscleContributions);
   const rawTotal = raw.reduce((sum, item) => sum + item.percent, 0);
   if (raw.length && Math.abs(rawTotal - 1) > 0.02) {
-    warnings.push(`Custom muscle contributions total ${round(rawTotal * 100)}%, so IronLung normalizes them to 100%.`);
+    warnings.push(`Custom muscle contributions total ${round(rawTotal * 100)}%, so IronLog normalizes them to 100%.`);
   }
   if (raw.some((item) => item.percent <= 0)) {
     warnings.push("One or more custom muscle contributions are zero or negative and are ignored.");

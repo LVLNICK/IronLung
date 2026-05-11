@@ -12,7 +12,7 @@ import {
   type SetLog,
   type WorkoutSession,
   type WorkoutSessionExercise
-} from "@ironlung/core";
+} from "@ironlog/core";
 
 export interface AnalyticsInput {
   exercises: Exercise[];

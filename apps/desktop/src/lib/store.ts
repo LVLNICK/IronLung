@@ -22,12 +22,12 @@ import {
   type WorkoutSessionExercise,
   type WorkoutTemplate,
   type WorkoutTemplateExercise
-} from "@ironlung/core";
+} from "@ironlog/core";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { analyzeProgressPhotoLocally } from "./photoAnalysis";
 
-export interface IronLungStateData {
+export interface IronLogStateData {
   unitPreference: UnitPreference;
   theme: ThemePreference;
   trainingGoal: TrainingGoal;
@@ -44,7 +44,7 @@ export interface IronLungStateData {
   analyses: BodyAnalysis[];
 }
 
-interface IronLungStore extends IronLungStateData {
+interface IronLogStore extends IronLogStateData {
   createExercise(input: Omit<Exercise, "id" | "createdAt" | "updatedAt">): Exercise;
   updateExercise(id: string, input: Partial<Omit<Exercise, "id" | "createdAt" | "updatedAt">>): void;
   deleteExercise(id: string): void;
@@ -81,12 +81,12 @@ interface IronLungStore extends IronLungStateData {
   assignWorkoutToBlock(sessionId: string, blockId: string | null): void;
   deletePhoto(photoId: string): void;
   deleteAllPhotoData(): void;
-  updateSettings(input: Partial<Pick<IronLungStateData, "unitPreference" | "theme" | "trainingGoal">>): void;
-  importData(data: IronLungStateData): void;
+  updateSettings(input: Partial<Pick<IronLogStateData, "unitPreference" | "theme" | "trainingGoal">>): void;
+  importData(data: IronLogStateData): void;
   clearAllData(): void;
 }
 
-const initialData: IronLungStateData = {
+const initialData: IronLogStateData = {
   unitPreference: "lbs",
   theme: "dark",
   trainingGoal: "general_fitness",
@@ -103,7 +103,7 @@ const initialData: IronLungStateData = {
   analyses: []
 };
 
-export const useIronLungStore = create<IronLungStore>()(
+export const useIronLogStore = create<IronLogStore>()(
   persist(
     (set, get) => ({
       ...initialData,
@@ -508,16 +508,16 @@ export const useIronLungStore = create<IronLungStore>()(
       clearAllData: () => set(initialData)
     }),
     {
-      name: "ironlung-desktop-local",
+      name: "ironlog-desktop-local",
       merge: (persistedState, currentState) => {
-        const persisted = persistedState && typeof persistedState === "object" ? persistedState as Partial<IronLungStateData> : {};
+        const persisted = persistedState && typeof persistedState === "object" ? persistedState as Partial<IronLogStateData> : {};
         return { ...currentState, ...normalizeStoredData({ ...initialData, ...persisted }) };
       }
     }
   )
 );
 
-export function selectOpenSession(state: IronLungStateData): WorkoutSession | undefined {
+export function selectOpenSession(state: IronLogStateData): WorkoutSession | undefined {
   return state.sessions.find((session) => !session.finishedAt);
 }
 
@@ -525,7 +525,7 @@ export function oneRmForSet(setLog: SetLog): number {
   return estimatedOneRepMax(setLog.weight, setLog.reps);
 }
 
-function recalculatePersonalRecords(state: IronLungStateData): PersonalRecord[] {
+function recalculatePersonalRecords(state: IronLogStateData): PersonalRecord[] {
   const records: PersonalRecord[] = [];
   const setsBySessionExercise = new Map<string, SetLog[]>();
   for (const setLog of state.setLogs) {
@@ -602,7 +602,7 @@ function recordKey(record: PersonalRecord) {
   return [record.exerciseId, record.workoutSessionId, record.type, record.unit].join("|");
 }
 
-function normalizeStoredData(data: IronLungStateData): IronLungStateData {
+function normalizeStoredData(data: IronLogStateData): IronLogStateData {
   return {
     ...data,
     exercises: Array.isArray(data.exercises) ? data.exercises.map(normalizeExercise) : [],

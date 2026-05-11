@@ -1,7 +1,7 @@
 {
-  "name": "IronLung Analyzer",
+  "name": "IronLog Analyzer",
   "short_name": "Analyzer",
-  "description": "Offline phone-local training analytics companion for IronLung Desktop.",
+  "description": "Offline phone-local training analytics companion for IronLog Desktop.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, FolderDown, FolderUp, Scale, Sparkles, Trash2 } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
-import type { BodyAnalysis, ProgressPhoto } from "@ironlung/core";
+import type { BodyAnalysis, ProgressPhoto } from "@ironlog/core";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, IconButton, Input, Select, TextArea } from "../components/forms/controls";
 import { ScreenShell } from "../components/layout/ScreenShell";
@@ -10,12 +10,12 @@ import { ConfirmModal } from "../components/modals/ConfirmModal";
 import { StatRows } from "../components/tables/AnalyticsTable";
 import { tooltipStyle } from "../components/charts/ChartPrimitives";
 import { shortDate, todayIso } from "../lib/format";
-import { useIronLungStore } from "../lib/store";
+import { useIronLogStore } from "../lib/store";
 
 const safetyText = "This is an experimental progress metric. It is not a medical diagnosis, body-fat measurement, or attractiveness rating.";
 
 export function PhotosPage() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [poseType, setPoseType] = useState<ProgressPhoto["poseType"]>("front");
   const [bodyweight, setBodyweight] = useState("");
   const [age, setAge] = useState("");
@@ -120,7 +120,7 @@ export function PhotosPage() {
           <div>
             <div className="text-sm font-semibold text-electric">Privacy-safe progress photos</div>
             <p className="mt-2 max-w-4xl text-sm leading-relaxed text-obsidian-muted">{safetyText}</p>
-            <p className="mt-1 max-w-4xl text-sm leading-relaxed text-obsidian-subtle">Photos stay local by default. IronLung does not upload photos, compare you against other users, or rate attractiveness.</p>
+            <p className="mt-1 max-w-4xl text-sm leading-relaxed text-obsidian-subtle">Photos stay local by default. IronLog does not upload photos, compare you against other users, or rate attractiveness.</p>
           </div>
           <Button variant="danger" icon={Trash2} onClick={() => setDeleteAllOpen(true)}>Delete all photo data</Button>
         </div>
@@ -231,7 +231,7 @@ export function PhotosPage() {
       {deletePhotoId && (
         <ConfirmModal
           title="Delete progress photo?"
-          body="This removes the local photo record and its Progress Photo Index analysis from IronLung storage."
+          body="This removes the local photo record and its Progress Photo Index analysis from IronLog storage."
           confirmLabel="Delete photo"
           onCancel={() => setDeletePhotoId(null)}
           onConfirm={() => { state.deletePhoto(deletePhotoId); setDeletePhotoId(null); }}
@@ -240,7 +240,7 @@ export function PhotosPage() {
       {deleteAllOpen && (
         <ConfirmModal
           title="Delete all photo data?"
-          body="This removes every local progress photo record and analysis from IronLung storage. Workout data stays intact."
+          body="This removes every local progress photo record and analysis from IronLog storage. Workout data stays intact."
           confirmLabel="Delete all photos"
           onCancel={() => setDeleteAllOpen(false)}
           onConfirm={() => { state.deleteAllPhotoData(); setDeleteAllOpen(false); }}

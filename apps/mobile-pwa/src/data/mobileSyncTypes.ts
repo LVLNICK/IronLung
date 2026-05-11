@@ -8,7 +8,7 @@ import type {
   WorkoutSessionExercise,
   WorkoutTemplate,
   WorkoutTemplateExercise
-} from "@ironlung/core";
+} from "@ironlog/core";
 
 export interface MobileSyncMetadata {
   deletedAt?: string | null;
@@ -61,7 +61,7 @@ export interface MobileRecords {
 
 export interface MobileExportBundle {
   schemaVersion: 1;
-  bundleType: "ironlung-mobile-export";
+  bundleType: "ironlog-mobile-export";
   deviceId: string;
   deviceName: string;
   exportedAt: string;
@@ -82,7 +82,7 @@ export interface MobileExportBundle {
 
 export interface MobileSeedBundle {
   schemaVersion: 1;
-  bundleType: "ironlung-mobile-seed";
+  bundleType: "ironlog-mobile-seed";
   exportedAt: string;
   appVersion: string;
   unitPreference: UnitPreference;

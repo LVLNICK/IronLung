@@ -1,5 +1,5 @@
 {
-  "name": "@ironlung/desktop",
+  "name": "@ironlog/desktop",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@ironlung/core": "0.1.0",
-    "@ironlung/db": "0.1.0",
+    "@ironlog/core": "0.1.0",
+    "@ironlog/db": "0.1.0",
     "@tauri-apps/api": "^2.9.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

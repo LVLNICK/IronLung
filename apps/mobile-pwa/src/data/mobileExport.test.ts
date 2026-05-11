@@ -6,11 +6,18 @@ describe("mobile export bundle", () => {
   it("creates a validated local-only analyzer cache bundle", () => {
     const bundle = createMobileExportBundle(records(), settings(), operationLog());
 
-    expect(bundle.bundleType).toBe("ironlung-mobile-export");
+    expect(bundle.bundleType).toBe("ironlog-mobile-export");
     expect(bundle.summary.workouts).toBe(1);
     expect(bundle.summary.sets).toBe(1);
     expect(bundle.summary.dateRange.start).toBe("2026-05-06T20:00:00.000Z");
     expect(validateMobileExportBundle(bundle).deviceId).toBe("phone-1");
+  });
+
+  it("accepts legacy IronLung mobile export bundles and normalizes the brand name", () => {
+    const bundle = createMobileExportBundle(records(), settings(), operationLog());
+    const legacy = { ...bundle, bundleType: "ironlung-mobile-export" };
+
+    expect(validateMobileExportBundle(legacy).bundleType).toBe("ironlog-mobile-export");
   });
 });
 

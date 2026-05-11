@@ -9,13 +9,13 @@ import { AnalyticsPage } from "../pages/AnalyticsPage";
 import { PhotosPage } from "../pages/PhotosPage";
 import { DataSettingsPage } from "../pages/DataSettingsPage";
 import { Button } from "../components/forms/controls";
-import { useIronLungStore } from "../lib/store";
+import { useIronLogStore } from "../lib/store";
 
 export function App() {
   const [screen, setScreen] = useState<AppScreen>("Command Center");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const state = useIronLungStore();
+  const state = useIronLogStore();
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

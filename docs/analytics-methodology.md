@@ -1,6 +1,6 @@
 # Analytics Methodology
 
-IronLung analytics are deterministic and rule-based. No paid API or LLM is connected.
+IronLog analytics are deterministic and rule-based. No paid API or LLM is connected.
 
 ## Volume
 
@@ -22,7 +22,7 @@ Muscle volume uses weighted exercise contributions instead of duplicating full v
 
 - Barbell bench press: pectoralis major 55%, anterior deltoids 20%, triceps brachii 20%, serratus anterior 5%.
 
-If an old or custom exercise has no preset, IronLung falls back to 65% primary muscle and 35% split across secondary muscles. Distributed volume is used for muscle volume, weak points, fatigue flags, balance scores, and recommendations.
+If an old or custom exercise has no preset, IronLog falls back to 65% primary muscle and 35% split across secondary muscles. Distributed volume is used for muscle volume, weak points, fatigue flags, balance scores, and recommendations.
 
 ## Balance
 
@@ -46,7 +46,7 @@ Fatigue flags are workload signals, not medical advice. They use:
 
 ## Insights
 
-Smart insights detect neglected muscles, volume changes, imbalances, plateauing exercises, PR patterns, and consistency gaps. Recommendations are optional suggestions only; IronLung does not ship premade workout plans.
+Smart insights detect neglected muscles, volume changes, imbalances, plateauing exercises, PR patterns, and consistency gaps. Recommendations are optional suggestions only; IronLog does not ship premade workout plans.
 
 Training goals adjust recommendation wording and priority:
 

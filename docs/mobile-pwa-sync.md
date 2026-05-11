@@ -1,12 +1,12 @@
-# IronLung Analyzer Import
+# IronLog Analyzer Import
 
-IronLung Analyzer uses file-based local import. There is no cloud service and no server requirement.
+IronLog Analyzer uses file-based local import. There is no cloud service and no server requirement.
 
 The app shell can be hosted as a static PWA at `https://lvlnick.github.io/IronLung/`. That public URL serves only app files. Training data is still imported by the user and stored in phone-local browser storage.
 
 ## GitHub Pages Install
 
-The hosted app runs under the `/IronLung/` base path. The Vite Pages build rewrites asset URLs, registers the service worker at `/IronLung/sw.js`, and uses relative manifest icon paths so install/offline support works from GitHub Pages.
+The hosted app runs under the `/IronLung/` base path because the GitHub repository is still named `IronLung`; the app itself is branded IronLog. The Vite Pages build rewrites asset URLs, registers the service worker at `/IronLung/sw.js`, and uses relative manifest icon paths so install/offline support works from GitHub Pages.
 
 Phone install flow:
 
@@ -22,8 +22,8 @@ If the app opens but has no analytics, the app shell is installed correctly and 
 
 1. Open Desktop `Data & Settings`.
 2. Use `Mobile/PWA Sync -> Export mobile analytics seed`.
-3. Move the `.ironlung-mobile-seed.json` file to the phone.
-4. Open IronLung Analyzer `Sync`.
+3. Move the `.ironlog-mobile-seed.json` file to the phone.
+4. Open IronLog Analyzer `Sync`.
 5. Import the desktop data file.
 
 The seed contains exercises, sessions, session exercises, set logs, PRs, user-created templates, training blocks, and settings. It does not include photos by default.

@@ -29,7 +29,7 @@ export function AnalyticsPage({ snapshot, analyzer }: { snapshot: MobileSnapshot
     return (
       <MobilePage>
         <PageHeader range={range} setRange={setRange} />
-        <EmptyMobileState icon={BarChart3} title="Import desktop data" body="Analytics unlock after you import an IronLung desktop seed. Your cache stays local on this phone." />
+        <EmptyMobileState icon={BarChart3} title="Import desktop data" body="Analytics unlock after you import an IronLog desktop seed. Your cache stays local on this phone." />
       </MobilePage>
     );
   }

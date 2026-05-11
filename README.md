@@ -1,6 +1,6 @@
-# IronLung Desktop
+# IronLog Desktop
 
-IronLung Desktop is a local-first, desktop-priority fitness tracker for users who build their own workouts. It includes custom exercises, workout templates, set logging, PR detection, muscle-contribution analytics, training goals, training blocks, progress photos, JSON import/export, and a privacy-first local approximate Progress Photo Index.
+IronLog Desktop is a local-first, desktop-priority fitness tracker for users who build their own workouts. It includes custom exercises, workout templates, set logging, PR detection, muscle-contribution analytics, training goals, training blocks, progress photos, JSON import/export, and a privacy-first local approximate Progress Photo Index.
 
 No premade workout programs are included.
 
@@ -16,7 +16,7 @@ No premade workout programs are included.
 
 ## Navigation
 
-IronLung now uses six desktop-first destinations:
+IronLog now uses six desktop-first destinations:
 
 - Command Center: training status, weak points, fatigue flags, recent PRs, and next actions
 - Train: start workouts, active logging, journal, and user-created templates
@@ -27,7 +27,7 @@ IronLung now uses six desktop-first destinations:
 
 ## Boostcamp Import
 
-IronLung can import user-provided Boostcamp-style CSV or JSON files from `Data & Settings -> Boostcamp Import`. In the Tauri desktop app, it can also refresh through a local authenticated `D:\boostcamp-mcp` helper and feed that JSON into the same dry-run importer. The importer runs locally, supports exercise mapping, and skips duplicate sets using stable import hashes. It does not store your Boostcamp password or upload imported data. See `docs/importing-boostcamp.md`.
+IronLog can import user-provided Boostcamp-style CSV or JSON files from `Data & Settings -> Boostcamp Import`. In the Tauri desktop app, it can also refresh through a local authenticated `D:\boostcamp-mcp` helper and feed that JSON into the same dry-run importer. The importer runs locally, supports exercise mapping, and skips duplicate sets using stable import hashes. It does not store your Boostcamp password or upload imported data. See `docs/importing-boostcamp.md`.
 
 ## Setup
 
@@ -44,7 +44,7 @@ npm run desktop
 
 ## Mobile/PWA Analyzer
 
-IronLung also includes `IronLung Analyzer`, a phone-local installable PWA in `apps/mobile-pwa`. It is an offline phone-local training analytics companion for IronLung Desktop, not a workout logger yet and not a cloud sync app.
+IronLog also includes `IronLog Analyzer`, a phone-local installable PWA in `apps/mobile-pwa`. It is an offline phone-local training analytics companion for IronLog Desktop, not a workout logger yet and not a cloud sync app.
 
 ```powershell
 npm run mobile:dev
@@ -56,14 +56,14 @@ npm run mobile:preview
 Public hosted app shell:
 
 - GitHub Pages URL after deployment: `https://lvlnick.github.io/IronLung/`
-- The hosted site contains only the IronLung Analyzer app code. Your workout data is not uploaded.
+- The hosted site contains only the IronLog Analyzer app code. Your workout data is not uploaded.
 - Install/open the PWA once on your phone, then import a desktop seed bundle in the `Sync` tab. The imported analyzer cache stays in phone-local browser storage.
-- GitHub Pages serves the app from `/IronLung/`; the manifest, icons, and service worker are built with that base path so offline shell caching works from the hosted URL.
+- GitHub Pages serves the app from `/IronLung/` because the GitHub repository is still named `IronLung`; the app itself is branded IronLog. The manifest, icons, and service worker are built with that base path so offline shell caching works from the hosted URL.
 
 Phone workflow:
 
 1. In Desktop `Data & Settings`, export a mobile analytics seed bundle.
-2. Move the `.ironlung-mobile-seed.json` file to your phone and import it in the PWA `Sync` tab.
+2. Move the `.ironlog-mobile-seed.json` file to your phone and import it in the PWA `Sync` tab.
 3. View Home, Strength, Volume, and Muscle analytics offline from the phone-local cache.
 4. Optionally export an analyzer cache backup from the PWA.
 

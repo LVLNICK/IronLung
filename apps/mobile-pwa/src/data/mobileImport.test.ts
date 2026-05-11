@@ -150,9 +150,16 @@ describe("desktop seed import", () => {
   });
 
   it("rejects invalid seed files", () => {
-    expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "wrong" })).toThrow("IronLung mobile seed");
-    expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "ironlung-mobile-seed", exportedAt: "bad", unitPreference: "lbs", records: { exercises: [] } })).toThrow("exportedAt");
+    expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "wrong" })).toThrow("IronLog mobile seed");
+    expect(() => validateMobileSeedBundle({ schemaVersion: 1, bundleType: "ironlog-mobile-seed", exportedAt: "bad", unitPreference: "lbs", records: { exercises: [] } })).toThrow("exportedAt");
     expect(() => validateMobileSeedBundle({ ...seedBundle(), records: { ...seedBundle().records, setLogs: {} } })).toThrow("setLogs");
+  });
+
+  it("accepts legacy IronLung seed bundles and normalizes the brand name", () => {
+    const parsed = validateMobileSeedBundle({ ...seedBundle(), bundleType: "ironlung-mobile-seed" });
+
+    expect(parsed.bundleType).toBe("ironlog-mobile-seed");
+    expect(parsed.records.exercises).toHaveLength(1);
   });
 
   it("updates lastImportedAt after import", async () => {
@@ -163,7 +170,7 @@ describe("desktop seed import", () => {
     expect(storedSettings[0].lastImportedAt).toBe(seedBundle().exportedAt);
   });
 
-  it("accepts a full IronLung desktop JSON export", async () => {
+  it("accepts a full IronLog desktop JSON export", async () => {
     await clearAllMobileData();
     const parsed = parseMobileImportFile(JSON.stringify({
       version: 1,
@@ -183,7 +190,7 @@ describe("desktop seed import", () => {
       }
     }), settings());
 
-    expect(parsed.bundleType).toBe("ironlung-mobile-seed");
+    expect(parsed.bundleType).toBe("ironlog-mobile-seed");
     expect(parsed.records.sessions).toHaveLength(1);
     const result = await importMobileSeedBundle(parsed, settings());
     expect(result.workoutsCreated).toBe(1);
@@ -216,7 +223,7 @@ describe("desktop seed import", () => {
       }
     }), settings());
 
-    expect(parsed.bundleType).toBe("ironlung-mobile-seed");
+    expect(parsed.bundleType).toBe("ironlog-mobile-seed");
     expect(parsed.records.exercises[0].name).toBe("Bench Press");
     expect(parsed.records.sessions).toHaveLength(1);
     expect(parsed.records.setLogs).toHaveLength(2);
@@ -287,7 +294,7 @@ function seedBundle(): MobileSeedBundle {
   };
   return {
     schemaVersion: 1,
-    bundleType: "ironlung-mobile-seed",
+    bundleType: "ironlog-mobile-seed",
     exportedAt: "2026-05-06T12:00:00.000Z",
     appVersion: "0.1.0",
     unitPreference: "lbs",

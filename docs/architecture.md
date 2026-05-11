@@ -16,7 +16,7 @@ The desktop MVP stores app state locally and keeps the persistence boundary behi
 
 The shared analytics engine lives in `packages/core/src/analytics` so future desktop, mobile, and sync clients can reuse the same formulas. Muscle contribution presets live in `packages/core/src/muscle-contributions.ts`. UI-only aggregation remains in `apps/desktop/src/lib/analytics.ts` and is adapted through `apps/desktop/src/features/analytics/useTrainingAnalytics.ts`.
 
-Boostcamp support has two boundaries: flexible CSV/JSON normalization in `packages/core/src/importers`, and an optional personal Tauri command that calls a local `boostcamp-mcp` helper and passes the resulting JSON through the same dry-run importer. Credentials stay in the helper folder, not in IronLung app state.
+Boostcamp support has two boundaries: flexible CSV/JSON normalization in `packages/core/src/importers`, and an optional personal Tauri command that calls a local `boostcamp-mcp` helper and passes the resulting JSON through the same dry-run importer. Credentials stay in the helper folder, not in IronLog app state.
 
 Mobile/PWA import is file-based in the MVP. Desktop exports an analytics seed bundle with exercises, sessions, session exercises, set logs, PRs, templates, training blocks, and settings. The phone stores a read-only analyzer cache and can export a local diagnostic/cache backup. Workout logging is intentionally not exposed in the mobile analyzer yet.
 

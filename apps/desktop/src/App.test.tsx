@@ -2,11 +2,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { useIronLungStore } from "./lib/store";
+import { useIronLogStore } from "./lib/store";
 
-describe("IronLung desktop command center", () => {
+describe("IronLog desktop command center", () => {
   beforeEach(() => {
-    useIronLungStore.getState().clearAllData();
+    useIronLogStore.getState().clearAllData();
   });
 
   it("renders the six-page navigation and preserves photo safety copy", async () => {
@@ -32,7 +32,7 @@ describe("IronLung desktop command center", () => {
   });
 
   it("shows imported history in the training journal", async () => {
-    useIronLungStore.getState().importData({
+    useIronLogStore.getState().importData({
       unitPreference: "lbs",
       theme: "dark",
       trainingGoal: "general_fitness",
@@ -100,7 +100,7 @@ describe("IronLung desktop command center", () => {
   });
 
   it("keeps exercise search stable for imported exercises with missing metadata", async () => {
-    useIronLungStore.getState().importData({
+    useIronLogStore.getState().importData({
       unitPreference: "lbs",
       theme: "dark",
       trainingGoal: "general_fitness",
@@ -165,7 +165,7 @@ describe("IronLung desktop command center", () => {
   });
 
   it("keeps exercise search results visible after a second typed character", async () => {
-    useIronLungStore.getState().importData({
+    useIronLogStore.getState().importData({
       unitPreference: "lbs",
       theme: "dark",
       trainingGoal: "general_fitness",
@@ -201,7 +201,7 @@ describe("IronLung desktop command center", () => {
   });
 
   it("does not blank exercises search when matching an exercise with invalid imported PR data", async () => {
-    useIronLungStore.getState().importData({
+    useIronLogStore.getState().importData({
       unitPreference: "lbs",
       theme: "dark",
       trainingGoal: "general_fitness",

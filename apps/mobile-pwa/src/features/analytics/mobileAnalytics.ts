@@ -11,7 +11,7 @@ import {
   type PersonalRecord,
   type PRImportance,
   type TrainingIntelligence
-} from "@ironlung/core";
+} from "@ironlog/core";
 import type { MobileSnapshot } from "../../data/mobileRepository";
 
 export type MobileRangePreset = DateRangePreset | "block";

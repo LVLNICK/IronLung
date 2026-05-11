@@ -1,4 +1,4 @@
-"""Local approximate inference entrypoint for IronLung progress photos.
+"""Local approximate inference entrypoint for IronLog progress photos.
 
 This mirrors the desktop local-vision-v1 contract. It estimates photo quality
 and a user-relative visual progress band. It does not compute attractiveness,
@@ -16,7 +16,7 @@ from PIL import Image, ImageFilter
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run future IronLung body progress photo inference.")
+    parser = argparse.ArgumentParser(description="Run future IronLog body progress photo inference.")
     parser.add_argument("--model", type=Path, required=False, help="Future model artifact path.")
     parser.add_argument("--image", type=Path, required=True, help="Local image path.")
     parser.add_argument("--age", type=float, required=False, help="Optional private age context.")

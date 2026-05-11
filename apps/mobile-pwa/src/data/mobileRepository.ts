@@ -1,4 +1,4 @@
-import { detectPersonalRecords, inferExerciseTargetProfile, type SetType } from "@ironlung/core";
+import { detectPersonalRecords, inferExerciseTargetProfile, type SetType } from "@ironlog/core";
 import { clearStore, getAllFromStore, putInStore } from "./mobileDb";
 import { nowIso, type MobileExercise, type MobileOperationLogEntry, type MobilePersonalRecord, type MobileRecords, type MobileSetLog, type MobileSettings, type MobileWorkoutSession, type MobileWorkoutSessionExercise } from "./mobileSyncTypes";
 import { createId } from "../lib/uuid";
@@ -31,7 +31,7 @@ export async function createDefaultSettings(): Promise<MobileSettings> {
     id: "settings",
     unitPreference: "lbs",
     deviceId: createId(),
-    deviceName: navigator.userAgent.includes("iPhone") ? "iPhone" : "IronLung Phone",
+    deviceName: navigator.userAgent.includes("iPhone") ? "iPhone" : "IronLog Phone",
     createdAt: now,
     updatedAt: now,
     lastExportedAt: null,
@@ -108,7 +108,7 @@ export async function ensureActiveMobileWorkout(settings: MobileSettings): Promi
     name: "Mobile Workout",
     startedAt: now,
     finishedAt: null,
-    notes: "Logged from IronLung mobile.",
+    notes: "Logged from IronLog mobile.",
     bodyweight: null,
     createdAt: now,
     updatedAt: now,

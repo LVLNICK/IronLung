@@ -27,10 +27,10 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
     const bundle = createMobileExportBundle(pickRecords(snapshot), snapshot.settings, snapshot.operationLog);
     const text = JSON.stringify(bundle, null, 2);
     const blob = new Blob([text], { type: "application/json" });
-    const file = new File([blob], `ironlung-analyzer-cache-${new Date().toISOString().slice(0, 10)}.ironlung-mobile.json`, { type: "application/json" });
+    const file = new File([blob], `ironlog-analyzer-cache-${new Date().toISOString().slice(0, 10)}.ironlog-mobile.json`, { type: "application/json" });
 
     if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: "IronLung analyzer cache backup" });
+      await navigator.share({ files: [file], title: "IronLog analyzer cache backup" });
     } else {
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -41,7 +41,7 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
 
     await saveSettings({ ...snapshot.settings, lastExportedAt: bundle.exportedAt });
     await refresh();
-    setStatus("Analyzer cache backup exported. IronLung did not upload it anywhere.");
+    setStatus("Analyzer cache backup exported. IronLog did not upload it anywhere.");
   }
 
   async function importSeed(file?: File) {
@@ -92,7 +92,7 @@ export function SyncPage({ snapshot, refresh, status, setStatus }: SyncPageProps
           <MobileButton variant="ghost" onClick={() => inputRef.current?.click()} className="flex items-center justify-center gap-2"><FileUp className="h-4 w-4" />Import desktop data</MobileButton>
           <MobileButton variant="ghost" onClick={exportCacheBackup} className="flex items-center justify-center gap-2"><FileDown className="h-4 w-4" />Export cache backup</MobileButton>
           <MobileButton variant="danger" onClick={clearCache} className="flex items-center justify-center gap-2"><Trash2 className="h-4 w-4" />Clear analyzer cache</MobileButton>
-          <input ref={inputRef} className="hidden" type="file" accept=".json,.ironlung-mobile-seed.json,application/json" onChange={(event) => void importSeed(event.target.files?.[0])} />
+          <input ref={inputRef} className="hidden" type="file" accept=".json,.ironlog-mobile-seed.json,.ironlung-mobile-seed.json,application/json" onChange={(event) => void importSeed(event.target.files?.[0])} />
         </div>
       </MobileCard>
 

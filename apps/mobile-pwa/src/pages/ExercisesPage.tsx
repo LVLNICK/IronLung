@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, Dumbbell, Filter, LibraryBig, Plus, Search, Trophy } from "lucide-react";
-import { estimatedOneRepMax, resolveMuscleContributions } from "@ironlung/core";
+import { estimatedOneRepMax, resolveMuscleContributions } from "@ironlog/core";
 import { saveMobileExercise, type MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import { EmptyMobileState, GlassCard, IconTile, ListRow, MetricChip, MobileGhostButton, MobileHeader, MobilePage, MobilePrimaryButton, MobileSelect, SectionTitle, StatusPill } from "../components/MobilePrimitives";

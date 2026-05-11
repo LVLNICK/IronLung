@@ -1,6 +1,6 @@
-# IronLung Desktop Product Spec
+# IronLog Desktop Product Spec
 
-IronLung Desktop is a premium, local-first desktop fitness tracker for self-directed lifters. Users create exercises, build their own workout templates, log sets quickly, track progress, and optionally analyze local progress photos.
+IronLog Desktop is a premium, local-first desktop fitness tracker for self-directed lifters. Users create exercises, build their own workout templates, log sets quickly, track progress, and optionally analyze local progress photos.
 
 ## Non-goals
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { IronLungStateData } from "../../lib/store";
+import type { IronLogStateData } from "../../lib/store";
+import { parseMobileExportBundle } from "./mobileBundleImporter";
 import { createMobileSeedBundle, mergeMobileBundle, previewMobileImport } from "./mobileMerge";
 import type { MobileExportBundle } from "./mobileSyncTypes";
 
@@ -7,7 +8,7 @@ describe("mobile PWA sync merge", () => {
   it("exports a desktop seed bundle without workout history", () => {
     const seed = createMobileSeedBundle(baseState());
 
-    expect(seed.bundleType).toBe("ironlung-mobile-seed");
+    expect(seed.bundleType).toBe("ironlog-mobile-seed");
     expect(seed.records.exercises).toHaveLength(1);
     expect(seed.records.templates).toHaveLength(1);
     expect(seed.summary.exercises).toBe(1);
@@ -35,9 +36,16 @@ describe("mobile PWA sync merge", () => {
     expect(twice.setLogs.filter((set) => set.id === "mobile-set")).toHaveLength(1);
     expect(mergeMobileBundle(mobileBundle(), once).preview.recordsToSkip).toBeGreaterThan(0);
   });
+
+  it("accepts legacy IronLung mobile export bundles and normalizes the brand name", () => {
+    const parsed = parseMobileExportBundle(JSON.stringify({ ...mobileBundle(), bundleType: "ironlung-mobile-export" }));
+
+    expect(parsed.bundleType).toBe("ironlog-mobile-export");
+    expect(parsed.records.setLogs).toHaveLength(1);
+  });
 });
 
-function baseState(): IronLungStateData {
+function baseState(): IronLogStateData {
   return {
     unitPreference: "lbs",
     theme: "dark",
@@ -73,7 +81,7 @@ function mobileBundle(): MobileExportBundle {
   };
   return {
     schemaVersion: 1,
-    bundleType: "ironlung-mobile-export",
+    bundleType: "ironlog-mobile-export",
     deviceId: "phone-1",
     deviceName: "Nick iPhone",
     exportedAt: "2026-05-06T22:00:00.000Z",

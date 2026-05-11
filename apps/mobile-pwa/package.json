@@ -1,5 +1,5 @@
 {
-  "name": "@ironlung/mobile-pwa",
+  "name": "@ironlog/mobile-pwa",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@ironlung/core": "0.1.0",
+    "@ironlog/core": "0.1.0",
     "@vitejs/plugin-react": "^5.1.1",
     "lucide-react": "^0.468.0",
     "react": "^19.2.0",

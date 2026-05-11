@@ -1,10 +1,10 @@
-# IronLung Analyzer User Flow
+# IronLog Analyzer User Flow
 
 ## Setup
 
 1. Run the desktop app.
 2. Export a mobile analytics seed from `Data & Settings`.
-3. Import the seed into IronLung Analyzer on the phone.
+3. Import the seed into IronLog Analyzer on the phone.
 4. Install the PWA from the phone browser when available.
 
 ## Phone Use

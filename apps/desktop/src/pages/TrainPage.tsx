@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, Copy, Dumbbell, Flame, Plus, Search, Trash2 } from "lucide-react";
-import { exerciseSessionVolume, prLabel, setVolume, type PersonalRecord, type SetType, type WorkoutSession } from "@ironlung/core";
+import { exerciseSessionVolume, prLabel, setVolume, type PersonalRecord, type SetType, type WorkoutSession } from "@ironlog/core";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, IconButton, Input, Select, fieldClass } from "../components/forms/controls";
 import { ScreenShell } from "../components/layout/ScreenShell";
@@ -8,13 +8,13 @@ import { EmptyState } from "../components/empty-states/EmptyState";
 import { AnalyticsTable } from "../components/tables/AnalyticsTable";
 import { ConfirmModal } from "../components/modals/ConfirmModal";
 import { compactNumber, countNumber, dateTime, shortDate } from "../lib/format";
-import { oneRmForSet, selectOpenSession, useIronLungStore } from "../lib/store";
+import { oneRmForSet, selectOpenSession, useIronLogStore } from "../lib/store";
 
 type TrainTab = "Start Workout" | "Active Workout" | "Training Journal" | "Templates";
 
 export function TrainPage() {
   const [tab, setTab] = useState<TrainTab>("Start Workout");
-  const openSession = useIronLungStore(selectOpenSession);
+  const openSession = useIronLogStore(selectOpenSession);
 
   return (
     <ScreenShell title="Train" subtitle="Start workouts, log fast, review your training journal, and manage user-created templates.">
@@ -32,7 +32,7 @@ export function TrainPage() {
 }
 
 function StartWorkout({ onActive }: { onActive: () => void }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const openSession = selectOpenSession(state);
   const recentExercises = [...state.sessionExercises].reverse().map((row) => state.exercises.find((exercise) => exercise.id === row.exerciseId)).filter(Boolean).slice(0, 8);
 
@@ -56,7 +56,7 @@ function StartWorkout({ onActive }: { onActive: () => void }) {
               <div className="mt-0.5 text-xs text-[rgba(255,255,255,0.5)]">{state.templateExercises.filter((row) => row.workoutTemplateId === template.id).length} exercises</div>
             </button>
           ))}
-          {!state.templates.length && <EmptyState icon={Dumbbell} title="No templates yet" body="Create your own templates. No premade plans exist in IronLung." />}
+          {!state.templates.length && <EmptyState icon={Dumbbell} title="No templates yet" body="Create your own templates. No premade plans exist in IronLog." />}
         </div>
       </Card>
       <Card>
@@ -75,7 +75,7 @@ function StartWorkout({ onActive }: { onActive: () => void }) {
 }
 
 function ActiveWorkout({ session }: { session: WorkoutSession }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [exerciseId, setExerciseId] = useState("");
   const [notes, setNotes] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -130,7 +130,7 @@ function ActiveWorkout({ session }: { session: WorkoutSession }) {
 }
 
 function LoggerExercise({ session, sessionExerciseId, exerciseId }: { session: WorkoutSession; sessionExerciseId: string; exerciseId: string }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const exercise = state.exercises.find((item) => item.id === exerciseId)!;
   const sets = state.setLogs.filter((set) => set.workoutSessionExerciseId === sessionExerciseId);
   const previous = findPreviousPerformance(exerciseId, session.id);
@@ -261,7 +261,7 @@ function RestTimer({ seconds }: { seconds: number }) {
 }
 
 function TrainingJournal({ onEdit }: { onEdit: () => void }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [query, setQuery] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [status, setStatus] = useState("");
@@ -307,7 +307,7 @@ function TrainingJournal({ onEdit }: { onEdit: () => void }) {
 }
 
 function Templates() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [name, setName] = useState("");
   const [selectedId, setSelectedId] = useState(state.templates[0]?.id ?? "");
   const [exerciseId, setExerciseId] = useState("");
@@ -350,7 +350,7 @@ function Templates() {
 }
 
 function findPreviousPerformance(exerciseId: string, currentSessionId: string) {
-  const state = useIronLungStore.getState();
+  const state = useIronLogStore.getState();
   const previousRow = [...state.sessionExercises].reverse().find((row) => row.exerciseId === exerciseId && row.workoutSessionId !== currentSessionId);
   if (!previousRow) return "";
   const sets = state.setLogs.filter((set) => set.workoutSessionExerciseId === previousRow.id);

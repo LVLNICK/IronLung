@@ -11,7 +11,7 @@ import {
   type ImportUnitPreference,
   type NormalizedWorkoutImport,
   type TrainingGoal
-} from "@ironlung/core";
+} from "@ironlog/core";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, Input, Select, TextArea } from "../components/forms/controls";
 import { ScreenShell } from "../components/layout/ScreenShell";
@@ -21,13 +21,13 @@ import { ConfirmModal } from "../components/modals/ConfirmModal";
 import { countNumber, shortDate } from "../lib/format";
 import { refreshBoostcampFromLocalHelper } from "../lib/boostcampSync";
 import { createExport, validateImportPayload } from "../lib/importExport";
-import { type IronLungStateData, useIronLungStore } from "../lib/store";
+import { type IronLogStateData, useIronLogStore } from "../lib/store";
 import { parseMobileExportBundle } from "../features/mobile-sync/mobileBundleImporter";
 import { createMobileSeedBundle, mergeMobileBundle, previewMobileImport } from "../features/mobile-sync/mobileMerge";
 import type { MobileExportBundle, MobileImportPreview } from "../features/mobile-sync/mobileSyncTypes";
 
 export function DataSettingsPage() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [status, setStatus] = useState("");
   const [confirmAction, setConfirmAction] = useState<"photos" | "reset" | null>(null);
   const exportJson = useMemo(() => JSON.stringify(createExport(pickStateData(state)), null, 2), [state]);
@@ -41,14 +41,14 @@ export function DataSettingsPage() {
     const blob = new Blob([exportJson], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ironlung-export-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `ironlog-export-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
     setStatus("Export downloaded.");
   }
 
   return (
-    <ScreenShell title="Data & Settings" subtitle="Preferences, Boostcamp import, IronLung JSON backup, privacy controls, and local data safety.">
+    <ScreenShell title="Data & Settings" subtitle="Preferences, Boostcamp import, IronLog JSON backup, privacy controls, and local data safety.">
       <div className="grid grid-cols-5 gap-4">
         <MetricCard label="Exercises" value={String(state.exercises.length)} hint="local" />
         <MetricCard label="Workouts" value={String(state.sessions.length)} hint="local" />
@@ -96,8 +96,8 @@ export function DataSettingsPage() {
         <Card>
           <SectionHeader title="Privacy" icon={Lock} />
           <div className="space-y-3 text-sm leading-relaxed text-obsidian-muted">
-            <p>IronLung Desktop does not require an account, does not upload progress photos, and does not add analytics tracking.</p>
-            <p>Imported Boostcamp and IronLung files are parsed locally. Original import files are not stored unless you choose to keep them elsewhere.</p>
+            <p>IronLog Desktop does not require an account, does not upload progress photos, and does not add analytics tracking.</p>
+            <p>Imported Boostcamp and IronLog files are parsed locally. Original import files are not stored unless you choose to keep them elsewhere.</p>
             <p>Future sync is intentionally left as a documented roadmap item, not a hidden service.</p>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -114,10 +114,10 @@ export function DataSettingsPage() {
       <MobileSyncPanel />
 
       <div className="grid grid-cols-2 gap-5">
-        <IronLungImportPanel onStatus={setStatus} />
+        <IronLogImportPanel onStatus={setStatus} />
         <Card>
           <SectionHeader title="Export" icon={FolderDown} action={<div className="flex gap-2"><Button variant="ghost" icon={Download} onClick={downloadExport}>Download</Button><Button icon={FolderDown} onClick={copyExport}>Copy JSON</Button></div>} />
-          <TextArea value={exportJson} onChange={() => undefined} placeholder="IronLung JSON export" />
+          <TextArea value={exportJson} onChange={() => undefined} placeholder="IronLog JSON export" />
           <div className="mt-4 grid grid-cols-4 gap-3">
             <ExportStat label="Workouts" value={state.sessions.length} />
             <ExportStat label="PRs" value={state.personalRecords.length} />
@@ -139,7 +139,7 @@ export function DataSettingsPage() {
       {confirmAction === "photos" && (
         <ConfirmModal
           title="Delete all photo data?"
-          body="This removes local progress photos and analysis outputs from IronLung storage. Workout logs stay intact."
+          body="This removes local progress photos and analysis outputs from IronLog storage. Workout logs stay intact."
           confirmLabel="Delete photos"
           onCancel={() => setConfirmAction(null)}
           onConfirm={() => { state.deleteAllPhotoData(); setConfirmAction(null); }}
@@ -148,7 +148,7 @@ export function DataSettingsPage() {
       {confirmAction === "reset" && (
         <ConfirmModal
           title="Reset all local data?"
-          body="This removes local workouts, exercises, templates, PRs, photos, analyses, goals, and blocks from IronLung storage."
+          body="This removes local workouts, exercises, templates, PRs, photos, analyses, goals, and blocks from IronLog storage."
           confirmLabel="Reset everything"
           onCancel={() => setConfirmAction(null)}
           onConfirm={() => { state.clearAllData(); setConfirmAction(null); }}
@@ -159,7 +159,7 @@ export function DataSettingsPage() {
 }
 
 function TrainingBlocksPanel() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [name, setName] = useState("");
   const [goal, setGoal] = useState<TrainingGoal>(state.trainingGoal);
   const [notes, setNotes] = useState("");
@@ -228,7 +228,7 @@ function TrainingBlocksPanel() {
 }
 
 function BoostcampImportPanel() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [unit, setUnit] = useState<ImportUnitPreference>("auto");
   const [helperPath, setHelperPath] = useState("D:\\boostcamp-mcp");
   const [exportDir, setExportDir] = useState("D:\\IronLung");
@@ -304,7 +304,7 @@ function BoostcampImportPanel() {
     const result = state.importNormalizedWorkouts(normalized, mappings, unit);
     setSummary(result);
     setStatus("Import finished.");
-    const current = useIronLungStore.getState();
+    const current = useIronLogStore.getState();
     const existingHashes = current.setLogs.map((setLog) => setLog.importHash).filter((hash): hash is string => Boolean(hash));
     setPreview(buildImportPreview(normalized, current.exercises, existingHashes));
   }
@@ -312,7 +312,7 @@ function BoostcampImportPanel() {
   return (
     <Card>
       <SectionHeader title="Boostcamp Import" icon={FolderUp} action={<div className="flex gap-2"><Select value={unit} onChange={(value) => setUnit(value as ImportUnitPreference)}><option value="auto">Auto unit</option><option value="lbs">lbs</option><option value="kg">kg</option></Select><label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg bg-electric px-4 text-sm font-bold text-white shadow-[0_0_24px_rgba(59,130,246,0.35)] transition-colors hover:bg-blue-500"><FolderUp className="h-4 w-4" />Upload CSV/JSON<input className="hidden" type="file" accept=".csv,.json,.txt,application/json,text/csv,text/plain" onChange={(event) => handleFile(event.target.files?.[0])} /></label></div>} />
-      <p className="max-w-4xl text-sm leading-relaxed text-obsidian-muted">Import user-provided Boostcamp files, or refresh through your local authenticated `boostcamp-mcp` helper. IronLung does not store your Boostcamp password, does not upload imported data, and still runs a dry-run preview before writing anything.</p>
+      <p className="max-w-4xl text-sm leading-relaxed text-obsidian-muted">Import user-provided Boostcamp files, or refresh through your local authenticated `boostcamp-mcp` helper. IronLog does not store your Boostcamp password, does not upload imported data, and still runs a dry-run preview before writing anything.</p>
       <div className="mt-5 grid grid-cols-[1.15fr_1.15fr_150px_auto] gap-3 rounded-xl border border-obsidian bg-obsidian-700 p-3">
         <Input value={helperPath} onChange={setHelperPath} placeholder="Boostcamp helper folder" />
         <Input value={exportDir} onChange={setExportDir} placeholder="Export folder" />
@@ -395,7 +395,7 @@ function BoostcampImportPanel() {
 }
 
 function MobileSyncPanel() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [status, setStatus] = useState("");
   const [preview, setPreview] = useState<MobileImportPreview | null>(null);
   const [bundle, setBundle] = useState<MobileExportBundle | null>(null);
@@ -405,7 +405,7 @@ function MobileSyncPanel() {
     const blob = new Blob([JSON.stringify(seed, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `ironlung-mobile-seed-${new Date().toISOString().slice(0, 10)}.ironlung-mobile-seed.json`;
+    link.download = `ironlog-mobile-seed-${new Date().toISOString().slice(0, 10)}.ironlog-mobile-seed.json`;
     link.click();
     URL.revokeObjectURL(link.href);
     setStatus("Mobile seed bundle exported. Import it on your phone from the Sync tab.");
@@ -427,7 +427,7 @@ function MobileSyncPanel() {
 
   function mergePhoneData() {
     if (!bundle) return;
-    const result = mergeMobileBundle(bundle, pickStateData(useIronLungStore.getState()));
+    const result = mergeMobileBundle(bundle, pickStateData(useIronLogStore.getState()));
     state.importData(result.data);
     setPreview(result.preview);
     setStatus("Mobile bundle merged. PRs and analytics were recalculated.");
@@ -448,7 +448,7 @@ function MobileSyncPanel() {
             <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-obsidian-strong bg-obsidian-700 px-4 text-sm font-semibold text-obsidian-muted transition-colors hover:border-electric hover:text-white">
               <FolderUp className="h-4 w-4" />
               Import mobile export
-              <input className="hidden" type="file" accept=".json,.ironlung-mobile.json,application/json" onChange={(event) => handleMobileBundle(event.target.files?.[0])} />
+              <input className="hidden" type="file" accept=".json,.ironlog-mobile.json,.ironlung-mobile.json,application/json" onChange={(event) => handleMobileBundle(event.target.files?.[0])} />
             </label>
             <Button disabled={!bundle} icon={CheckCircle2} onClick={mergePhoneData}>Merge mobile data</Button>
           </div>
@@ -473,7 +473,7 @@ function MobileSyncPanel() {
               {preview.warnings.length > 0 && <div className="text-xs leading-relaxed text-warn">{preview.warnings.join(" ")}</div>}
             </div>
           ) : (
-            <EmptyState icon={Smartphone} title="No phone export selected" body="Upload a .ironlung-mobile.json file from the PWA Sync tab to preview a local merge." />
+            <EmptyState icon={Smartphone} title="No phone export selected" body="Upload a .ironlog-mobile.json file from the PWA Sync tab to preview a local merge. Legacy .ironlung-mobile.json exports are still accepted." />
           )}
         </div>
       </div>
@@ -481,14 +481,14 @@ function MobileSyncPanel() {
   );
 }
 
-function IronLungImportPanel({ onStatus }: { onStatus: (value: string) => void }) {
-  const state = useIronLungStore();
+function IronLogImportPanel({ onStatus }: { onStatus: (value: string) => void }) {
+  const state = useIronLogStore();
   const [importText, setImportText] = useState("");
 
   function importJson(raw: string) {
     try {
       state.importData(validateImportPayload(raw));
-      onStatus("IronLung JSON import complete.");
+      onStatus("IronLog JSON import complete.");
     } catch (error) {
       onStatus(error instanceof Error ? error.message : "Import failed.");
     }
@@ -501,8 +501,8 @@ function IronLungImportPanel({ onStatus }: { onStatus: (value: string) => void }
 
   return (
     <Card>
-      <SectionHeader title="IronLung JSON Import" icon={FolderUp} />
-      <TextArea placeholder="Paste IronLung JSON export" value={importText} onChange={setImportText} />
+      <SectionHeader title="IronLog JSON Import" icon={FolderUp} />
+      <TextArea placeholder="Paste IronLog JSON export" value={importText} onChange={setImportText} />
       <div className="mt-3 flex flex-wrap gap-2">
         <Button icon={FolderUp} onClick={() => importJson(importText)}>Import pasted JSON</Button>
         <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-obsidian-strong bg-obsidian-700 px-4 text-sm font-medium text-obsidian-muted transition-colors hover:border-electric hover:text-white">
@@ -555,7 +555,7 @@ function goalLabel(goal: TrainingGoal) {
   return labels[goal];
 }
 
-function pickStateData(state: ReturnType<typeof useIronLungStore.getState>): IronLungStateData {
+function pickStateData(state: ReturnType<typeof useIronLogStore.getState>): IronLogStateData {
   return {
     unitPreference: state.unitPreference,
     theme: state.theme,

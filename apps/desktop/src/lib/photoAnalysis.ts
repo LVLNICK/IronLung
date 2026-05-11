@@ -1,4 +1,4 @@
-import { scoreBodyProgressFromFeatures, type BodyAnalysisResult, type PhotoQualityFeatures, type ProgressPhoto } from "@ironlung/core";
+import { scoreBodyProgressFromFeatures, type BodyAnalysisResult, type PhotoQualityFeatures, type ProgressPhoto } from "@ironlog/core";
 
 export async function analyzeProgressPhotoLocally(photo: ProgressPhoto, consentGiven: boolean): Promise<BodyAnalysisResult> {
   const features = await extractPhotoQualityFeatures(photo.imagePath);

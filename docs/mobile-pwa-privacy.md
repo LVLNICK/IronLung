@@ -1,12 +1,12 @@
-# IronLung Analyzer Privacy
+# IronLog Analyzer Privacy
 
-IronLung Analyzer is local-first. Imported desktop data is stored in the phone browser's local storage layer.
+IronLog Analyzer is local-first. Imported desktop data is stored in the phone browser's local storage layer.
 
 ## Guarantees
 
 - No account is required.
 - No cloud sync is implemented.
-- No workout data, photos, or analytics are uploaded by IronLung.
+- No workout data, photos, or analytics are uploaded by IronLog.
 - No analytics tracking is added.
 - Import files are parsed locally in the browser.
 - Cache backup files are created only when the user taps export.
@@ -14,7 +14,7 @@ IronLung Analyzer is local-first. Imported desktop data is stored in the phone b
 
 ## Sensitive Files
 
-`.ironlung-mobile-seed.json` and analyzer cache backups can contain exercise history, set logs, PRs, notes, bodyweight values, training blocks, and device metadata. Treat these files like private health-adjacent records.
+`.ironlog-mobile-seed.json` and analyzer cache backups can contain exercise history, set logs, PRs, notes, bodyweight values, training blocks, and device metadata. Treat these files like private health-adjacent records.
 
 ## Deletion
 

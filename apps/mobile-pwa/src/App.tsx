@@ -49,7 +49,7 @@ export function App() {
     return (
       <main className="grid min-h-screen place-items-center bg-ink p-6 text-white">
         <MobileCard className="w-full max-w-sm text-center">
-          <div className="text-lg font-black">Loading IronLung Analyzer...</div>
+          <div className="text-lg font-black">Loading IronLog Analyzer...</div>
           <p className="mt-2 text-sm leading-relaxed text-white/60">{status}</p>
           {loadError && (
             <div className="mt-4 space-y-3">

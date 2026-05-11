@@ -6,7 +6,7 @@ export type Primitive = string | number | null;
 export type Row = Record<string, Primitive>;
 export type Snapshot = Record<TableName, Row[]>;
 
-export interface IronLungDatabase {
+export interface IronLogDatabase {
   db: Database;
   exportBytes(): Uint8Array;
   snapshot(): Snapshot;
@@ -17,7 +17,7 @@ export interface IronLungDatabase {
 
 let sqlPromise: Promise<SqlJsStatic> | null = null;
 
-export async function createIronLungDatabase(bytes?: Uint8Array): Promise<IronLungDatabase> {
+export async function createIronLogDatabase(bytes?: Uint8Array): Promise<IronLogDatabase> {
   sqlPromise ??= initSqlJs({
     locateFile: (file) => {
       if (typeof window !== "undefined") return `https://sql.js.org/dist/${file}`;

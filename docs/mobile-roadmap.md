@@ -1,6 +1,6 @@
 # Mobile Roadmap
 
-IronLung is structured so a future mobile app can reuse the same product concepts and logic.
+IronLog is structured so a future mobile app can reuse the same product concepts and logic.
 
 - Keep `packages/core` shared for types, validation schemas, importers, muscle contribution analytics, training goals, training blocks, PR calculations, and fitness math.
 - Keep schema concepts aligned with `packages/db`.

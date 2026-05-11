@@ -1,6 +1,6 @@
 # Muscle Contribution Model
 
-IronLung uses weighted muscle contributions so analytics do not duplicate full set volume across every listed muscle.
+IronLog uses weighted muscle contributions so analytics do not duplicate full set volume across every listed muscle.
 
 ## Formula
 
@@ -33,7 +33,7 @@ This keeps old imported data compatible.
 
 ## Validation Warnings
 
-Custom contribution totals are normalized to 100%. If a custom exercise totals far above or below 100%, IronLung warns the user in exercise detail instead of silently implying exact precision. Zero or negative contribution rows are ignored.
+Custom contribution totals are normalized to 100%. If a custom exercise totals far above or below 100%, IronLog warns the user in exercise detail instead of silently implying exact precision. Zero or negative contribution rows are ignored.
 
 Preset coverage currently includes common bench/chest press, incline press, rows, pulldowns/chinups, squats/leg press, deadlifts/RDLs, shoulder presses, lateral raises, curls, and triceps isolation patterns.
 

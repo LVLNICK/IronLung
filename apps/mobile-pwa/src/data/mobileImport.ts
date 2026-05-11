@@ -9,7 +9,7 @@ import {
   type PRType,
   type SetLog,
   type UnitPreference
-} from "@ironlung/core";
+} from "@ironlog/core";
 import type {
   MobileExercise,
   MobileImportSummary,
@@ -39,13 +39,13 @@ export function parseMobileImportFile(raw: string, settings: MobileSettings): Mo
   if (isMobileSeedBundle(parsed)) return validateMobileSeedBundle(parsed);
   if (isDesktopStateExport(parsed)) return desktopStateToSeedBundle(parsed, settings);
   if (looksLikeBoostcampTrainingHistory(parsed)) return boostcampHistoryToSeedBundle(raw, settings);
-  throw new Error("Unsupported file. Import an IronLung mobile seed, IronLung desktop JSON export, or raw Boostcamp training-history JSON.");
+  throw new Error("Unsupported file. Import an IronLog mobile seed, IronLog desktop JSON export, or raw Boostcamp training-history JSON.");
 }
 
 export function validateMobileSeedBundle(value: unknown): MobileSeedBundle {
   if (!value || typeof value !== "object") throw new Error("Invalid mobile seed file.");
-  const bundle = value as MobileSeedBundle;
-  if (bundle.schemaVersion !== 1 || bundle.bundleType !== "ironlung-mobile-seed") throw new Error("This is not an IronLung mobile seed bundle.");
+  const bundle = value as MobileSeedBundle & { bundleType?: string };
+  if (bundle.schemaVersion !== 1 || !isSupportedSeedBundleType(bundle.bundleType)) throw new Error("This is not an IronLog mobile seed bundle.");
   if (typeof bundle.exportedAt !== "string" || Number.isNaN(new Date(bundle.exportedAt).getTime())) throw new Error("Seed bundle exportedAt is invalid.");
   if (bundle.unitPreference !== "lbs" && bundle.unitPreference !== "kg") throw new Error("Seed bundle unit preference is invalid.");
   if (!bundle.records || !Array.isArray(bundle.records.exercises)) throw new Error("Seed bundle records are missing.");
@@ -53,7 +53,7 @@ export function validateMobileSeedBundle(value: unknown): MobileSeedBundle {
   for (const key of optionalArrays) {
     if (bundle.records[key] !== undefined && !Array.isArray(bundle.records[key])) throw new Error(`Seed bundle ${key} records are invalid.`);
   }
-  return bundle;
+  return { ...bundle, bundleType: "ironlog-mobile-seed" };
 }
 
 export async function importMobileSeedBundle(bundle: MobileSeedBundle, settings: MobileSettings): Promise<MobileImportSummary> {
@@ -201,7 +201,11 @@ function normalizeName(value: string) {
 }
 
 function isMobileSeedBundle(value: unknown): value is MobileSeedBundle {
-  return Boolean(value && typeof value === "object" && (value as { bundleType?: unknown }).bundleType === "ironlung-mobile-seed");
+  return Boolean(value && typeof value === "object" && isSupportedSeedBundleType((value as { bundleType?: unknown }).bundleType));
+}
+
+function isSupportedSeedBundleType(value: unknown): value is "ironlog-mobile-seed" | "ironlung-mobile-seed" {
+  return value === "ironlog-mobile-seed" || value === "ironlung-mobile-seed";
 }
 
 function isDesktopStateExport(value: unknown): value is DesktopStateExport {
@@ -227,7 +231,7 @@ function desktopStateToSeedBundle(exportFile: DesktopStateExport, settings: Mobi
   const data = exportFile.data;
   return validateMobileSeedBundle({
     schemaVersion: 1,
-    bundleType: "ironlung-mobile-seed",
+    bundleType: "ironlog-mobile-seed",
     exportedAt,
     appVersion: "0.1.0",
     unitPreference: data.unitPreference === "kg" ? "kg" : settings.unitPreference,
@@ -257,7 +261,7 @@ function boostcampHistoryToSeedBundle(raw: string, settings: MobileSettings): Mo
   const records = normalizedToMobileRecords(normalized, settings.unitPreference, exportedAt);
   return validateMobileSeedBundle({
     schemaVersion: 1,
-    bundleType: "ironlung-mobile-seed",
+    bundleType: "ironlog-mobile-seed",
     exportedAt,
     appVersion: "0.1.0",
     unitPreference: settings.unitPreference,

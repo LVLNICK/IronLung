@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createExport, validateImportPayload } from "./importExport";
-import type { IronLungStateData } from "./store";
+import type { IronLogStateData } from "./store";
 
-describe("IronLung JSON import/export", () => {
+describe("IronLog JSON import/export", () => {
   it("round-trips settings, training blocks, workouts, PRs, and photo metadata", () => {
-    const data: IronLungStateData = {
+    const data: IronLogStateData = {
       unitPreference: "lbs",
       theme: "dark",
       trainingGoal: "powerbuilding",

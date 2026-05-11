@@ -13,7 +13,7 @@ export function AppShell({ screen, onNavigate, children }: { screen: AppScreen; 
               <Dumbbell className="h-5 w-5 text-white" />
             </div>
             <div>
-              <div className="text-lg font-bold tracking-tight text-white">IronLung</div>
+              <div className="text-lg font-bold tracking-tight text-white">IronLog</div>
               <div className="text-xs font-semibold uppercase tracking-widest text-obsidian-muted">Local-First Fitness</div>
             </div>
           </div>

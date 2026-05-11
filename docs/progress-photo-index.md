@@ -1,6 +1,6 @@
 # Progress Photo Index
 
-Progress Photo Index is the privacy-safe name for IronLung's local progress-photo metric.
+Progress Photo Index is the privacy-safe name for IronLog's local progress-photo metric.
 
 It is:
 

@@ -16,7 +16,7 @@ export function createMobileExportBundle(records: MobileRecords, settings: Mobil
   const lastDate = dates[dates.length - 1];
   return {
     schemaVersion: 1,
-    bundleType: "ironlung-mobile-export",
+    bundleType: "ironlog-mobile-export",
     deviceId: settings.deviceId,
     deviceName: settings.deviceName,
     exportedAt,
@@ -38,8 +38,12 @@ export function createMobileExportBundle(records: MobileRecords, settings: Mobil
 
 export function validateMobileExportBundle(value: unknown): MobileExportBundle {
   if (!value || typeof value !== "object") throw new Error("Invalid mobile export file.");
-  const bundle = value as MobileExportBundle;
-  if (bundle.schemaVersion !== 1 || bundle.bundleType !== "ironlung-mobile-export") throw new Error("This is not an IronLung mobile export.");
+  const bundle = value as MobileExportBundle & { bundleType?: string };
+  if (bundle.schemaVersion !== 1 || !isSupportedExportBundleType(bundle.bundleType)) throw new Error("This is not an IronLog mobile export.");
   if (!bundle.records || !Array.isArray(bundle.records.sessions) || !Array.isArray(bundle.records.setLogs)) throw new Error("Mobile export records are missing.");
-  return bundle;
+  return { ...bundle, bundleType: "ironlog-mobile-export" };
+}
+
+function isSupportedExportBundleType(value: unknown): value is "ironlog-mobile-export" | "ironlung-mobile-export" {
+  return value === "ironlog-mobile-export" || value === "ironlung-mobile-export";
 }

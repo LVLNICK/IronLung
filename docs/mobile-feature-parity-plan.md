@@ -1,6 +1,6 @@
-# IronLung Mobile Feature Parity Plan
+# IronLog Mobile Feature Parity Plan
 
-IronLung mobile is moving from analyzer-first companion to a mobile version of the same product concepts as desktop, using the premium phone UI.
+IronLog mobile is moving from analyzer-first companion to a mobile version of the same product concepts as desktop, using the premium phone UI.
 
 ## Current parity target
 

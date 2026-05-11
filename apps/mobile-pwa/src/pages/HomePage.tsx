@@ -129,7 +129,7 @@ export function BrandHeader() {
           <ShieldCheck className="h-6 w-6 text-white" />
         </div>
         <div>
-          <div className="text-[1.45rem] font-black leading-none">IronLung</div>
+          <div className="text-[1.45rem] font-black leading-none">IronLog</div>
           <div className="mt-1 text-xs font-black uppercase tracking-widest text-slate-400">Local-first fitness</div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 # PR Definitions
 
-IronLung stores PRs by explicit type. It should never show a vague inflated PR count without context.
+IronLog stores PRs by explicit type. It should never show a vague inflated PR count without context.
 
 ## Types
 
@@ -32,4 +32,4 @@ Legacy records without importance are displayed as legacy and treated as meaning
 
 ## Recalculation
 
-IronLung recalculates PR history chronologically after workout imports, JSON imports, workout deletion, and set deletion. This prevents deleted sets from leaving stale PRs and keeps older imported workouts from corrupting later PR order.
+IronLog recalculates PR history chronologically after workout imports, JSON imports, workout deletion, and set deletion. This prevents deleted sets from leaving stale PRs and keeps older imported workouts from corrupting later PR order.

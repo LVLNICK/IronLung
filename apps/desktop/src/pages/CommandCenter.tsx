@@ -1,5 +1,5 @@
 import { Activity, Brain, Camera, CheckCircle2, Dumbbell, Flame, Plus, Target, Trophy, TrendingUp } from "lucide-react";
-import { isMeaningfulPr, prLabel, type DateRangePreset } from "@ironlung/core";
+import { isMeaningfulPr, prLabel, type DateRangePreset } from "@ironlog/core";
 import { useState } from "react";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button } from "../components/forms/controls";
@@ -7,13 +7,13 @@ import { ScreenShell } from "../components/layout/ScreenShell";
 import { StatRows } from "../components/tables/AnalyticsTable";
 import { EmptyState } from "../components/empty-states/EmptyState";
 import { compactNumber, countNumber, shortDate } from "../lib/format";
-import { selectOpenSession, useIronLungStore } from "../lib/store";
+import { selectOpenSession, useIronLogStore } from "../lib/store";
 import { useTrainingAnalytics } from "../features/analytics/useTrainingAnalytics";
 import type { AppScreen } from "../app/navigation";
 
 export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) => void }) {
   const [range, setRange] = useState<DateRangePreset>("30d");
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const { core, desktop, intelligence } = useTrainingAnalytics(range);
   const openSession = selectOpenSession(state);
   const latestPhoto = [...state.photos].sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))[0];
@@ -59,7 +59,7 @@ export function CommandCenter({ onNavigate }: { onNavigate: (screen: AppScreen) 
               <p className="mt-2 text-sm leading-relaxed text-obsidian-muted">{nextFocus.detail}</p>
               {core.currentBlock && <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-obsidian-subtle">Current block: {core.currentBlock.name}</p>}
             </div>
-          ) : <EmptyState icon={Target} title="No focus signal yet" body="Log or import enough sessions for IronLung to compare trends." />}
+          ) : <EmptyState icon={Target} title="No focus signal yet" body="Log or import enough sessions for IronLog to compare trends." />}
         </Card>
         <Card>
           <SectionHeader title="Most Improved This Period" icon={CheckCircle2} />

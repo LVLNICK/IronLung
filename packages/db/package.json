@@ -1,5 +1,5 @@
 {
-  "name": "@ironlung/db",
+  "name": "@ironlog/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@ironlung/core": "0.1.0",
+    "@ironlog/core": "0.1.0",
     "sql.js": "^1.13.0"
   },
   "devDependencies": {

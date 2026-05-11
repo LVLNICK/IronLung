@@ -1,4 +1,4 @@
-# IronLung ML Scaffold
+# IronLog ML Scaffold
 
 This package is a future-ready Python module for training and running private body progress photo analysis. The desktop MVP now includes a local approximate vision analyzer in TypeScript and a Python parity scaffold in `infer.py`.
 

@@ -24,6 +24,8 @@ export interface MobileDbStores {
   operationLog: MobileOperationLogEntry;
 }
 
+// Preserve the original internal database key so existing installed PWAs keep
+// their imported analyzer cache after the user-facing rename to IronLog.
 const DB_NAME = "ironlung-mobile-pwa";
 const DB_VERSION = 1;
 const FALLBACK_PREFIX = "ironlung-mobile-pwa-fallback-v1";

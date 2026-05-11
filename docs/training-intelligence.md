@@ -1,6 +1,6 @@
 # Training Intelligence
 
-IronLung now has a shared training intelligence layer in `packages/core/src/training-intelligence.ts`.
+IronLog now has a shared training intelligence layer in `packages/core/src/training-intelligence.ts`.
 
 This is intentionally not a deep-learning system yet. It implements the first three layers that are more useful for a local-first personal training app:
 

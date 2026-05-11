@@ -1,4 +1,4 @@
-"""Future training entrypoint for IronLung body progress photo analysis.
+"""Future training entrypoint for IronLog body progress photo analysis.
 
 The MVP does not train or ship a model. This script is intentionally a scaffold
 with safety-oriented checks so future work starts from the right interface.
@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train a future IronLung photo consistency/progress model.")
+    parser = argparse.ArgumentParser(description="Train a future IronLog photo consistency/progress model.")
     parser.add_argument("--data-dir", type=Path, required=True, help="Directory containing user-provided, licensed datasets.")
     parser.add_argument("--output", type=Path, required=True, help="Output model artifact path, e.g. artifacts/model.onnx.")
     return parser.parse_args()
@@ -23,7 +23,7 @@ def main() -> None:
       raise SystemExit(f"Dataset directory does not exist: {args.data_dir}")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    print("IronLung ML scaffold")
+    print("IronLog ML scaffold")
     print(f"Dataset directory: {args.data_dir}")
     print(f"Planned output: {args.output}")
     print("No model is trained in the MVP scaffold.")

@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { buildTrainingAnalytics, buildTrainingIntelligence, type DateRangePreset } from "@ironlung/core";
+import { buildTrainingAnalytics, buildTrainingIntelligence, type DateRangePreset } from "@ironlog/core";
 import { buildAnalyticsSnapshot } from "../../lib/analytics";
-import { useIronLungStore } from "../../lib/store";
+import { useIronLogStore } from "../../lib/store";
 
 export function useTrainingAnalytics(range: DateRangePreset = "30d") {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   return useMemo(() => {
     const dataset = {
       exercises: state.exercises,

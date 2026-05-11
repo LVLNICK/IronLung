@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BarChart3, Brain, CalendarDays, Flame, Gauge, Layers, LineChart as LineIcon, Target, Trophy } from "lucide-react";
-import { type DateRangePreset } from "@ironlung/core";
+import { type DateRangePreset } from "@ironlog/core";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { ScreenShell } from "../components/layout/ScreenShell";
@@ -8,8 +8,8 @@ import { AnalyticsTable, StatRows } from "../components/tables/AnalyticsTable";
 import { chartColors, tooltipStyle } from "../components/charts/ChartPrimitives";
 import { compactNumber, countNumber, shortDate, wholeNumber } from "../lib/format";
 import { useTrainingAnalytics } from "../features/analytics/useTrainingAnalytics";
-import { useIronLungStore } from "../lib/store";
-import { prLabel } from "@ironlung/core";
+import { useIronLogStore } from "../lib/store";
+import { prLabel } from "@ironlog/core";
 
 type AnalyticsTab = "Overview" | "Strength" | "Volume" | "Muscle Balance" | "PRs" | "Consistency" | "Intensity & Recovery" | "Insights";
 
@@ -146,7 +146,7 @@ function MuscleBalance({ analytics }: { analytics: ReturnType<typeof useTraining
 }
 
 function PRs({ analytics }: { analytics: ReturnType<typeof useTrainingAnalytics> }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const records = [...state.personalRecords].sort((a, b) => b.achievedAt.localeCompare(a.achievedAt));
   const importance = ["major", "medium", "small", "baseline"].map((level) => ({
     level,

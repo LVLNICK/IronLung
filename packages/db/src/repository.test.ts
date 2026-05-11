@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createIronLungDatabase } from "./repository";
+import { createIronLogDatabase } from "./repository";
 
 describe("SQLite repository", () => {
   it("runs migrations and stores snapshot data", async () => {
-    const store = await createIronLungDatabase();
+    const store = await createIronLogDatabase();
     store.upsert("exercise", {
       id: "bench",
       name: "Bench Press",

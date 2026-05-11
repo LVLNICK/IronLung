@@ -95,5 +95,5 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![refresh_boostcamp_export])
         .run(tauri::generate_context!())
-        .expect("error while running IronLung Desktop");
+        .expect("error while running IronLog Desktop");
 }

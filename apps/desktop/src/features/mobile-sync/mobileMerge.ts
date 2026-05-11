@@ -1,16 +1,16 @@
-import type { Exercise, SetLog, TrainingBlock, WorkoutSession, WorkoutSessionExercise, WorkoutTemplate, WorkoutTemplateExercise } from "@ironlung/core";
-import type { IronLungStateData } from "../../lib/store";
+import type { Exercise, SetLog, TrainingBlock, WorkoutSession, WorkoutSessionExercise, WorkoutTemplate, WorkoutTemplateExercise } from "@ironlog/core";
+import type { IronLogStateData } from "../../lib/store";
 import type { MobileExportBundle, MobileImportPreview, MobileRecords, MobileSeedBundle, MobileSyncMetadata } from "./mobileSyncTypes";
 
 const DESKTOP_DEVICE_ID = "desktop";
 
-export function createMobileSeedBundle(data: IronLungStateData): MobileSeedBundle {
+export function createMobileSeedBundle(data: IronLogStateData): MobileSeedBundle {
   const now = new Date().toISOString();
   return {
     schemaVersion: 1,
-    bundleType: "ironlung-mobile-seed",
+    bundleType: "ironlog-mobile-seed",
     deviceId: DESKTOP_DEVICE_ID,
-    deviceName: "IronLung Desktop",
+    deviceName: "IronLog Desktop",
     exportedAt: now,
     appVersion: "0.1.0",
     unitPreference: data.unitPreference,
@@ -38,14 +38,14 @@ export function createMobileSeedBundle(data: IronLungStateData): MobileSeedBundl
   };
 }
 
-export function previewMobileImport(bundle: MobileExportBundle, desktop: IronLungStateData): MobileImportPreview {
+export function previewMobileImport(bundle: MobileExportBundle, desktop: IronLogStateData): MobileImportPreview {
   const result = mergeMobileBundle(bundle, desktop, { dryRun: true });
   return result.preview;
 }
 
-export function mergeMobileBundle(bundle: MobileExportBundle, desktop: IronLungStateData, options: { dryRun?: boolean } = {}) {
+export function mergeMobileBundle(bundle: MobileExportBundle, desktop: IronLogStateData, options: { dryRun?: boolean } = {}) {
   const warnings: string[] = [];
-  const mutable: IronLungStateData = cloneState(desktop);
+  const mutable: IronLogStateData = cloneState(desktop);
   const counters = {
     duplicateRecords: 0,
     conflicts: 0,
@@ -106,7 +106,7 @@ function mergeById<T extends { id: string; updatedAt?: string; deletedAt?: strin
   }
 }
 
-function mergeSetLogs(desktop: IronLungStateData, mobileRecords: MobileRecords, counters: MutableCounters) {
+function mergeSetLogs(desktop: IronLogStateData, mobileRecords: MobileRecords, counters: MutableCounters) {
   const desktopSignatures = new Set(desktop.setLogs.map((set) => setSignature(set, desktop)));
   const mobileSessionExercises = new Map(mobileRecords.sessionExercises.map((row) => [row.id, row]));
 
@@ -140,7 +140,7 @@ function mergeSetLogs(desktop: IronLungStateData, mobileRecords: MobileRecords, 
   }
 }
 
-function setSignature(set: SetLog, desktop: IronLungStateData, mobileSessionExercises?: Map<string, WorkoutSessionExercise>) {
+function setSignature(set: SetLog, desktop: IronLogStateData, mobileSessionExercises?: Map<string, WorkoutSessionExercise>) {
   const sessionExercise = mobileSessionExercises?.get(set.workoutSessionExerciseId)
     ?? desktop.sessionExercises.find((row) => row.id === set.workoutSessionExerciseId);
   const session = desktop.sessions.find((row) => row.id === sessionExercise?.workoutSessionId);
@@ -186,7 +186,7 @@ function stripSync<T>(record: T): T {
   return copy as T;
 }
 
-function cloneState(data: IronLungStateData): IronLungStateData {
+function cloneState(data: IronLogStateData): IronLogStateData {
   return {
     ...data,
     trainingBlocks: [...data.trainingBlocks],

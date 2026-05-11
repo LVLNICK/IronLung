@@ -1,6 +1,6 @@
 import { Component, useMemo, useState, type ReactNode } from "react";
 import { Activity, BarChart3, Dumbbell, Plus, Search, TrendingUp } from "lucide-react";
-import { muscleContributionWarnings, prLabel, resolveMuscleContributions } from "@ironlung/core";
+import { muscleContributionWarnings, prLabel, resolveMuscleContributions } from "@ironlog/core";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, MetricCard, SectionHeader } from "../components/cards/Card";
 import { Button, Input, Select } from "../components/forms/controls";
@@ -9,11 +9,11 @@ import { EmptyState } from "../components/empty-states/EmptyState";
 import { AnalyticsTable, StatRows } from "../components/tables/AnalyticsTable";
 import { tooltipStyle } from "../components/charts/ChartPrimitives";
 import { compactNumber, countNumber, shortDate } from "../lib/format";
-import { useIronLungStore } from "../lib/store";
+import { useIronLogStore } from "../lib/store";
 import { useTrainingAnalytics } from "../features/analytics/useTrainingAnalytics";
 
 export function ExercisesPage() {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const { core, desktop } = useTrainingAnalytics("all");
   const [query, setQuery] = useState("");
   const [muscle, setMuscle] = useState("");
@@ -111,7 +111,7 @@ function NeverTrainedExercise({ selected }: { selected: ReturnType<typeof useTra
 }
 
 function ExerciseDetail({ selected, detail }: { selected: ReturnType<typeof useTrainingAnalytics>["core"]["exerciseMetrics"][number]; detail: ReturnType<typeof useTrainingAnalytics>["desktop"]["exerciseDetails"][number] }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const exercise = state.exercises.find((item) => item.id === selected.exerciseId);
   const prs = state.personalRecords.filter((record) => record.exerciseId === selected.exerciseId).sort((a, b) => safeText(b.achievedAt, "").localeCompare(safeText(a.achievedAt, "")));
   const trend = Array.isArray(detail.trend) ? detail.trend : [];
@@ -277,7 +277,7 @@ class ExercisePaneBoundary extends Component<{ children: ReactNode }, { crashed:
 }
 
 function CreateExerciseDrawer({ onClose }: { onClose: () => void }) {
-  const state = useIronLungStore();
+  const state = useIronLogStore();
   const [name, setName] = useState("");
   const [primaryMuscle, setPrimaryMuscle] = useState("");
   const [equipment, setEquipment] = useState("");

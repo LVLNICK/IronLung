@@ -3,7 +3,7 @@
 ## Current Repo Structure
 
 - `apps/desktop`: React/Tauri desktop command center. Owns desktop UI, Zustand local store, Boostcamp import UI, JSON import/export, progress photos, analytics pages, and desktop mobile import/export UI.
-- `apps/mobile-pwa`: React/Vite installable PWA. Current product direction is `IronLung Analyzer`, a read-only phone-local analytics viewer that imports desktop seed bundles.
+- `apps/mobile-pwa`: React/Vite installable PWA. Current product direction is `IronLog Analyzer`, a read-only phone-local analytics viewer that imports desktop seed bundles.
 - `packages/core`: shared TypeScript types, Zod schemas, fitness calculations, PR logic, analytics engine, muscle contribution model, body analysis interface, and Boostcamp importers.
 - `packages/db`: SQLite schema and `sql.js` repository adapter.
 - `packages/ml`: future Python ML scaffold for progress-photo analysis.
@@ -27,7 +27,7 @@
 
 ## Duplicate Code Candidates
 
-- Mobile analytics previously duplicated formulas in `App.tsx`; this has been moved to `apps/mobile-pwa/src/features/analytics/mobileAnalytics.ts`, which calls `@ironlung/core` analytics.
+- Mobile analytics previously duplicated formulas in `App.tsx`; this has been moved to `apps/mobile-pwa/src/features/analytics/mobileAnalytics.ts`, which calls `@ironlog/core` analytics.
 - Desktop and mobile both have local import/export type definitions. Longer term, mobile seed/export schemas should move to `packages/core`.
 - Formatting helpers exist in both desktop and mobile. This is acceptable for now because the UI contexts are separate, but common pure formatters could move to core later.
 
@@ -76,7 +76,7 @@
 ## Type-Safety Problems
 
 - Desktop/mobile bundle parsing uses manual shape checks. Zod schemas for mobile seed/export bundles should move into `packages/core`.
-- Desktop `validateImportPayload` casts parsed payload to `IronLungStateData` after schema parse; acceptable short term, but the schema should align exactly with state type.
+- Desktop `validateImportPayload` casts parsed payload to `IronLogStateData` after schema parse; acceptable short term, but the schema should align exactly with state type.
 - Some imported mobile metadata is structural and optional; validation should reject malformed IDs/dates/sets before writes.
 
 ## Mobile/Desktop Duplicated Logic
