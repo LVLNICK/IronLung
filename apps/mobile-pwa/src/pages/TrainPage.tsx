@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dumbbell, List, MessageSquare, MoreHorizontal, Trophy, Zap } from "lucide-react";
-import { addSetToActiveMobileWorkout, finishActiveMobileWorkout, setMobileSetCompleted, type MobileSnapshot } from "../data/mobileRepository";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Copy, Dumbbell, List, MessageSquare, MoreHorizontal, Play, Plus, Trophy, Zap } from "lucide-react";
+import { addSetToActiveMobileWorkout, ensureActiveMobileWorkout, finishActiveMobileWorkout, loadMobileSnapshot, setMobileSetCompleted, type MobileSnapshot } from "../data/mobileRepository";
 import type { MobileAnalyzerModel } from "../features/analytics/mobileAnalytics";
 import type { MobileTab } from "../types";
 import { EmptyMobileState, GlassCard, IconTile, MetricChip, MobileGhostButton, MobilePage, MobilePrimaryButton, SectionTitle, StatusPill } from "../components/MobilePrimitives";
@@ -39,6 +39,7 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   const [finished, setFinished] = useState(false);
   const [exercisePickerOpen, setExercisePickerOpen] = useState(false);
   const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
+  const [loggerOpen, setLoggerOpen] = useState(false);
 
   useEffect(() => {
     setLocalSnapshot(snapshot);
@@ -48,6 +49,7 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   const activeExercise = exercises.find((exercise) => exercise.id === activeExerciseId) ?? exercises[0];
   const visibleWorkout = useMemo(() => visibleMobileWorkoutSession(localSnapshot), [localSnapshot]);
   const hasActiveWorkout = Boolean(visibleWorkout && !visibleWorkout.finishedAt);
+  const lastCompletedMobileWorkout = useMemo(() => latestCompletedMobileWorkout(localSnapshot), [localSnapshot]);
 
   useEffect(() => {
     if (!activeExerciseId && exercises[0]) setActiveExerciseId(exercises[0].id);
@@ -71,14 +73,30 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   if (!exercises.length || !activeExercise) {
     return (
       <MobilePage>
-        <header className="flex items-center gap-3 pt-1">
-          <button onClick={() => onNavigate("settings")} aria-label="Back to Settings" className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><ChevronLeft className="h-7 w-7 text-white" /></button>
-          <div>
-            <div className="text-xl font-black">Train</div>
-            <div className="text-sm text-slate-400">Import desktop data first.</div>
+        <header className="flex items-start justify-between pt-1">
+          <button onClick={() => onNavigate("home")} aria-label="Back to Home" className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><ChevronLeft className="h-7 w-7 text-white" /></button>
+          <div className="min-w-0 px-2 text-center">
+            <div className="truncate text-2xl font-black leading-tight">Train</div>
+            <div className="mt-1 text-sm text-slate-400">Start after importing exercises.</div>
           </div>
+          <button onClick={() => onNavigate("settings")} aria-label="Open Data and Settings" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><MoreHorizontal className="h-5 w-5" /></button>
         </header>
-        <EmptyMobileState icon={Dumbbell} title="No exercises on this phone" body="Import a desktop seed or Boostcamp history before logging mobile sets. Workouts stay local on this phone." actionLabel="Open Import" onAction={() => onNavigate("settings")} />
+        <GlassCard className="p-5">
+          <div className="flex items-start gap-4">
+            <IconTile icon={Dumbbell} size="large" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-400">Workout Launcher</div>
+              <h1 className="mt-2 text-2xl font-black leading-tight text-white">Import exercises first</h1>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                The Train page starts from a launcher, not an already-open workout. Import your desktop seed or Boostcamp history, then start a fresh phone-local workout here.
+              </p>
+            </div>
+          </div>
+          <MobilePrimaryButton onClick={() => onNavigate("settings")} className="mt-5 flex h-14 w-full items-center justify-center gap-3 text-base">
+            <Plus className="h-5 w-5" />Open Import
+          </MobilePrimaryButton>
+        </GlassCard>
+        <EmptyMobileState icon={Dumbbell} title="No exercises on this phone" body="Once your exercise library is imported, this page will show Start New Workout, Resume Active Workout, recent exercise choices, and workout context." />
       </MobilePage>
     );
   }
@@ -95,6 +113,45 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
     setLocalSnapshot(next);
     onSnapshot(next);
   };
+
+  const openLogger = async () => {
+    setSaving(true);
+    try {
+      await withSaveTimeout(ensureActiveMobileWorkout(localSnapshot.settings));
+      const next = await withSaveTimeout(loadMobileSnapshot());
+      saveSnapshot(next);
+      setLoggerOpen(true);
+      setFinished(false);
+      setNotice("New phone-local workout started.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not start workout.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resumeLogger = () => {
+    setLoggerOpen(true);
+    setFinished(false);
+    setNotice("Active phone-local workout resumed.");
+  };
+
+  if (!loggerOpen) {
+    return (
+      <TrainStartScreen
+        analyzer={analyzer}
+        exercises={exercises}
+        hasActiveWorkout={hasActiveWorkout}
+        lastWorkoutName={lastCompletedMobileWorkout?.name}
+        onBack={() => onNavigate("home")}
+        onImport={() => onNavigate("settings")}
+        onResume={resumeLogger}
+        onStart={() => void openLogger()}
+        saving={saving}
+        snapshot={localSnapshot}
+      />
+    );
+  }
 
   const addSet = async (weight: number, reps: number, rpe: number, source: "add" | "repeat") => {
     setSaving(true);
@@ -313,6 +370,125 @@ export function TrainPage({ snapshot, analyzer, onNavigate, onSnapshot }: { snap
   );
 }
 
+function TrainStartScreen({
+  analyzer,
+  exercises,
+  hasActiveWorkout,
+  lastWorkoutName,
+  onBack,
+  onImport,
+  onResume,
+  onStart,
+  saving,
+  snapshot
+}: {
+  analyzer: MobileAnalyzerModel;
+  exercises: WorkoutExercise[];
+  hasActiveWorkout: boolean;
+  lastWorkoutName?: string;
+  onBack: () => void;
+  onImport: () => void;
+  onResume: () => void;
+  onStart: () => void;
+  saving: boolean;
+  snapshot: MobileSnapshot;
+}) {
+  const recentExercises = exercises.slice(0, 5);
+  const lastSession = latestImportedWorkout(snapshot);
+  const weeklyVolume = analyzer.summary.totals.volume;
+  const recentPr = analyzer.recentPrs.find((record) => record.importance === "major" || record.importance === "medium") ?? analyzer.recentPrs[0];
+
+  return (
+    <MobilePage>
+      <header className="flex items-start justify-between pt-1">
+        <button onClick={onBack} aria-label="Back to Home" className="grid h-11 w-11 place-items-center rounded-full bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><ChevronLeft className="h-7 w-7 text-white" /></button>
+        <div className="min-w-0 px-2 text-center">
+          <div className="truncate text-2xl font-black leading-tight">Train</div>
+          <div className="mt-1 text-sm text-slate-400">Start when you are ready.</div>
+        </div>
+        <button onClick={onImport} aria-label="Open Data and Settings" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"><MoreHorizontal className="h-5 w-5" /></button>
+      </header>
+
+      <GlassCard className="overflow-hidden p-5">
+        <div className="flex items-start gap-4">
+          <IconTile icon={Dumbbell} size="large" />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-400">Workout Launcher</div>
+            <h1 className="mt-2 text-2xl font-black leading-tight text-white">Choose how to train today</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">
+              Start a fresh phone-local workout, resume one you already opened, or review your imported desktop history first.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-2">
+          {hasActiveWorkout && (
+            <MobilePrimaryButton disabled={saving} onClick={onResume} className="flex h-14 w-full items-center justify-center gap-3 text-base">
+              <Play className="h-5 w-5" />Resume Active Workout
+            </MobilePrimaryButton>
+          )}
+          {!hasActiveWorkout ? (
+            <MobilePrimaryButton disabled={saving} onClick={onStart} className="flex h-14 w-full items-center justify-center gap-3 text-base">
+              <Plus className="h-5 w-5" />Start New Workout
+            </MobilePrimaryButton>
+          ) : (
+            <MobileGhostButton disabled className="h-12 w-full">Finish the active workout before starting another</MobileGhostButton>
+          )}
+          <MobileGhostButton onClick={onImport} className="h-12 w-full">Import / Data Settings</MobileGhostButton>
+        </div>
+      </GlassCard>
+
+      <div className="grid grid-cols-2 gap-2 min-[390px]:grid-cols-4">
+        <TopMetric icon={Dumbbell} value={formatNumber(snapshot.exercises.filter((exercise) => !exercise.deletedAt).length)} label="Exercises" />
+        <TopMetric icon={List} value={formatNumber(snapshot.setLogs.filter((set) => !set.deletedAt).length)} label="Sets" />
+        <TopMetric icon={Trophy} value={formatNumber(analyzer.recentPrs.length)} label="PRs" />
+        <TopMetric icon={Zap} value={formatNumber(weeklyVolume)} label="30D Vol" />
+      </div>
+
+      <GlassCard className="p-4">
+        <SectionTitle label="Ready context" />
+        <div className="space-y-2">
+          <StartInfoRow label="Last imported workout" value={lastSession?.name ?? lastWorkoutName ?? "No imported sessions yet"} />
+          <StartInfoRow label="Last phone workout" value={lastWorkoutName ?? "No phone workout finished yet"} />
+          <StartInfoRow label="Best recent PR" value={recentPr ? `${recentPr.type.replaceAll("_", " ")} - ${formatNumber(recentPr.value)} ${recentPr.unit}` : "No recent meaningful PRs"} />
+        </div>
+      </GlassCard>
+
+      <GlassCard className="p-4">
+        <SectionTitle label="Quick exercise choices" />
+        {recentExercises.length ? (
+          <div className="space-y-2">
+            {recentExercises.map((exercise) => (
+              <button
+                key={exercise.id}
+                onClick={onStart}
+                className="flex min-h-[64px] w-full items-center gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.045] p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"
+              >
+                <IconTile icon={Dumbbell} tone="blue" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-black text-white">{exercise.name}</span>
+                  <span className="mt-1 block truncate text-sm text-slate-400">{exercise.muscles}</span>
+                </span>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <EmptyMobileState icon={Dumbbell} title="No exercises imported" body="Import your desktop seed or Boostcamp history before starting a workout on this phone." actionLabel="Open Import" onAction={onImport} />
+        )}
+      </GlassCard>
+    </MobilePage>
+  );
+}
+
+function StartInfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-h-[52px] items-center justify-between gap-3 rounded-2xl bg-white/[0.04] px-3">
+      <div className="text-xs font-black uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="min-w-0 truncate text-right text-sm font-bold text-slate-100">{value}</div>
+    </div>
+  );
+}
+
 function buildWorkoutExercises(snapshot: MobileSnapshot, analyzer: MobileAnalyzerModel): WorkoutExercise[] {
   const exercisesById = new Map(snapshot.exercises.filter((exercise) => !exercise.deletedAt).map((exercise) => [exercise.id, exercise]));
   const rankedIds = [...analyzer.strengthRows.map((row) => row.exerciseId), ...snapshot.exercises.map((exercise) => exercise.id)];
@@ -358,6 +534,18 @@ function visibleMobileWorkoutSession(snapshot: MobileSnapshot) {
     .filter((session) => !session.deletedAt && session.importSource === "mobile-pwa")
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   return mobileSessions.find((session) => !session.finishedAt) ?? mobileSessions[0] ?? null;
+}
+
+function latestCompletedMobileWorkout(snapshot: MobileSnapshot) {
+  return snapshot.sessions
+    .filter((session) => !session.deletedAt && Boolean(session.finishedAt) && session.importSource === "mobile-pwa")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] ?? null;
+}
+
+function latestImportedWorkout(snapshot: MobileSnapshot) {
+  return snapshot.sessions
+    .filter((session) => !session.deletedAt && session.importSource !== "mobile-pwa")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] ?? null;
 }
 
 function historyForExercise(snapshot: MobileSnapshot, exerciseId: string, activeSessionId?: string): { previousBest: string; lastTime: string } {
